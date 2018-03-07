@@ -147,6 +147,7 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
         for (auto number : range(particle_branch.GetEntriesFast())) {
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
             if (std::abs(particle.PID) != 13) continue;
+            print("ID, Status", particle.PID,particle.Status);
             ++number_muons;
             auto distance = transverse_distance(particle);
             if (distance > 10 && distance < 200) {
