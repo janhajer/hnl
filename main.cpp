@@ -6,6 +6,7 @@
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/transform.hpp>
+#include <boost/range/numeric.hpp>
 
 #include "TClonesArray.h"
 
@@ -48,39 +49,57 @@ auto transform(Container const& container, Function const& function)
     return container | boost::adaptors::transformed(function);
 }
 
-
 template<typename Particle>
 auto transverse_distance(Particle const& particle)
 {
     return std::sqrt(sqr(particle.X) + sqr(particle.Y));
 }
 
-boost::optional<double> get_distance(TClonesArray const& muon_branch, int number)
+auto particle_distance(TClonesArray const& particle_branch, int number)
+{
+    auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
+    return std::abs(particle.PID) == 13 ? transverse_distance(particle) : 0;
+}
+
+auto muon_distance(TClonesArray const& muon_branch, int number)
 {
     auto& muon = static_cast<Muon&>(*muon_branch.At(number));
     auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
-    auto distance = transverse_distance(particle);
-    if (distance > 10 && distance < 200) return distance;
-    return boost::none;
+    return transverse_distance(particle);
 }
 
-auto get_vector(ExRootTreeReader& tree_reader, int entry, TClonesArray const& muon_branch)
+template<typename Function>
+auto displacement(ExRootTreeReader& tree_reader, int entry, TClonesArray const& branch, Function const& function)
 {
-    // Load selected branches with data from specified event
     tree_reader.ReadEntry(entry);
     std::vector<double> result;
-    for (auto number : range(muon_branch.GetEntriesFast())) get_distance(muon_branch, number);
-    print(result);
+    for (auto number : range(branch.GetEntriesFast())) function(branch, number);
+    return !result.empty();
+}
+
+auto muon_displacement(ExRootTreeReader& tree_reader, int entry, TClonesArray const& muon_branch)
+{
+    tree_reader.ReadEntry(entry);
+    std::vector<double> result;
+    for (auto number : range(muon_branch.GetEntriesFast())) muon_distance(muon_branch, number);
+    return !result.empty();
+}
+
+auto particle_displacement(ExRootTreeReader& tree_reader, int entry, TClonesArray const& particle_branch)
+{
+    tree_reader.ReadEntry(entry);
+    std::vector<double> result;
+    for (auto number : range(particle_branch.GetEntriesFast())) particle_distance(particle_branch, number);
     return !result.empty();
 }
 
 auto analyse_events(ExRootTreeReader& tree_reader)
 {
     auto& muon_branch = *tree_reader.UseBranch("Muon");
-    auto number = 0;
-    // Loop over all events
-    for (auto entry : range(tree_reader.GetEntries())) if (get_vector(tree_reader, entry, muon_branch)) ++number;
-    return static_cast<double>(number) / tree_reader.GetEntries();
+    double number = boost::accumulate(range(tree_reader.GetEntries()), 0, [&](auto &sum, auto entry) {
+        return sum += muon_displacement(tree_reader, entry, muon_branch) ? 1 : 0;
+    });
+    return number / tree_reader.GetEntries();
 }
 
 auto AnalyseEvents(ExRootTreeReader& tree_reader)
@@ -117,27 +136,24 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
     return static_cast<double>(number) / tree_reader.GetEntries();
 }
 
-
-
 auto AnalyseEvents2(ExRootTreeReader& tree_reader)
 {
     auto& particle_branch = *tree_reader.UseBranch("Particle");
-    // Loop over all events
     auto number = 0;
     for (auto entry : range(tree_reader.GetEntries())) {
-        // Load selected branches with data from specified event
         tree_reader.ReadEntry(entry);
         std::vector<double> result;
+        auto number_muons = 0;
         for (auto number : range(particle_branch.GetEntriesFast())) {
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
             if (std::abs(particle.PID) != 13) continue;
+            ++number_muons;
             auto distance = transverse_distance(particle);
             if (distance > 10 && distance < 200) {
-//              if (distance > 0) {
-//                 print(distance);
                 result.emplace_back(distance);
             }
         }
+        if (number_muons != 2) print("number of muons", number_muons);
         if (!result.empty()) ++number;
     }
     print("displaced", number);
@@ -165,7 +181,8 @@ auto file_name(int number)
 
 int main()
 {
-    auto result = transform(boost::irange(1, 49), [](auto number) {
+    auto range = boost::irange(1, 49);
+    auto result = transform(range, [](auto number) {
         return analyze(file_name(number));
     });
     for (auto res : result) print(res, '\n');
