@@ -52,6 +52,7 @@ auto range(Integer integer)
 template<typename Container, typename Function>
 auto transform(Container const& container, Function const& function)
 {
+        print("transform");
     return container | boost::adaptors::transformed(function);
 }
 
@@ -209,6 +210,7 @@ int main()
 {
     print("start");
     auto result = transform(range(2), [](auto number) {
+        print("loop", 2);
         return analyze(file_name(number));
     });
 //     print(result);
