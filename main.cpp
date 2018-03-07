@@ -213,7 +213,7 @@ int main()
     auto r = range(5);
     print("range", r);
 
-    for (auto number : range(2)){
+    for (auto number : boost::irange(1,3)){
         analyze(file_name(number));
     };
 //     auto result = transform(r, [](auto number) {
