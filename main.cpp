@@ -181,7 +181,7 @@ auto analyze(std::string const& file_name)
 //     chain.Add(file_name.c_str());
 //     ExRootTreeReader tree_reader(&chain);
     File file(file_name);
-    return AnalyseEvents3(file.tree_reader);
+    return AnalyseEvents2(file.tree_reader);
 }
 
 auto file_name(int number)
