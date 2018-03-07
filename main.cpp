@@ -168,9 +168,10 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
             auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
 //             print("got particle");
             auto distance = transverse_distance(particle);
-            if(distance > 0) print("dist", distance);
-//             if (distance > 10 && distance < 200)
-                if(distance > 0) result.emplace_back(distance);
+//             if(distance > 0) print("dist", distance);
+            if (distance > 10 && distance < 200)
+//                 if(distance > 0)
+                result.emplace_back(distance);
         }
         if(!result.empty()) print("result:", result.size());
         if (!result.empty()) ++number;
@@ -214,12 +215,8 @@ auto file_name(int number)
 
 int main()
 {
-    print("start");
-    auto r = range(5);
-    print("range", r);
-
     std::vector<double> result;
-    for (auto number : boost::irange(1,30)){
+    for (auto number : boost::irange(1,48)){
         result.emplace_back(analyze(file_name(number)));
     };
 //     auto result = transform(r, [](auto number) {
