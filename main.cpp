@@ -150,7 +150,7 @@ auto analyze(std::string const& file_name)
     TChain chain("Delphes");
     chain.Add(file_name.c_str());
     ExRootTreeReader tree_reader(&chain);
-    return AnalyseEvents(tree_reader);
+    return AnalyseEvents2(tree_reader);
 }
 
 auto file_name(int number)
@@ -166,16 +166,7 @@ auto file_name(int number)
 
 int main()
 {
-    auto rang = boost::irange(1, 49);
-//     auto result = transform(rang, [](auto number) {
-//         return number * 2;
-//     });
-
-//     std::vector<double> result;
-//     for (auto number : boost::irange(1,49)) {
-//         result.emplace_back(analyze(file_name(number)));
-//     };
-    auto result = transform(rang, [](auto number) {
+    auto result = transform(boost::irange(1, 49), [](auto number) {
         return analyze(file_name(number));
     });
     for (auto res : result) print(res, '\n');
