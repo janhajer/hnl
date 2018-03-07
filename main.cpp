@@ -209,7 +209,9 @@ auto file_name(int number)
 int main()
 {
     print("start");
-    auto result = transform(range(2), [](auto number) {
+    auto r = range(2);
+    print(r);
+    auto result = transform(r, [](auto number) {
         print("loop", 2);
         return analyze(file_name(number));
     });
