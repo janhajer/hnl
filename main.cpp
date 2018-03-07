@@ -46,7 +46,6 @@ void print(Object const& object, Arguments ... arguments)
 template<typename Integer>
 auto range(Integer integer)
 {
-    print("range", integer);
     return boost::irange(static_cast<Integer>(0), integer);
 }
 
@@ -165,9 +164,9 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
         std::vector<double> result;
         for (auto number : range(muon_branch.GetEntriesFast())) {
             auto& muon = static_cast<Muon&>(*muon_branch.At(number));
-            print("got muon");
+//             print("got muon");
             auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
-            print("got particle");
+//             print("got particle");
             auto distance = transverse_distance(particle);
             if (distance > 10 && distance < 200) result.emplace_back(distance);
         }
