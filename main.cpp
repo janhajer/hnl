@@ -30,6 +30,7 @@ void print()
 {
     std::cout << std::endl;
 }
+
 template<typename Object, typename ... Arguments>
 void print(Object const& object, Arguments ... arguments)
 {
@@ -73,33 +74,18 @@ auto displacement(ExRootTreeReader& tree_reader, int entry, TClonesArray const& 
 {
     tree_reader.ReadEntry(entry);
     std::vector<double> result;
-    for (auto number : range(branch.GetEntriesFast())) function(branch, number);
-    return !result.empty();
-}
-
-auto muon_displacement(ExRootTreeReader& tree_reader, int entry, TClonesArray const& muon_branch)
-{
-    tree_reader.ReadEntry(entry);
-    std::vector<double> result;
-    for (auto number : range(muon_branch.GetEntriesFast())) muon_distance(muon_branch, number);
-    return !result.empty();
-}
-
-auto particle_displacement(ExRootTreeReader& tree_reader, int entry, TClonesArray const& particle_branch)
-{
-    tree_reader.ReadEntry(entry);
-    std::vector<double> result;
-    for (auto number : range(particle_branch.GetEntriesFast())) particle_distance(particle_branch, number);
+    for (auto number : range(branch.GetEntriesFast())) function(number);
     return !result.empty();
 }
 
 auto analyse_events(ExRootTreeReader& tree_reader)
 {
     auto& muon_branch = *tree_reader.UseBranch("Muon");
-    double number = boost::accumulate(range(tree_reader.GetEntries()), 0, [&](auto &sum, auto entry) {
-        return sum += muon_displacement(tree_reader, entry, muon_branch) ? 1 : 0;
-    });
-    return number / tree_reader.GetEntries();
+    return boost::accumulate(range(tree_reader.GetEntries()), 0., [&](auto & sum, auto entry) {
+        return sum += displacement(tree_reader, entry, muon_branch, [&](auto number) {
+            return muon_distance(muon_branch, number);
+        }) ? 1 : 0;
+    }) / tree_reader.GetEntries();
 }
 
 auto AnalyseEvents(ExRootTreeReader& tree_reader)
@@ -147,14 +133,15 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
         for (auto number : range(particle_branch.GetEntriesFast())) {
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
             if (std::abs(particle.PID) != 13) continue;
-            print("ID, Status", particle.PID,particle.Status);
+            print("ID, Status", particle.PID, particle.Status);
             ++number_muons;
             auto distance = transverse_distance(particle);
             if (distance > 10 && distance < 200) {
                 result.emplace_back(distance);
             }
         }
-        if (number_muons != 2) print("number of muons", number_muons);
+//         if (number_muons != 2)
+            print("number of muons", number_muons, result.size());
         if (!result.empty()) ++number;
     }
     print("displaced", number);
@@ -179,12 +166,22 @@ auto AnalyseEvents3(ExRootTreeReader& tree_reader)
     return static_cast<double>(number) / tree_reader.GetEntries();
 }
 
+struct File {
+    File(std::string const& file_name) : chain("Delphes"), tree_reader(&chain)
+    {
+        chain.Add(file_name.c_str());
+    }
+    TChain chain;
+    ExRootTreeReader tree_reader;
+};
+
 auto analyze(std::string const& file_name)
 {
-    TChain chain("Delphes");
-    chain.Add(file_name.c_str());
-    ExRootTreeReader tree_reader(&chain);
-    return AnalyseEvents3(tree_reader);
+//     TChain chain("Delphes");
+//     chain.Add(file_name.c_str());
+//     ExRootTreeReader tree_reader(&chain);
+    File file(file_name);
+    return AnalyseEvents3(file.tree_reader);
 }
 
 auto file_name(int number)
