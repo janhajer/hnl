@@ -218,12 +218,13 @@ int main()
     auto r = range(5);
     print("range", r);
 
+    std::vector<double> result;
     for (auto number : boost::irange(1,30)){
-        analyze(file_name(number));
+        result.emplace_back(analyze(file_name(number)));
     };
 //     auto result = transform(r, [](auto number) {
 //         print("loop", 2);
 //         return analyze(file_name(number));
 //     });
-//     print(result);
+    print(result);
 }
