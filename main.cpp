@@ -121,7 +121,8 @@ auto transform(Container const& container, Function const& function)
 //     return plots;
 // }
 
-auto transverse_distance(GenParticle const& particle)
+template<typename Particle>
+auto transverse_distance(Particle const& particle)
 {
     return std::sqrt(sqr(particle.X) + sqr(particle.Y));
 }
@@ -171,6 +172,39 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
 //                 if(distance > 0)
             if(distance > 0 && particle.D0 > 0) {
                 print(distance, particle.D0);
+//             if(distance > 0) print("dist", distance);
+//             if (distance > 10 && distance < 200)
+                result.emplace_back(distance);
+            }
+        }
+//         if(!result.empty()) print("result:", result.size());
+        if (!result.empty()) ++number;
+    }
+    print("displaced", number);
+    return static_cast<double>(number) / tree_reader.GetEntries();
+}
+
+
+
+auto AnalyseEvents2(ExRootTreeReader& tree_reader)
+{
+    auto& muon_branch = *tree_reader.UseBranch("Track");
+    auto& particle_branch = *tree_reader.UseBranch("Particle");
+    // Loop over all events
+    auto number = 0;
+    for (auto entry : range(tree_reader.GetEntries())) {
+        // Load selected branches with data from specified event
+        tree_reader.ReadEntry(entry);
+        std::vector<double> result;
+        for (auto number : range(muon_branch.GetEntriesFast())) {
+            auto& muon = static_cast<Track&>(*muon_branch.At(number));
+//             print("got muon");
+//             auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
+//             print("got particle");
+            auto distance = transverse_distance(muon);
+//                 if(distance > 0)
+            if(distance > 0 && muon.D0 > 0) {
+                print(distance, muon.D0);
 //             if(distance > 0) print("dist", distance);
 //             if (distance > 10 && distance < 200)
                 result.emplace_back(distance);
