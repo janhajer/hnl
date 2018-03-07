@@ -52,7 +52,7 @@ auto range(Integer integer)
 template<typename Container, typename Function>
 auto transform(Container const& container, Function const& function)
 {
-        print("transform", container);
+    print("transform", container);
     return container | boost::adaptors::transformed(function);
 }
 
@@ -163,7 +163,10 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
         // Load selected branches with data from specified event
         tree_reader.ReadEntry(entry);
         std::vector<double> result;
-        for (auto number : range(muon_branch.GetEntriesFast())) {
+        auto entries = muon_branch.GetEntriesFast();
+        print("entries", entries);
+        if(entries != 2) continue;
+        for (auto number : range(entries)) {
             auto& muon = static_cast<Muon&>(*muon_branch.At(number));
 //             print("got muon");
             auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
@@ -253,7 +256,7 @@ auto file_name(int number)
 int main()
 {
     std::vector<double> result;
-    for (auto number : boost::irange(1,49)){
+    for (auto number : boost::irange(1,49)) {
         result.emplace_back(analyze(file_name(number)));
     };
 //     auto result = transform(r, [](auto number) {
