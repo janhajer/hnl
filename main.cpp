@@ -46,13 +46,14 @@ void print(Object const& object, Arguments ... arguments)
 template<typename Integer>
 auto range(Integer integer)
 {
+    print("range", integer);
     return boost::irange(static_cast<Integer>(0), integer);
 }
 
 template<typename Container, typename Function>
 auto transform(Container const& container, Function const& function)
 {
-        print("transform");
+        print("transform", container);
     return container | boost::adaptors::transformed(function);
 }
 
@@ -196,7 +197,7 @@ auto analyze(std::string const& file_name)
 
 auto file_name(int number)
 {
-    print("file name");
+    print("file name", number);
     auto path = "~/scratch/2.6.2_heavyion/scan/Events/";
     auto name = (number < 10 ? "0" : "") + std::to_string(number);
     auto folder = "run_" + name + "_decayed_1/";
@@ -209,8 +210,8 @@ auto file_name(int number)
 int main()
 {
     print("start");
-    auto r = range(2);
-    print(r);
+    auto r = range(5);
+    print("range", r);
     auto result = transform(r, [](auto number) {
         print("loop", 2);
         return analyze(file_name(number));
