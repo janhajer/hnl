@@ -169,11 +169,13 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
 //             print("got particle");
             auto distance = transverse_distance(particle);
             print("dist", distance);
-            if (distance > 10 && distance < 200) result.emplace_back(distance);
+//             if (distance > 10 && distance < 200)
+                if(distance > 0) result.emplace_back(distance);
         }
-        print("result:", result);
+        if(!result.empty()) print("result:", result.size());
         if (!result.empty()) ++number;
     }
+    print("fraction",static_cast<double>(number) / tree_reader.GetEntries());
     return static_cast<double>(number) / tree_reader.GetEntries();
 }
 
@@ -216,7 +218,7 @@ int main()
     auto r = range(5);
     print("range", r);
 
-    for (auto number : boost::irange(1,3)){
+    for (auto number : boost::irange(1,30)){
         analyze(file_name(number));
     };
 //     auto result = transform(r, [](auto number) {
