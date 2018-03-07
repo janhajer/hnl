@@ -131,10 +131,10 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
         for (auto number : range(particle_branch.GetEntriesFast())) {
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
             if (std::abs(particle.PID) != 13) continue;
-                auto distance = transverse_distance(particle);
-//             if (distance > 10 && distance < 200)
-            if (distance > 0) {
-                print(distance);
+            auto distance = transverse_distance(particle);
+            if (distance > 10 && distance < 200) {
+//              if (distance > 0) {
+//                 print(distance);
                 result.emplace_back(distance);
             }
         }
@@ -146,7 +146,6 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
 
 auto analyze(std::string const& file_name)
 {
-    print("anal");
     TChain chain("Delphes");
     chain.Add(file_name.c_str());
     ExRootTreeReader tree_reader(&chain);
