@@ -195,6 +195,7 @@ auto analyze(std::string const& file_name)
 
 auto file_name(int number)
 {
+    print("file name");
     auto path = "~/scratch/2.6.2_heavyion/scan/Events/";
     auto name = (number < 10 ? "0" : "") + std::to_string(number);
     auto folder = "run_" + name + "_decayed_1/";
@@ -206,6 +207,7 @@ auto file_name(int number)
 
 int main()
 {
+    print("start");
     auto result = transform(range(2), [](auto number) {
         return analyze(file_name(number));
     });
