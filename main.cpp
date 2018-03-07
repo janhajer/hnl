@@ -171,7 +171,7 @@ auto AnalyseEvents3(ExRootTreeReader& tree_reader)
         for (auto number : range(particle_branch.GetEntriesFast())) {
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
             auto distance = transverse_distance(particle);
-            if (distance > 10 && distance < 200)  result.emplace_back(distance);
+            if (distance > 100 && distance < 2000)  result.emplace_back(distance);
         }
         if (!result.empty()) ++number;
     }
