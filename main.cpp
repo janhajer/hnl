@@ -168,9 +168,10 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
             auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
 //             print("got particle");
             auto distance = transverse_distance(particle);
+            if(distance > 0 && particle.D0 > 0) print(distance, particle.D0);
 //             if(distance > 0) print("dist", distance);
-            if (distance > 10 && distance < 200)
-//                 if(distance > 0)
+//             if (distance > 10 && distance < 200)
+                if(distance > 0)
                 result.emplace_back(distance);
         }
         if(!result.empty()) print("result:", result.size());
