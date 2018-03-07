@@ -212,9 +212,13 @@ int main()
     print("start");
     auto r = range(5);
     print("range", r);
-    auto result = transform(r, [](auto number) {
-        print("loop", 2);
-        return analyze(file_name(number));
-    });
+
+    for (auto number : range(2)){
+        analyze(file_name(number));
+    };
+//     auto result = transform(r, [](auto number) {
+//         print("loop", 2);
+//         return analyze(file_name(number));
+//     });
 //     print(result);
 }
