@@ -168,16 +168,18 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
             auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
 //             print("got particle");
             auto distance = transverse_distance(particle);
-            if(distance > 0 && particle.D0 > 0) print(distance, particle.D0);
+//                 if(distance > 0)
+            if(distance > 0 && particle.D0 > 0) {
+                print(distance, particle.D0);
 //             if(distance > 0) print("dist", distance);
 //             if (distance > 10 && distance < 200)
-                if(distance > 0)
                 result.emplace_back(distance);
+            }
         }
-        if(!result.empty()) print("result:", result.size());
+//         if(!result.empty()) print("result:", result.size());
         if (!result.empty()) ++number;
     }
-    print("fraction",static_cast<double>(number) / tree_reader.GetEntries());
+    print("displaced", number);
     return static_cast<double>(number) / tree_reader.GetEntries();
 }
 
@@ -217,7 +219,7 @@ auto file_name(int number)
 int main()
 {
     std::vector<double> result;
-    for (auto number : boost::irange(1,48)){
+    for (auto number : boost::irange(1,49)){
         result.emplace_back(analyze(file_name(number)));
     };
 //     auto result = transform(r, [](auto number) {
