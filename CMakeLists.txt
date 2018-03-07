@@ -4,6 +4,8 @@ project(Neutrino)
 
 find_package(ROOT)
 find_package(Boost)
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
+
 add_library(libDelphes SHARED IMPORTED)
 
 add_executable (neutrino main.cpp)
