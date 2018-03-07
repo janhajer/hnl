@@ -156,6 +156,7 @@ auto analyse_events(ExRootTreeReader& tree_reader)
 auto AnalyseEvents(ExRootTreeReader& tree_reader)
 {
     auto& muon_branch = *tree_reader.UseBranch("Muon");
+    auto& particle_branch = *tree_reader.UseBranch("Particle");
     // Loop over all events
     auto number = 0;
     for (auto entry : range(tree_reader.GetEntries())) {
@@ -164,7 +165,9 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
         std::vector<double> result;
         for (auto number : range(muon_branch.GetEntriesFast())) {
             auto& muon = static_cast<Muon&>(*muon_branch.At(number));
+            print("got muon");
             auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
+            print("got particle");
             auto distance = transverse_distance(particle);
             if (distance > 10 && distance < 200) result.emplace_back(distance);
         }
