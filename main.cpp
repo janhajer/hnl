@@ -161,12 +161,30 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
     return static_cast<double>(number) / tree_reader.GetEntries();
 }
 
+auto AnalyseEvents3(ExRootTreeReader& tree_reader)
+{
+    auto& particle_branch = *tree_reader.UseBranch("Particle");
+    auto number = 0;
+    for (auto entry : range(tree_reader.GetEntries())) {
+        tree_reader.ReadEntry(entry);
+        std::vector<double> result;
+        for (auto number : range(particle_branch.GetEntriesFast())) {
+            auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
+            auto distance = transverse_distance(particle);
+            if (distance > 10 && distance < 200)  result.emplace_back(distance);
+        }
+        if (!result.empty()) ++number;
+    }
+    print("displaced", number);
+    return static_cast<double>(number) / tree_reader.GetEntries();
+}
+
 auto analyze(std::string const& file_name)
 {
     TChain chain("Delphes");
     chain.Add(file_name.c_str());
     ExRootTreeReader tree_reader(&chain);
-    return AnalyseEvents2(tree_reader);
+    return AnalyseEvents3(tree_reader);
 }
 
 auto file_name(int number)
