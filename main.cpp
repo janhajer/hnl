@@ -182,6 +182,7 @@ auto AnalyseEvents4(ExRootTreeReader& tree_reader)
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
             print(particle);
         }
+        print("");
     }
     return 0.;
 }
