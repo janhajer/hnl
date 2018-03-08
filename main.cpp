@@ -126,10 +126,12 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
 {
     auto& particle_branch = *tree_reader.UseBranch("Particle");
     auto number = 0;
+    // loop over all events
     for (auto entry : range(tree_reader.GetEntries())) {
         tree_reader.ReadEntry(entry);
         std::vector<double> result;
         auto number_muons = 0;
+        // loop over all particles
         for (auto number : range(particle_branch.GetEntriesFast())) {
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
             if (std::abs(particle.PID) != 13) continue;
@@ -197,7 +199,8 @@ auto file_name(int number)
 
 int main()
 {
-    auto range = boost::irange(1, 49);
+//     auto range = boost::irange(1, 49);
+    auto range = boost::irange(1, 1);
     auto result = transform(range, [](auto number) {
         return analyze(file_name(number));
     });
