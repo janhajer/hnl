@@ -125,7 +125,7 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
 auto AnalyseEvents2(ExRootTreeReader& tree_reader)
 {
     auto& particle_branch = *tree_reader.UseBranch("Particle");
-    auto number = 0;
+    auto number_displaced = 0;
     // loop over all events
     for (auto entry : range(tree_reader.GetEntries())) {
         tree_reader.ReadEntry(entry);
@@ -143,11 +143,11 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
             }
         }
 //         if (number_muons != 2)
-            print("number of muons", number_muons, result.size());
-        if (!result.empty()) ++number;
+        print("number of muons", number_muons, result.size());
+        if (!result.empty()) ++number_displaced;
     }
-    print("displaced", number);
-    return static_cast<double>(number) / tree_reader.GetEntries();
+    print("displaced", number_displaced);
+    return static_cast<double>(number_displaced) / tree_reader.GetEntries();
 }
 
 auto AnalyseEvents3(ExRootTreeReader& tree_reader)
