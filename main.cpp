@@ -180,7 +180,7 @@ auto AnalyseEvents4(ExRootTreeReader& tree_reader)
         std::vector<double> result;
         for (auto position : range(particle_branch.GetEntriesFast())) {
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
-            print(particle);
+            (particle.PID == 9900012 || particle.PID == 9900014 || particle.PID == 9900016) ?            print("      ", particle): print(particle);
         }
         print("");
     }
