@@ -132,7 +132,7 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
         std::vector<double> result;
         auto number_muons = 0;
         // loop over all particles
-        for (auto number : range(particle_branch.GetEntriesFast())) {
+        for (auto number : range(particle_branch.GetEntriesFast()+1)) {
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
             if (std::abs(particle.PID) != 13) continue;
             print("ID, Status", particle.PID, particle.Status);
