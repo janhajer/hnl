@@ -74,7 +74,7 @@ auto displacement(ExRootTreeReader& tree_reader, int entry, TClonesArray const& 
 {
     tree_reader.ReadEntry(entry);
     std::vector<double> result;
-    for (auto number : range(branch.GetEntriesFast())) function(number);
+    for (auto number : range(branch.GetEntriesFast())) if (auto displ = function(number) > 0) result.emplace_back(displ);
     return !result.empty();
 }
 
@@ -168,6 +168,24 @@ auto AnalyseEvents3(ExRootTreeReader& tree_reader)
     return static_cast<double>(number_of_muons) / tree_reader.GetEntries();
 }
 
+std::ostream & operator<<(std::ostream & stream, GenParticle const& particle){
+    return stream << "(" << particle.PID << ", " << particle.Status << ")";
+}
+
+auto AnalyseEvents4(ExRootTreeReader& tree_reader)
+{
+    auto& particle_branch = *tree_reader.UseBranch("Particle");
+    for (auto entry : range(tree_reader.GetEntries())) {
+        tree_reader.ReadEntry(entry);
+        std::vector<double> result;
+        for (auto position : range(particle_branch.GetEntriesFast())) {
+            auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
+            print(particle);
+        }
+    }
+    return 0.;
+}
+
 struct File {
     File(std::string const& file_name) : chain("Delphes"), tree_reader(&chain)
     {
@@ -183,7 +201,7 @@ auto analyze(std::string const& file_name)
 //     chain.Add(file_name.c_str());
 //     ExRootTreeReader tree_reader(&chain);
     File file(file_name);
-    return AnalyseEvents2(file.tree_reader);
+    return AnalyseEvents4(file.tree_reader);
 }
 
 auto file_name(int number)
