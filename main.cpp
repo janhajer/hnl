@@ -50,6 +50,11 @@ auto transform(Container const& container, Function const& function)
     return container | boost::adaptors::transformed(function);
 }
 
+std::ostream& operator<<(std::ostream& stream, GenParticle const& particle)
+{
+    return stream << "(" << particle.PID << ", " << particle.Status << ")";
+}
+
 template<typename Particle>
 auto transverse_distance(Particle const& particle)
 {
@@ -73,9 +78,9 @@ template<typename Function>
 auto displacement(ExRootTreeReader& tree_reader, int entry, TClonesArray const& branch, Function const& function)
 {
     tree_reader.ReadEntry(entry);
-    std::vector<double> result;
-    for (auto number : range(branch.GetEntriesFast())) if (auto displ = function(number) > 0) result.emplace_back(displ);
-    return !result.empty();
+    return boost::accumulate(range(branch.GetEntriesFast()), 0, [&](auto & sum, auto number) {
+        return sum += function(number) > 10 ? 1 : 0 ;
+    }) > 0;
 }
 
 auto analyse_events(ExRootTreeReader& tree_reader)
@@ -93,33 +98,26 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
     auto& muon_branch = *tree_reader.UseBranch("Muon");
     auto& particle_branch = *tree_reader.UseBranch("Particle");
     // Loop over all events
-    auto number = 0;
+    auto displaced_number = 0;
     for (auto entry : range(tree_reader.GetEntries())) {
         // Load selected branches with data from specified event
         tree_reader.ReadEntry(entry);
         std::vector<double> result;
         auto entries = muon_branch.GetEntriesFast();
-        print("entries", entries);
-        if (entries != 2) continue;
-        for (auto number : range(entries)) {
-            auto& muon = static_cast<Muon&>(*muon_branch.At(number));
-//             print("got muon");
+        for (auto position : range(entries)) {
+            auto& muon = static_cast<Muon&>(*muon_branch.At(position));
             auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
-//             print("got particle");
             auto distance = transverse_distance(particle);
-//                 if(distance > 0)
-            if (distance > 0 && particle.D0 > 0) {
+//             if (distance > 10 && distance < 200){
+            if (distance > 0) {
                 print(distance, particle.D0);
-//             if(distance > 0) print("dist", distance);
-//             if (distance > 10 && distance < 200)
                 result.emplace_back(distance);
             }
         }
-//         if(!result.empty()) print("result:", result.size());
-        if (!result.empty()) ++number;
+        if (!result.empty()) ++displaced_number;
     }
-    print("displaced", number);
-    return static_cast<double>(number) / tree_reader.GetEntries();
+    print("displaced", displaced_number);
+    return static_cast<double>(displaced_number) / tree_reader.GetEntries();
 }
 
 auto AnalyseEvents2(ExRootTreeReader& tree_reader)
@@ -168,11 +166,6 @@ auto AnalyseEvents3(ExRootTreeReader& tree_reader)
     return static_cast<double>(number_of_muons) / tree_reader.GetEntries();
 }
 
-std::ostream& operator<<(std::ostream& stream, GenParticle const& particle)
-{
-    return stream << "(" << particle.PID << ", " << particle.Status << ")";
-}
-
 auto AnalyseEvents4(ExRootTreeReader& tree_reader)
 {
     auto& particle_branch = *tree_reader.UseBranch("Particle");
@@ -188,6 +181,17 @@ auto AnalyseEvents4(ExRootTreeReader& tree_reader)
     return 0.;
 }
 
+auto file_name(int number)
+{
+    auto path = "~/scratch/2.6.2_heavyion/plain_scan/Events/";
+    auto name = (number < 10 ? "0" : "") + std::to_string(number);
+    auto folder = "run_" + name + "_decayed_1/";
+    auto file = "tag_1_delphes_events.root";
+    auto result = path + folder + file;
+    print(result);
+    return result;
+}
+
 struct File {
     File(std::string const& file_name) : chain("Delphes"), tree_reader(&chain)
     {
@@ -197,32 +201,13 @@ struct File {
     ExRootTreeReader tree_reader;
 };
 
-auto analyze(std::string const& file_name)
-{
-//     TChain chain("Delphes");
-//     chain.Add(file_name.c_str());
-//     ExRootTreeReader tree_reader(&chain);
-    File file(file_name);
-    return AnalyseEvents4(file.tree_reader);
-}
-
-auto file_name(int number)
-{
-    auto path = "~/scratch/2.6.2_heavyion/scan/Events/";
-    auto name = (number < 10 ? "0" : "") + std::to_string(number);
-    auto folder = "run_" + name + "_decayed_1/";
-    auto file = "tag_1_delphes_events.root";
-    auto result = path + folder + file;
-    print(result);
-    return result;
-}
-
 int main()
 {
 //     auto range = boost::irange(1, 49);
     auto range = boost::irange(1, 2);
     auto result = transform(range, [](auto number) {
-        return analyze(file_name(number));
+        File file(file_name(number));
+        return AnalyseEvents(file.tree_reader);;
     });
     for (auto res : result) print(res, '\n');
 }
