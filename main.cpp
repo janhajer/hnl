@@ -110,7 +110,7 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
             auto distance = transverse_distance(particle);
 //             if (distance > 10 && distance < 200){
             if (distance > 0) {
-                print(distance, particle.D0);
+                print(distance);
                 result.emplace_back(distance);
             }
         }
@@ -133,10 +133,11 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
         for (auto position : range(particle_branch.GetEntriesFast())) {
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
             if (std::abs(particle.PID) != 13) continue;
-            print("ID, Status", particle.PID, particle.Status);
+            print("ID, Status", particle);
             ++number_muons;
             auto distance = transverse_distance(particle);
-            if (distance > 10 && distance < 200) {
+            if (distance > 0) {
+//             if (distance > 10 && distance < 200) {
                 result.emplace_back(distance);
             }
         }
@@ -207,7 +208,7 @@ int main()
     auto range = boost::irange(1, 2);
     auto result = transform(range, [](auto number) {
         File file(file_name(number));
-        return AnalyseEvents(file.tree_reader);;
+        return AnalyseEvents2(file.tree_reader);;
     });
     for (auto res : result) print(res, '\n');
 }
