@@ -83,7 +83,7 @@ auto analyse_events(ExRootTreeReader& tree_reader)
     auto& muon_branch = *tree_reader.UseBranch("Muon");
     return boost::accumulate(range(tree_reader.GetEntries()), 0., [&](auto & sum, auto entry) {
         return sum += displacement(tree_reader, entry, muon_branch, [&](auto number) {
-            return muon_distance(muon_branch, number);
+            return particle_distance(muon_branch, number);
         }) ? 1 : 0;
     }) / tree_reader.GetEntries();
 }
@@ -132,8 +132,8 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
         std::vector<double> result;
         auto number_muons = 0;
         // loop over all particles
-        for (auto number : range(particle_branch.GetEntriesFast()+1)) {
-            auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
+        for (auto position : range(particle_branch.GetEntriesFast())) {
+            auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
             if (std::abs(particle.PID) != 13) continue;
             print("ID, Status", particle.PID, particle.Status);
             ++number_muons;
@@ -153,19 +153,19 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
 auto AnalyseEvents3(ExRootTreeReader& tree_reader)
 {
     auto& particle_branch = *tree_reader.UseBranch("Particle");
-    auto number = 0;
+    auto number_of_muons = 0;
     for (auto entry : range(tree_reader.GetEntries())) {
         tree_reader.ReadEntry(entry);
         std::vector<double> result;
-        for (auto number : range(particle_branch.GetEntriesFast())) {
-            auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
+        for (auto position : range(particle_branch.GetEntriesFast())) {
+            auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
             auto distance = transverse_distance(particle);
             if (distance > 100 && distance < 2000)  result.emplace_back(distance);
         }
-        if (!result.empty()) ++number;
+        if (!result.empty()) ++number_of_muons;
     }
-    print("displaced", number);
-    return static_cast<double>(number) / tree_reader.GetEntries();
+    print("displaced", number_of_muons);
+    return static_cast<double>(number_of_muons) / tree_reader.GetEntries();
 }
 
 struct File {
