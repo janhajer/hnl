@@ -168,7 +168,8 @@ auto AnalyseEvents3(ExRootTreeReader& tree_reader)
     return static_cast<double>(number_of_muons) / tree_reader.GetEntries();
 }
 
-std::ostream & operator<<(std::ostream & stream, GenParticle const& particle){
+std::ostream& operator<<(std::ostream& stream, GenParticle const& particle)
+{
     return stream << "(" << particle.PID << ", " << particle.Status << ")";
 }
 
@@ -180,7 +181,7 @@ auto AnalyseEvents4(ExRootTreeReader& tree_reader)
         std::vector<double> result;
         for (auto position : range(particle_branch.GetEntriesFast())) {
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
-            (particle.PID == 9900012 || particle.PID == 9900014 || particle.PID == 9900016) ?            print("      ", particle): print(particle);
+            (particle.PID == 9900012 || particle.PID == 9900014 || particle.PID == 9900016) ?            print(position, ":      ", particle) : print(position, ": ", particle);
         }
         print("");
     }
