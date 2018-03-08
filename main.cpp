@@ -200,7 +200,7 @@ auto file_name(int number)
 int main()
 {
 //     auto range = boost::irange(1, 49);
-    auto range = boost::irange(1, 1);
+    auto range = boost::irange(1, 2);
     auto result = transform(range, [](auto number) {
         return analyze(file_name(number));
     });
