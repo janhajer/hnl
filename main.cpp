@@ -134,7 +134,7 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
             if (std::abs(particle.PID) != 13) continue;
             auto distance = transverse_distance(particle);
-            if(particle.Status) print("ID, Status", particle, distance);
+            if(particle.Status == 1) print("ID, Status", particle, distance);
             ++number_muons;
 //             if (distance > 0) {
             if (distance > 10 && distance < 200) {
