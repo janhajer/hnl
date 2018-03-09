@@ -33,6 +33,11 @@ auto & operator<<(std::ostream& stream, Container<Element> const& container)
     return stream;
 }
 
+template<typename Key_, typename Value_>
+auto & operator<<(std::ostream& stream, std::pair<Key_, Value_> const& pair){
+    return stream << '(' << pair.first << ", " << pair.second << ')';
+}
+
 void print()
 {
     std::cout << std::endl;
@@ -235,22 +240,15 @@ auto to_folder(int number)
 
 auto get_xsec(std::string const& run, int number)
 {
-    File file1(x_sec_file_name(run));
-    print(x_sec_file_name(run));
+    File file(x_sec_file_name(run));
     std::vector<std::string> lines;
-    std::copy(std::istream_iterator<Line>(file1.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-    print("lines size", lines.size());
+    std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
     for (auto const& line : lines) {
         std::vector<std::string> strings;
         boost::split(strings, line, [](char c) {
             return c == ' ';
         });
-        print("string size", strings.size());
-        if (strings.size() < 4) print("empty vector", strings.size());
-        else {
-            print("strings", strings.at(0), to_folder(number));
-            if (strings.at(0) == to_folder(number)) return strings.at(2);
-        }
+        if (strings.size() >= 2 && strings.at(0) == to_folder(number)) return strings.at(2);
     }
     return "Not found"s;
 }
@@ -274,16 +272,12 @@ int main()
     auto run = "plain_scan"s;
 //     auto run = "lead_scan"s;
 
-
-    print(get_xsec(run, 1));
-    print(get_xsec(run, 40));
-
     print("starting from", file_name(run, 1));
 //     auto range = boost::irange(1, 49);
     auto range = boost::irange(1, 3);
     auto result = transform(range, [&run](auto number) {
         Tree tree(file_name(run, number));
-        return AnalyseEvents(tree.tree_reader);
+        return std::make_pair(AnalyseEvents(tree.tree_reader), get_xsec(run, number));
     });
     for (auto i : result) print(i);
 
