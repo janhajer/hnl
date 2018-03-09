@@ -220,6 +220,7 @@ int main()
         return AnalyseEvents(file.tree_reader);;
     });
 //     print("result size", result.size());
-        boost::copy(result, std::ostream_iterator<int>(std::cout, "\n"));
+//         boost::copy(result, std::ostream_iterator<int>(std::cout, "\n"));
 //     for (auto res : result) print("loop",res, '\n');
+        print(result);
 }
