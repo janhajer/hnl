@@ -212,7 +212,7 @@ struct File //: boost::integer_range<int>
 int main()
 {
 //     auto range = boost::irange(1, 49);
-    auto range = boost::irange(1, 2);
+    auto range = boost::irange(1, 3);
     auto result = transform(range, [](auto number) {
         File file(file_name(number));
 //         print("file size",file.size());
