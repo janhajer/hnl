@@ -195,9 +195,9 @@ auto file_name(int number)
     return path + folder + file;
 }
 
-struct File
-{
-    File(std::string const& file_name) : chain("Delphes"), tree_reader(&chain) {
+struct File {
+    File(std::string const& file_name) : chain("Delphes"), tree_reader(&chain)
+    {
         chain.Add(file_name.c_str());
     }
     TChain chain;
@@ -206,11 +206,15 @@ struct File
 
 int main()
 {
-    print("starting from", file_name(0));
+    print("starting from", file_name(1));
 //     auto range = boost::irange(1, 49);
     auto range = boost::irange(1, 3);
-    print(transform(range, [](auto number) {
+    auto result = transform(range, [](auto number) {
         File file(file_name(number));
         return AnalyseEvents(file.tree_reader);;
-    }),'\n');
+    });
+    for(auto i : result)
+    std::cout << i << "\n";
+
+
 }
