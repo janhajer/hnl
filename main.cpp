@@ -277,8 +277,11 @@ int main()
     auto range = boost::irange(1, 3);
     auto result = transform(range, [&run](auto number) {
         Tree tree(file_name(run, number));
-        return std::make_pair(AnalyseEvents(tree.tree_reader), get_xsec(run, number));
+        return std::to_string(AnalyseEvents(tree.tree_reader)) + " " +  get_xsec(run, number);
     });
     for (auto i : result) print(i);
 
+    std::ofstream output_file("./" + run + ".dat");
+    std::ostream_iterator<std::string> output_iterator(output_file, "\n");
+    std::copy(result.begin(), result.end(), output_iterator);
 }
