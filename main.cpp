@@ -186,11 +186,14 @@ auto AnalyseEvents4(ExRootTreeReader& tree_reader)
     return 0.;
 }
 
+auto base_path()
+{
+    return "~/scratch/2.6.2_heavyion/";
+}
+
 auto x_sec_file_name(std::string const& run)
 {
-    auto path = "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion/";
-    auto file = "cross_sections";
-    return path + run + "/" + file;
+    return base_path() + run + "/cross_sections";
 }
 
 struct File {
@@ -217,29 +220,33 @@ public:
     }
 };
 
-auto get_xsec(std::string const& run)
+auto to_string(int number)
+{
+    return (number < 10 ? "0" : "") + std::to_string(number);
+}
+
+auto to_folder(int number)
+{
+    return "run_" + to_string(number) + "_decayed_1";
+}
+
+auto get_xsec(std::string const& run, int number)
 {
     File file1(x_sec_file_name(run));
-
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file1.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-
-    std::vector<std::vector<std::string>> tokens;
-    for(auto const&line : lines){
-            std::vector<std::string> strings;
-boost::split(strings, line, [](char c){return c == ' ';});
-            tokens.emplace_back(strings);
+    for (auto const& line : lines) {
+        std::vector<std::string> strings;
+        boost::split(strings, line, [](char c) {
+            return c == ' ';
+        });
+        if (strings.at(0) == to_folder(number)) return strings.at(2);
     }
-    print(tokens);
 }
 
 auto file_name(std::string const& run, int number)
 {
-    auto path = "~/scratch/2.6.2_heavyion/" + run + "/Events/";
-    auto name = (number < 10 ? "0" : "") + std::to_string(number);
-    auto folder = "run_" + name + "_decayed_1/";
-    auto file = "tag_1_delphes_events.root";
-    return path + folder + file;
+    return base_path() + run + "/Events/" + to_folder(number) + "/tag_1_delphes_events.root";
 }
 
 struct Tree {
@@ -258,7 +265,8 @@ int main()
 //     auto run = "lead_scan"s;
 
 
-    get_xsec(run);
+    print(get_xsec(run,1));
+    print(get_xsec(run,40));
 
     print("starting from", file_name(run, 1));
 //     auto range = boost::irange(1, 49);
