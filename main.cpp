@@ -223,18 +223,15 @@ auto get_xsec(std::string const& run)
 
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file1.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-    print(lines);
 
-//     std::string line;
-//     std::ifstream file(x_sec_file_name(run, number));
-//     if (file.is_open()) {
-//         while (getline(file, line)) {
-//             std::vector<std::string> vector;
-//             boost::tokenizer<boost::escaped_list_separator<char> > tokenizer(line, boost::escaped_list_separator<char>(' '));
-//             for (auto const& token : tokenizer) vector.emplace_back(token);
-//             }
-//         file.close();
-//     } else print("Unable to open file");
+    std::vector<std::vector<std::string>> tokens;
+    for(auto const&line : lines){
+            std::vector<std::string> strings;
+            boost::tokenizer<boost::escaped_list_separator<char> > tokenizer(line, boost::escaped_list_separator<char>(' '));
+            for (auto const& token : tokenizer) strings.emplace_back(token);
+            tokens.emplace_back(strings);
+    }
+    print(tokens);
 }
 
 auto file_name(std::string const& run, int number)
