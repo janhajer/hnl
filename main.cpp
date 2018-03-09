@@ -18,7 +18,7 @@
 #include "ExRootAnalysis/ExRootTreeReader.h"
 
 
-    using namespace std::string_literals;
+using namespace std::string_literals;
 
 template<typename Object>
 auto sqr(Object const& object)
@@ -244,10 +244,11 @@ auto get_xsec(std::string const& run, int number)
         boost::split(strings, line, [](char c) {
             return c == ' ';
         });
-        if(strings.size() < 4) print("empty vector", strings.size());
-        else{
-        print("strings", strings.at(0), to_folder(number));
-        if (strings.at(0) == to_folder(number)) return strings.at(2);
+        print("string size",strings.size());
+        if (strings.size() < 4) print("empty vector", strings.size());
+        else {
+            print("strings", strings.at(0), to_folder(number));
+            if (strings.at(0) == to_folder(number)) return strings.at(2);
         }
     }
     return "Not found"s;
@@ -273,8 +274,8 @@ int main()
 //     auto run = "lead_scan"s;
 
 
-    print(get_xsec(run,1));
-    print(get_xsec(run,40));
+    print(get_xsec(run, 1));
+    print(get_xsec(run, 40));
 
     print("starting from", file_name(run, 1));
 //     auto range = boost::irange(1, 49);
