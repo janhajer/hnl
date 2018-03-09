@@ -294,7 +294,6 @@ auto get_mass(std::string const& run, int number)
 auto get_coupling(std::string const& run, int number)
 {
     File file(banner_name(run, number));
-    print(banner_name(run, number));
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
     for (auto & line : lines) {
@@ -311,7 +310,6 @@ auto get_coupling(std::string const& run, int number)
 auto get_width(std::string const& run, int number)
 {
     File file(banner_name(run, number));
-    print(banner_name(run, number));
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
     for (auto & line : lines) {
@@ -338,15 +336,12 @@ int main()
 {
     auto run = "plain_scan"s;
 //     auto run = "lead_scan"s;
-    print(get_coupling(run, 1));
-    print(get_mass(run, 1));
-    print(get_width(run, 1));
 
     print("starting from", file_name(run, 1));
     auto range = boost::irange(1, 49);
 //     auto range = boost::irange(1, 3);
     auto result = transform(range, [&run](auto number) {
-        return get_mass(run, number) + " " + get_coupling(run, number) + " " + std::to_string(AnalyseEvents(run, number)) + " " +  get_xsec(run, number);
+        return get_mass(run, number) + " " + get_coupling(run, number) + " " + std::to_string(AnalyseEvents(run, number)) + " " +  get_xsec(run, number) + " " + get_width(run, number);
     });
     save_result(result, run);
 }
