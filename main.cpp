@@ -207,8 +207,8 @@ struct File {
 
 int main()
 {
-//     auto range = boost::irange(1, 49);
-    auto range = boost::irange(1, 2);
+    auto range = boost::irange(1, 49);
+//     auto range = boost::irange(1, 2);
     auto result = transform(range, [](auto number) {
         File file(file_name(number));
         return AnalyseEvents(file.tree_reader);;
