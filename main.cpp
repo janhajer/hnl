@@ -308,6 +308,23 @@ auto get_coupling(std::string const& run, int number)
     return "Coupling value not found"s;
 }
 
+auto get_width(std::string const& run, int number)
+{
+    File file(banner_name(run, number));
+    print(banner_name(run, number));
+    std::vector<std::string> lines;
+    std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
+    for (auto & line : lines) {
+        std::vector<std::string> strings;
+        boost::trim_if(line, boost::is_any_of("\t "));
+        boost::split(strings, line, [](char c) {
+            return c == ' ';
+        }, boost::token_compress_on);
+        if (strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(2) == std::to_string(9900012)) return strings.at(1);
+    }
+    return "Width value not found"s;
+}
+
 template<typename Result>
 void save_result(Result const& result, std::string const& run)
 {
@@ -323,6 +340,7 @@ int main()
 //     auto run = "lead_scan"s;
     print(get_coupling(run, 1));
     print(get_mass(run, 1));
+    print(get_width(run, 1));
 
     print("starting from", file_name(run, 1));
     auto range = boost::irange(1, 49);
