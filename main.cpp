@@ -228,7 +228,10 @@ auto get_xsec(std::string const& run)
     for(auto const&line : lines){
             std::vector<std::string> strings;
             boost::tokenizer<boost::escaped_list_separator<char> > tokenizer(line, boost::escaped_list_separator<char>(' '));
-            for (auto const& token : tokenizer) strings.emplace_back(token);
+            for (auto const& token : tokenizer) {
+                print(token);
+                strings.emplace_back(token);
+            }
             tokens.emplace_back(strings);
     }
     print(tokens);
