@@ -293,6 +293,7 @@ auto get_mass(std::string const& run, int number)
 auto get_coupling(std::string const& run, int number)
 {
     File file(banner_name(run, number));
+    print(banner_name(run, number));
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
     for (auto const& line : lines) {
@@ -318,6 +319,7 @@ int main()
 {
     auto run = "plain_scan"s;
 //     auto run = "lead_scan"s;
+    print(get_coupling(run, 1));
 
     print("starting from", file_name(run, 1));
     auto range = boost::irange(1, 49);
