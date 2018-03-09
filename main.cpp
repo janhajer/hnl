@@ -191,7 +191,7 @@ auto AnalyseEvents4(ExRootTreeReader& tree_reader)
 
 auto base_path()
 {
-    return "~/scratch/2.6.2_heavyion/";
+    return "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion/";
 }
 
 auto x_sec_file_name(std::string const& run)
@@ -235,17 +235,17 @@ auto to_folder(int number)
 
 auto get_xsec(std::string const& run, int number)
 {
-    print(x_sec_file_name(run));
     File file1(x_sec_file_name(run));
+    print(x_sec_file_name(run));
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file1.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-        print("lines size",lines.size());
+    print("lines size", lines.size());
     for (auto const& line : lines) {
         std::vector<std::string> strings;
         boost::split(strings, line, [](char c) {
             return c == ' ';
         });
-        print("string size",strings.size());
+        print("string size", strings.size());
         if (strings.size() < 4) print("empty vector", strings.size());
         else {
             print("strings", strings.at(0), to_folder(number));
