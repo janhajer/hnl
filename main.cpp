@@ -17,6 +17,9 @@
 #include "classes/DelphesClasses.h"
 #include "ExRootAnalysis/ExRootTreeReader.h"
 
+
+    using namespace std::string_literals;
+
 template<typename Object>
 auto sqr(Object const& object)
 {
@@ -241,8 +244,10 @@ auto get_xsec(std::string const& run, int number)
         boost::split(strings, line, [](char c) {
             return c == ' ';
         });
+        print(strings.at(0), to_folder(number));
         if (strings.at(0) == to_folder(number)) return strings.at(2);
     }
+    return "Not found"s;
 }
 
 auto file_name(std::string const& run, int number)
@@ -261,7 +266,6 @@ struct Tree {
 
 int main()
 {
-    using namespace std::string_literals;
     auto run = "plain_scan"s;
 //     auto run = "lead_scan"s;
 
