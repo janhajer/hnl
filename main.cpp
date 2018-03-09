@@ -196,10 +196,11 @@ auto file_name(int number)
     return result;
 }
 
-struct File {
-    File(std::string const& file_name) : chain("Delphes"), tree_reader(&chain)
+struct File : boost::integer_range<int> {
+    File(std::string const& file_name) : boost::integer_range<int>(0, 0), chain("Delphes"), tree_reader(&chain)
     {
         chain.Add(file_name.c_str());
+        boost::integer_range<int>(0, tree_reader.GetEntries());
     }
     TChain chain;
     ExRootTreeReader tree_reader;
@@ -207,11 +208,13 @@ struct File {
 
 int main()
 {
-    auto range = boost::irange(1, 49);
-//     auto range = boost::irange(1, 2);
+//     auto range = boost::irange(1, 49);
+    auto range = boost::irange(1, 2);
     auto result = transform(range, [](auto number) {
         File file(file_name(number));
+        print("file size",file.size());
         return AnalyseEvents(file.tree_reader);;
     });
+    print("result size", result.size());
     for (auto res : result) print(res, '\n');
 }
