@@ -320,7 +320,7 @@ auto get_width(std::string const& run, int number)
         boost::split(strings, line, [](char c) {
             return c == ' ';
         }, boost::token_compress_on);
-        if (strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(2) == std::to_string(9900012)) return strings.at(1);
+        if (strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(1) == std::to_string(9900012)) return strings.at(2);
     }
     return "Width value not found"s;
 }
