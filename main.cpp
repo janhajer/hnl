@@ -266,7 +266,7 @@ auto get_xsec(std::string const& run, int number)
         });
         if (strings.size() >= 2 && strings.at(0) == to_folder(number)) return strings.at(2);
     }
-    return "Not found"s;
+    return "XSec value not found"s;
 }
 
 auto banner_name(std::string const& run, int number)
@@ -288,7 +288,7 @@ auto get_mass(std::string const& run, int number)
         }, boost::token_compress_on);
         if (strings.size() > 2 && strings.at(0) == std::to_string(9900012) && strings.at(2) == "#" && strings.at(2) == "mn1") return strings.at(1);
     }
-    return "Not found"s;
+    return "Mass value not found"s;
 }
 
 auto get_coupling(std::string const& run, int number)
@@ -306,7 +306,7 @@ auto get_coupling(std::string const& run, int number)
         print(strings);
         if (strings.size() > 3 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(2) == "vmun1") return strings.at(1);
     }
-    return "Not found"s;
+    return "Coupling value not found"s;
 }
 
 template<typename Result>
@@ -323,6 +323,7 @@ int main()
     auto run = "plain_scan"s;
 //     auto run = "lead_scan"s;
     print(get_coupling(run, 1));
+    print(get_mass(run, 1));
 
     print("starting from", file_name(run, 1));
     auto range = boost::irange(1, 49);
