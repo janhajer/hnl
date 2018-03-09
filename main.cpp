@@ -109,8 +109,8 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
             auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
             auto distance = transverse_distance(particle);
 //             if (distance > 10 && distance < 200){
-            if (distance > 0) {
-                print(distance);
+            if (distance > 100) {
+//                 print(distance);
                 result.emplace_back(distance);
             }
         }
@@ -185,8 +185,8 @@ auto AnalyseEvents4(ExRootTreeReader& tree_reader)
 auto file_name(int number)
 {
     using namespace std::string_literals;
-//     auto run = "plain_scan";
-    auto run = "lead_scan"s;
+    auto run = "plain_scan"s;
+//     auto run = "lead_scan"s;
     auto path = "~/scratch/2.6.2_heavyion/" + run + "/Events/";
     auto name = (number < 10 ? "0" : "") + std::to_string(number);
     auto folder = "run_" + name + "_decayed_1/";
@@ -211,7 +211,7 @@ int main()
     auto range = boost::irange(1, 2);
     auto result = transform(range, [](auto number) {
         File file(file_name(number));
-        return AnalyseEvents2(file.tree_reader);;
+        return AnalyseEvents(file.tree_reader);;
     });
     for (auto res : result) print(res, '\n');
 }
