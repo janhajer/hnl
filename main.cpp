@@ -117,7 +117,7 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
         }
         if (!result.empty()) ++displaced_number;
     }
-    print("displaced", displaced_number);
+//     print("displaced", displaced_number);
     return static_cast<double>(displaced_number) / tree_reader.GetEntries();
 }
 
@@ -192,19 +192,13 @@ auto file_name(int number)
     auto name = (number < 10 ? "0" : "") + std::to_string(number);
     auto folder = "run_" + name + "_decayed_1/";
     auto file = "tag_1_delphes_events.root";
-    auto result = path + folder + file;
-    print(result);
-    return result;
+    return path + folder + file;
 }
 
-struct File //: boost::integer_range<int>
+struct File
 {
-    File(std::string const& file_name) :// boost::integer_range<int>(0, 0),
-    chain("Delphes"), tree_reader(&chain)
-    {
+    File(std::string const& file_name) : chain("Delphes"), tree_reader(&chain) {
         chain.Add(file_name.c_str());
-//         print("tree reader size", tree_reader.GetEntries());
-//         boost::integer_range<int>(0, tree_reader.GetEntries());
     }
     TChain chain;
     ExRootTreeReader tree_reader;
@@ -212,15 +206,11 @@ struct File //: boost::integer_range<int>
 
 int main()
 {
+    print("starting from", file_name(0));
 //     auto range = boost::irange(1, 49);
     auto range = boost::irange(1, 3);
-    auto result = transform(range, [](auto number) {
+    print(transform(range, [](auto number) {
         File file(file_name(number));
-//         print("file size",file.size());
         return AnalyseEvents(file.tree_reader);;
-    });
-//     print("result size", result.size());
-//         boost::copy(result, std::ostream_iterator<int>(std::cout, "\n"));
-//     for (auto res : result) print("loop",res, '\n');
-        print(result);
+    }),'\n');
 }
