@@ -1,6 +1,9 @@
 #include <iostream>
+#include <fstream>
 
 #include <boost/optional.hpp>
+
+#include <boost/tokenizer.hpp>
 
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/indexed.hpp>
@@ -183,11 +186,59 @@ auto AnalyseEvents4(ExRootTreeReader& tree_reader)
     return 0.;
 }
 
-auto file_name(int number)
+auto x_sec_file_name(std::string const& run)
 {
-    using namespace std::string_literals;
-    auto run = "plain_scan"s;
-//     auto run = "lead_scan"s;
+    auto path = "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion/";
+    auto file = "cross_sections";
+    return path + run + "/" + file;
+}
+
+struct File {
+    File(std::string const& name) : file(name) {}
+    ~File()
+    {
+        file.close();
+    }
+    std::ifstream file;
+};
+
+class Line
+{
+    std::string string;
+public:
+    friend std::istream& operator>>(std::istream& stream, Line& line)
+    {
+        std::getline(stream, line.string);
+        return stream;
+    }
+    operator std::string() const
+    {
+        return string;
+    }
+};
+
+auto get_xsec(std::string const& run)
+{
+    File file1(x_sec_file_name(run));
+
+    std::vector<std::string> lines;
+    std::copy(std::istream_iterator<Line>(file1.file), std::istream_iterator<Line>(), std::back_inserter(lines));
+    print(lines);
+
+//     std::string line;
+//     std::ifstream file(x_sec_file_name(run, number));
+//     if (file.is_open()) {
+//         while (getline(file, line)) {
+//             std::vector<std::string> vector;
+//             boost::tokenizer<boost::escaped_list_separator<char> > tokenizer(line, boost::escaped_list_separator<char>(' '));
+//             for (auto const& token : tokenizer) vector.emplace_back(token);
+//             }
+//         file.close();
+//     } else print("Unable to open file");
+}
+
+auto file_name(std::string const& run, int number)
+{
     auto path = "~/scratch/2.6.2_heavyion/" + run + "/Events/";
     auto name = (number < 10 ? "0" : "") + std::to_string(number);
     auto folder = "run_" + name + "_decayed_1/";
@@ -195,8 +246,8 @@ auto file_name(int number)
     return path + folder + file;
 }
 
-struct File {
-    File(std::string const& file_name) : chain("Delphes"), tree_reader(&chain)
+struct Tree {
+    Tree(std::string const& file_name) : chain("Delphes"), tree_reader(&chain)
     {
         chain.Add(file_name.c_str());
     }
@@ -206,15 +257,20 @@ struct File {
 
 int main()
 {
-    print("starting from", file_name(1));
+    using namespace std::string_literals;
+    auto run = "plain_scan"s;
+//     auto run = "lead_scan"s;
+
+
+    get_xsec(run);
+
+    print("starting from", file_name(run, 1));
 //     auto range = boost::irange(1, 49);
     auto range = boost::irange(1, 3);
-    auto result = transform(range, [](auto number) {
-        File file(file_name(number));
-        return AnalyseEvents(file.tree_reader);;
+    auto result = transform(range, [&run](auto number) {
+        Tree tree(file_name(run, number));
+        return AnalyseEvents(tree.tree_reader);
     });
-    for(auto i : result)
-    std::cout << i << "\n";
-
+    for (auto i : result) print(i);
 
 }
