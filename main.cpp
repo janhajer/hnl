@@ -244,8 +244,11 @@ auto get_xsec(std::string const& run, int number)
         boost::split(strings, line, [](char c) {
             return c == ' ';
         });
-        print(strings.at(0), to_folder(number));
+        if(strings.size() < 4) print("empty vector", strings.size());
+        else{
+        print("strings", strings.at(0), to_folder(number));
         if (strings.at(0) == to_folder(number)) return strings.at(2);
+        }
     }
     return "Not found"s;
 }
