@@ -3,7 +3,7 @@
 
 #include <boost/optional.hpp>
 
-#include <boost/tokenizer.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/indexed.hpp>
@@ -227,11 +227,7 @@ auto get_xsec(std::string const& run)
     std::vector<std::vector<std::string>> tokens;
     for(auto const&line : lines){
             std::vector<std::string> strings;
-            boost::tokenizer<boost::escaped_list_separator<char> > tokenizer(line, boost::escaped_list_separator<char>(' '));
-            for (auto const& token : tokenizer) {
-                print(token);
-                strings.emplace_back(token);
-            }
+boost::split(strings, line, [](char c){return c == ' ';});
             tokens.emplace_back(strings);
     }
     print(tokens);
