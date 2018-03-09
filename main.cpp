@@ -286,7 +286,7 @@ auto get_mass(std::string const& run, int number)
         boost::split(strings, line, [](char c) {
             return c == ' ';
         }, boost::token_compress_on);
-        if (strings.size() >= 2 && strings.at(0) == std::to_string(9900012) && strings.at(2) == "#" && strings.at(2) == "mn1") return strings.at(1);
+        if (strings.size() > 2 && strings.at(0) == std::to_string(9900012) && strings.at(2) == "#" && strings.at(2) == "mn1") return strings.at(1);
     }
     return "Mass value not found"s;
 }
@@ -304,8 +304,8 @@ auto get_coupling(std::string const& run, int number)
             return c == ' ';
         }, boost::token_compress_on);
         print(strings);
-        if (strings.size() >= 2 && strings.at(2) == "vmun1") return strings.at(1);
-        if (strings.size() >= 2 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(2) == "vmun1") return strings.at(1);
+        if (strings.size() > 2 && strings.at(2) == "vmun1") return strings.at(1);
+        if (strings.size() > 2 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(2) == "vmun1") return strings.at(1);
     }
     return "Coupling value not found"s;
 }
