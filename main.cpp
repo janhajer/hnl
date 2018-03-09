@@ -301,6 +301,7 @@ auto get_coupling(std::string const& run, int number)
         boost::split(strings, line, [](char c) {
             return c == ' ';
         });
+        print(strings);
         if (strings.size() >= 2 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(2) == "vmun1") return strings.at(1);
     }
     return "Not found"s;
