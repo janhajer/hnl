@@ -280,12 +280,13 @@ auto get_mass(std::string const& run, int number)
     File file(banner_name(run, number));
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-    for (auto const& line : lines) {
+    for (auto & line : lines) {
         std::vector<std::string> strings;
+        boost::trim_if(line, boost::is_any_of("\t "));
         boost::split(strings, line, [](char c) {
             return c == ' ';
-        });
-        if (strings.size() >= 2 && strings.at(0) == std::to_string(9900012) && strings.at(2) == "#" && strings.at(2) == "mn1") return strings.at(1);
+        }, boost::token_compress_on);
+        if (strings.size() > 2 && strings.at(0) == std::to_string(9900012) && strings.at(2) == "#" && strings.at(2) == "mn1") return strings.at(1);
     }
     return "Not found"s;
 }
@@ -303,7 +304,7 @@ auto get_coupling(std::string const& run, int number)
             return c == ' ';
         }, boost::token_compress_on);
         print(strings);
-        if (strings.size() >= 2 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(2) == "vmun1") return strings.at(1);
+        if (strings.size() > 3 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(2) == "vmun1") return strings.at(1);
     }
     return "Not found"s;
 }
