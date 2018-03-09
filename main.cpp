@@ -200,6 +200,7 @@ struct File : boost::integer_range<int> {
     File(std::string const& file_name) : boost::integer_range<int>(0, 0), chain("Delphes"), tree_reader(&chain)
     {
         chain.Add(file_name.c_str());
+        print("tree reader size", tree_reader.GetEntries());
         boost::integer_range<int>(0, tree_reader.GetEntries());
     }
     TChain chain;
@@ -216,5 +217,5 @@ int main()
         return AnalyseEvents(file.tree_reader);;
     });
     print("result size", result.size());
-    for (auto res : result) print(res, '\n');
+    for (auto res : result) print("loop",res, '\n');
 }
