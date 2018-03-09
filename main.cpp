@@ -239,6 +239,7 @@ auto get_xsec(std::string const& run, int number)
     File file1(x_sec_file_name(run));
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file1.file), std::istream_iterator<Line>(), std::back_inserter(lines));
+        print("lines size",lines.size());
     for (auto const& line : lines) {
         std::vector<std::string> strings;
         boost::split(strings, line, [](char c) {
