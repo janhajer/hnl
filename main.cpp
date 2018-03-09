@@ -6,6 +6,7 @@
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/transform.hpp>
+#include <boost/range/algorithm/copy.hpp>
 #include <boost/range/numeric.hpp>
 
 #include "TClonesArray.h"
@@ -218,6 +219,7 @@ int main()
 //         print("file size",file.size());
         return AnalyseEvents(file.tree_reader);;
     });
-    print("result size", result.size());
-    for (auto res : result) print("loop",res, '\n');
+//     print("result size", result.size());
+        boost::copy(result, std::ostream_iterator<int>(std::cout, "\n"));
+//     for (auto res : result) print("loop",res, '\n');
 }
