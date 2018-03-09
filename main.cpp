@@ -134,7 +134,7 @@ auto AnalyseEvents2(ExRootTreeReader& tree_reader)
             auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
             if (std::abs(particle.PID) != 13) continue;
             auto distance = transverse_distance(particle);
-            if(particle.Status == 1) print("ID, Status", particle, distance);
+            if (particle.Status == 1) print("ID, Status", particle, distance);
             ++number_muons;
 //             if (distance > 0) {
             if (distance > 10 && distance < 200) {
@@ -184,7 +184,10 @@ auto AnalyseEvents4(ExRootTreeReader& tree_reader)
 
 auto file_name(int number)
 {
-    auto path = "~/scratch/2.6.2_heavyion/plain_scan/Events/";
+    using namespace std::string_literals;
+//     auto run = "plain_scan";
+    auto run = "lead_scan"s;
+    auto path = "~/scratch/2.6.2_heavyion/" + run + "/Events/";
     auto name = (number < 10 ? "0" : "") + std::to_string(number);
     auto folder = "run_" + name + "_decayed_1/";
     auto file = "tag_1_delphes_events.root";
