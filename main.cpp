@@ -34,7 +34,8 @@ auto & operator<<(std::ostream& stream, Container<Element> const& container)
 }
 
 template<typename Key_, typename Value_>
-auto & operator<<(std::ostream& stream, std::pair<Key_, Value_> const& pair){
+auto& operator<<(std::ostream& stream, std::pair<Key_, Value_> const& pair)
+{
     return stream << '(' << pair.first << ", " << pair.second << ')';
 }
 
@@ -66,6 +67,40 @@ std::ostream& operator<<(std::ostream& stream, GenParticle const& particle)
 {
     return stream << "(" << particle.PID << ", " << particle.Status << ")";
 }
+
+auto base_path()
+{
+    return "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion/";
+}
+
+auto x_sec_file_name(std::string const& run)
+{
+    return base_path() + run + "/cross_sections";
+}
+
+auto to_string(int number)
+{
+    return (number < 10 ? "0" : "") + std::to_string(number);
+}
+
+auto to_folder(int number)
+{
+    return "run_" + to_string(number) + "_decayed_1";
+}
+
+auto file_name(std::string const& run, int number)
+{
+    return base_path() + run + "/Events/" + to_folder(number) + "/tag_1_delphes_events.root";
+}
+
+struct Tree {
+    Tree(std::string const& file_name) : chain("Delphes"), reader(&chain)
+    {
+        chain.Add(file_name.c_str());
+    }
+    TChain chain;
+    ExRootTreeReader reader;
+};
 
 template<typename Particle>
 auto transverse_distance(Particle const& particle)
@@ -105,15 +140,16 @@ auto analyse_events(ExRootTreeReader& tree_reader)
     }) / tree_reader.GetEntries();
 }
 
-auto AnalyseEvents(ExRootTreeReader& tree_reader)
+auto AnalyseEvents(std::string const& run, int number)
 {
-    auto& muon_branch = *tree_reader.UseBranch("Muon");
-    auto& particle_branch = *tree_reader.UseBranch("Particle");
+    Tree tree(file_name(run, number));
+    auto& muon_branch = *tree.reader.UseBranch("Muon");
+    auto& particle_branch = *tree.reader.UseBranch("Particle");
     // Loop over all events
     auto displaced_number = 0;
-    for (auto entry : range(tree_reader.GetEntries())) {
+    for (auto entry : range(tree.reader.GetEntries())) {
         // Load selected branches with data from specified event
-        tree_reader.ReadEntry(entry);
+        tree.reader.ReadEntry(entry);
         std::vector<double> result;
         auto entries = muon_branch.GetEntriesFast();
         for (auto position : range(entries)) {
@@ -129,7 +165,7 @@ auto AnalyseEvents(ExRootTreeReader& tree_reader)
         if (!result.empty()) ++displaced_number;
     }
 //     print("displaced", displaced_number);
-    return static_cast<double>(displaced_number) / tree_reader.GetEntries();
+    return static_cast<double>(displaced_number) / tree.reader.GetEntries();
 }
 
 auto AnalyseEvents2(ExRootTreeReader& tree_reader)
@@ -194,16 +230,6 @@ auto AnalyseEvents4(ExRootTreeReader& tree_reader)
     return 0.;
 }
 
-auto base_path()
-{
-    return "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion/";
-}
-
-auto x_sec_file_name(std::string const& run)
-{
-    return base_path() + run + "/cross_sections";
-}
-
 struct File {
     File(std::string const& name) : file(name) {}
     ~File()
@@ -228,16 +254,6 @@ public:
     }
 };
 
-auto to_string(int number)
-{
-    return (number < 10 ? "0" : "") + std::to_string(number);
-}
-
-auto to_folder(int number)
-{
-    return "run_" + to_string(number) + "_decayed_1";
-}
-
 auto get_xsec(std::string const& run, int number)
 {
     File file(x_sec_file_name(run));
@@ -253,19 +269,50 @@ auto get_xsec(std::string const& run, int number)
     return "Not found"s;
 }
 
-auto file_name(std::string const& run, int number)
+auto banner_name(std::string const& run, int number)
 {
-    return base_path() + run + "/Events/" + to_folder(number) + "/tag_1_delphes_events.root";
+    auto name = "run_" + to_string(number);
+    return base_path() + run + "/Events/" + name + "/" + name + "_tag_1_banner.txt";
 }
 
-struct Tree {
-    Tree(std::string const& file_name) : chain("Delphes"), tree_reader(&chain)
-    {
-        chain.Add(file_name.c_str());
+auto get_mass(std::string const& run, int number)
+{
+    File file(banner_name(run, number));
+    std::vector<std::string> lines;
+    std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
+    for (auto const& line : lines) {
+        std::vector<std::string> strings;
+        boost::split(strings, line, [](char c) {
+            return c == ' ';
+        });
+        if (strings.size() >= 2 && strings.at(0) == std::to_string(9900012) && strings.at(2) == "#" && strings.at(2) == "mn1") return strings.at(1);
     }
-    TChain chain;
-    ExRootTreeReader tree_reader;
-};
+    return "Not found"s;
+}
+
+auto get_coupling(std::string const& run, int number)
+{
+    File file(banner_name(run, number));
+    std::vector<std::string> lines;
+    std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
+    for (auto const& line : lines) {
+        std::vector<std::string> strings;
+        boost::split(strings, line, [](char c) {
+            return c == ' ';
+        });
+        if (strings.size() >= 2 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(2) == "vmun1") return strings.at(1);
+    }
+    return "Not found"s;
+}
+
+template<typename Result>
+void save_result(Result const& result, std::string const& run)
+{
+    for (auto i : result) print(i);
+    std::ofstream file("./" + run + ".dat");
+    std::ostream_iterator<std::string> iterator(file, "\n");
+    boost::copy(result, iterator);
+}
 
 int main()
 {
@@ -276,12 +323,7 @@ int main()
     auto range = boost::irange(1, 49);
 //     auto range = boost::irange(1, 3);
     auto result = transform(range, [&run](auto number) {
-        Tree tree(file_name(run, number));
-        return std::to_string(AnalyseEvents(tree.tree_reader)) + " " +  get_xsec(run, number);
+        return get_mass(run, number) + " " + get_coupling(run, number) + " " + std::to_string(AnalyseEvents(run, number)) + " " +  get_xsec(run, number);
     });
-    for (auto i : result) print(i);
-
-    std::ofstream file("./" + run + ".dat");
-    std::ostream_iterator<std::string> output_iterator(file, "\n");
-    boost::copy(result, output_iterator);
+    save_result(result, run);
 }
