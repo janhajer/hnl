@@ -392,10 +392,10 @@ int main(int argc, char** argv)
 //     auto run = "lead_scan"s;
 
     print("starting from", file_name(run, 1));
-//     auto range = boost::irange(1, 49);
-    auto range = boost::irange(1, 3);
+    auto range = boost::irange(1, 49);
+//     auto range = boost::irange(1, 3);
     auto result = transform(range, [&run](auto number) {
-        return get_mass(run, number) + " " + get_coupling(run, number) + " " + std::to_string(AnalyseEvents2(run, number)) + " " +  get_xsec(run, number) + " " + get_width(run, number);
+        return get_mass(run, number) + " " + get_coupling(run, number) + " " + std::to_string(AnalyseEvents(run, number)) + " " +  get_xsec(run, number) + " " + get_width(run, number);
     });
     save_result(result, run);
 }
