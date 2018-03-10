@@ -80,9 +80,9 @@ auto base_path()
     return "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion/";
 }
 
-auto x_sec_file_name(std::string const& run)
+auto x_sec_file_name(std::string const& process)
 {
-    return base_path() + run + "/cross_sections";
+    return base_path() + process + "/cross_sections";
 }
 
 auto to_string(int number)
@@ -105,15 +105,15 @@ auto to_folder(int number)
     return join_name(run_name(number), "decayed_1");
 }
 
-auto file_name(std::string const& run, int number)
+auto file_name(std::string const& process, int number)
 {
-    return base_path() + run + "/Events/" + to_folder(number) + "/tag_1_delphes_events.root";
+    return base_path() + process + "/Events/" + to_folder(number) + "/tag_1_delphes_events.root";
 }
 
-auto banner_name(std::string const& run, int number)
+auto banner_name(std::string const& process, int number)
 {
     auto name = run_name(number);
-    return base_path() + run + "/Events/" + name + "/" + join_name(name, "tag_1_banner.txt");
+    return base_path() + process + "/Events/" + name + "/" + join_name(name, "tag_1_banner.txt");
 }
 
 struct Tree {
@@ -166,30 +166,30 @@ auto read_file(std::string const& file_name, Predicate predicate, int pos, std::
     return name + " value not found"s;
 }
 
-auto get_xsec(std::string const& run, int number)
+auto get_xsec(std::string const& process, int number)
 {
-    return read_file(x_sec_file_name(run), [number](std::vector<std::string> const & strings) {
+    return read_file(x_sec_file_name(process), [number](std::vector<std::string> const & strings) {
         return strings.size() >= 2 && strings.at(0) == to_folder(number);
     }, 2, "cross section");
 }
 
-auto get_mass(std::string const& run, int number)
+auto get_mass(std::string const& process, int number)
 {
-    return read_file(banner_name(run, number), [number](std::vector<std::string> const & strings) {
+    return read_file(banner_name(process, number), [number](std::vector<std::string> const & strings) {
         return strings.size() > 2 && strings.at(0) == std::to_string(9900012) && strings.at(2) == "#" && strings.at(3) == "mn1";
     }, 1, "mass");
 }
 
-auto get_coupling(std::string const& run, int number)
+auto get_coupling(std::string const& process, int number)
 {
-    return read_file(banner_name(run, number), [number](std::vector<std::string> const & strings) {
+    return read_file(banner_name(process, number), [number](std::vector<std::string> const & strings) {
         return strings.size() > 3 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(3) == "vmun1";
     }, 1, "coupling");
 }
 
-auto get_width(std::string const& run, int number)
+auto get_width(std::string const& process, int number)
 {
-    return read_file(banner_name(run, number), [number](std::vector<std::string> const & strings) {
+    return read_file(banner_name(process, number), [number](std::vector<std::string> const & strings) {
         return strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(1) == std::to_string(9900012);
     }, 2, "width");
 }
@@ -290,9 +290,9 @@ auto get_width(std::string const& run, int number)
 //     }) / tree.reader.GetEntries();
 // }
 
-auto AnalyseEvents(std::string const& run, int number)
+auto AnalyseEvents(std::string const& process, int number)
 {
-    Tree tree(file_name(run, number));
+    Tree tree(file_name(process, number));
     auto& muon_branch = *tree.reader.UseBranch("Muon");
     auto& particle_branch = *tree.reader.UseBranch("Particle");
     // Loop over all events
@@ -313,9 +313,9 @@ auto AnalyseEvents(std::string const& run, int number)
     return static_cast<double>(displaced_number) / tree.reader.GetEntries();
 }
 
-auto AnalyseEvents2(std::string const& run, int number)
+auto AnalyseEvents2(std::string const& process, int number)
 {
-    Tree tree(file_name(run, number));
+    Tree tree(file_name(process, number));
     auto& particle_branch = *tree.reader.UseBranch("Particle");
     auto number_displaced = 0;
     // loop over all events
@@ -377,10 +377,10 @@ auto AnalyseEvents2(std::string const& run, int number)
 // }
 
 template<typename Result>
-void save_result(Result const& result, std::string const& run)
+void save_result(Result const& result, std::string const& process)
 {
     for (auto i : result) print(i);
-    std::ofstream file("./" + run + ".dat");
+    std::ofstream file("./" + process + ".dat");
     std::ostream_iterator<std::string> iterator(file, "\n");
     boost::copy(result, iterator);
 }
@@ -388,14 +388,14 @@ void save_result(Result const& result, std::string const& run)
 int main(int argc, char** argv)
 {
     std::vector<std::string> arguments(argv, argv + argc);
-    auto run = "proton_scan"s;
-//     auto run = "lead_scan"s;
+//     auto process = "proton_scan"s;
+    auto process = "lead_scan"s;
 
-    print("starting from", file_name(run, 1));
+    print("starting from", file_name(process, 1));
     auto range = boost::irange(1, 49);
 //     auto range = boost::irange(1, 3);
-    auto result = transform(range, [&run](auto number) {
-        return get_mass(run, number) + " " + get_coupling(run, number) + " " + std::to_string(AnalyseEvents(run, number)) + " " +  get_xsec(run, number) + " " + get_width(run, number);
+    auto result = transform(range, [&process](auto number) {
+        return get_mass(process, number) + " " + get_coupling(process, number) + " " + std::to_string(AnalyseEvents(process, number)) + " " +  get_xsec(process, number) + " " + get_width(process, number);
     });
-    save_result(result, run);
+    save_result(result, process);
 }
