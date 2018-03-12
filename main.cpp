@@ -273,12 +273,15 @@ auto AnalyseEvents(std::string const& process, int number)
     // Loop over all events
     auto displaced_number = 0;
     for (auto entry : tree) {
+        print("entry", entry);
         // Load selected branches with data from specified event
         tree.reader.ReadEntry(entry);
         std::vector<double> result;
         for (auto position : muon_branch) {
+            print("position", position);
             auto& muon = muon_branch.at(position);
             auto& particle = get_particle(muon);
+            print("ID",particle.PID);
             auto distance = transverse_distance(particle);
             if (distance < 1) continue;
             if (std::abs(particle.PID) == 13) result.emplace_back(distance);
