@@ -118,7 +118,7 @@ auto banner_name(std::string const& process, int number)
 
 template<typename Object>
 struct Branch {
-    Branch(TClonesArray* input) : array(input), range(0, array->GetEntriesFast()) {}
+    Branch(TClonesArray* input) : array(input), range(boost::irange(0, array->GetEntriesFast())) {}
     auto begin()
     {
         return range.begin();
