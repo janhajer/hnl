@@ -277,6 +277,7 @@ auto AnalyseEvents(std::string const& process, int number)
         // Load selected branches with data from specified event
         tree.reader.ReadEntry(entry);
         std::vector<double> result;
+        print("muons", muon_branch.array->GetEntriesFast());
         for (auto position : muon_branch) {
             print("position", position);
             auto& muon = muon_branch.at(position);
