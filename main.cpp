@@ -269,10 +269,9 @@ auto AnalyseEvents(std::string const& process, int number)
 {
     Tree tree(file_name(process, number));
     auto muon_branch = tree.use_branch<Muon>("Muon");
-    /*auto& particle_branch = **/tree.use_branch<GenParticle>("Particle");
+    auto test = tree.use_branch<GenParticle>("Particle");
     // Loop over all events
     auto displaced_number = 0;
-//     for (auto entry : range(tree.reader.GetEntries())) {
     for (auto entry : tree) {
         // Load selected branches with data from specified event
         tree.reader.ReadEntry(entry);
