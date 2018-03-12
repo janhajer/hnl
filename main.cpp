@@ -288,7 +288,6 @@ auto AnalyseEvents(std::string const& process, int number)
         read_entry(tree, muon_branch, entry);
         std::vector<double> result;
         for (auto position : muon_branch) {
-            print("position", position);
             auto& muon = muon_branch.at(position);
             auto& particle = get_particle(muon);
             auto distance = transverse_distance(particle);
