@@ -116,13 +116,47 @@ auto banner_name(std::string const& process, int number)
     return base_path() + process + "/Events/" + name + "/" + join_name(name, "tag_1_banner.txt");
 }
 
+template<typename Object>
+struct Branch {
+    Branch(TClonesArray* input) : array(input), range(0, array->GetEntriesFast()) {}
+    auto begin()
+    {
+        return range.begin();
+    }
+    auto end()
+    {
+        return range.end();
+    }
+    auto& at(int position)
+    {
+        return static_cast<Object&>(*array->At(position));
+    }
+    TClonesArray* array;
+    boost::integer_range<int> range;
+};
+
 struct Tree {
-    Tree(std::string const& file_name) : chain("Delphes"), reader(&chain)
+    Tree(std::string const& file_name) : chain("Delphes"), reader(&chain), range(0, 0)
     {
         chain.Add(file_name.c_str());
+        range = boost::irange(0ll, reader.GetEntries());
+    }
+    template<typename Object>
+    Branch<Object> use_branch(std::string const& name)
+    {
+        return reader.UseBranch(name.c_str());
+    }
+    auto begin()
+    {
+        return range.begin();
+    }
+    auto end()
+    {
+        return range.end();
     }
     TChain chain;
     ExRootTreeReader reader;
+    boost::integer_range<long long> range;
 };
 
 struct File {
@@ -150,7 +184,7 @@ public:
 };
 
 template<typename Predicate>
-auto read_file(std::string const& file_name, Predicate predicate, int pos, std::string const& name)
+auto read_file(std::string const& file_name, Predicate predicate, int pos, std::string const& name = "")
 {
     File file(file_name);
     std::vector<std::string> lines;
@@ -194,70 +228,6 @@ auto get_width(std::string const& process, int number)
     }, 2, "width");
 }
 
-// auto get_xsec(std::string const& run, int number)
-// {
-//     File file(x_sec_file_name(run));
-//     std::vector<std::string> lines;
-//     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-//     for (auto const& line : lines) {
-//         std::vector<std::string> strings;
-//         boost::split(strings, line, [](char c) {
-//             return c == ' ';
-//         });
-//         if (strings.size() >= 2 && strings.at(0) == to_folder(number)) return strings.at(2);
-//     }
-//     return "XSec value not found"s;
-// }
-
-
-// auto get_mass(std::string const& run, int number)
-// {
-//     File file(banner_name(run, number));
-//     std::vector<std::string> lines;
-//     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-//     for (auto& line : lines) {
-//         std::vector<std::string> strings;
-//         boost::trim_if(line, boost::is_any_of("\t "));
-//         boost::split(strings, line, [](char c) {
-//             return c == ' ';
-//         }, boost::token_compress_on);
-//         if (strings.size() > 2 && strings.at(0) == std::to_string(9900012) && strings.at(2) == "#" && strings.at(3) == "mn1") return strings.at(1);
-//     }
-//     return "Mass value not found"s;
-// }
-
-// auto get_coupling(std::string const& run, int number)
-// {
-//     File file(banner_name(run, number));
-//     std::vector<std::string> lines;
-//     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-//     for (auto& line : lines) {
-//         std::vector<std::string> strings;
-//         boost::trim_if(line, boost::is_any_of("\t "));
-//         boost::split(strings, line, [](char c) {
-//             return c == ' ';
-//         }, boost::token_compress_on);
-//         if (strings.size() > 3 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(3) == "vmun1") return strings.at(1);
-//     }
-//     return "Coupling value not found"s;
-// }
-
-// auto get_width(std::string const& run, int number)
-// {
-//     File file(banner_name(run, number));
-//     std::vector<std::string> lines;
-//     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-//     for (auto& line : lines) {
-//         std::vector<std::string> strings;
-//         boost::trim_if(line, boost::is_any_of("\t "));
-//         boost::split(strings, line, [](char c) {
-//             return c == ' ';
-//         }, boost::token_compress_on);
-//         if (strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(1) == std::to_string(9900012)) return strings.at(2);
-//     }
-//     return "Width value not found"s;
-// }
-
 // auto particle_distance(TClonesArray const& particle_branch, int number)
 // {
 //     auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
@@ -272,39 +242,44 @@ auto get_width(std::string const& process, int number)
 // }
 //
 // template<typename Function>
-// auto displacement(ExRootTreeReader& tree.reader, int entry, TClonesArray const& branch, Function const& function)
+// auto displacement(TClonesArray const& branch, Function const& function)
 // {
-//     tree.reader.ReadEntry(entry);
 //     return boost::accumulate(range(branch.GetEntriesFast()), 0, [&](auto & sum, auto number) {
 //         return sum += function(number) > 10 ? 1 : 0 ;
 //     }) > 0;
 // }
 //
-// auto analyse_events(ExRootTreeReader& tree.reader)
+// auto analyse_events(Tree& tree)
 // {
 //     auto& muon_branch = *tree.reader.UseBranch("Muon");
-//     return boost::accumulate(range(tree.reader.GetEntries()), 0., [&](auto & sum, auto entry) {
-//         return sum += displacement(tree.reader, entry, muon_branch, [&](auto number) {
+//     return boost::accumulate(tree, 0., [&](auto & sum, auto entry) {
+//     tree.reader.ReadEntry(entry);
+//         return sum += displacement(muon_branch, [&](auto number) {
 //             return particle_distance(muon_branch, number);
 //         }) ? 1 : 0;
 //     }) / tree.reader.GetEntries();
 // }
 
+auto& get_particle(Muon& muon)
+{
+    return static_cast<GenParticle&>(*muon.Particle.GetObject());
+}
+
 auto AnalyseEvents(std::string const& process, int number)
 {
     Tree tree(file_name(process, number));
-    auto& muon_branch = *tree.reader.UseBranch("Muon");
-    auto& particle_branch = *tree.reader.UseBranch("Particle");
+    auto muon_branch = tree.use_branch<Muon>("Muon");
+    /*auto& particle_branch = **/tree.use_branch<GenParticle>("Particle");
     // Loop over all events
     auto displaced_number = 0;
-    for (auto entry : range(tree.reader.GetEntries())) {
+//     for (auto entry : range(tree.reader.GetEntries())) {
+    for (auto entry : tree) {
         // Load selected branches with data from specified event
         tree.reader.ReadEntry(entry);
         std::vector<double> result;
-        auto entries = muon_branch.GetEntriesFast();
-        for (auto position : range(entries)) {
-            auto& muon = static_cast<Muon&>(*muon_branch.At(position));
-            auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
+        for (auto position : muon_branch) {
+            auto& muon = muon_branch.at(position);
+            auto& particle = get_particle(muon);
             auto distance = transverse_distance(particle);
             if (distance < 1) continue;
             if (std::abs(particle.PID) == 13) result.emplace_back(distance);
