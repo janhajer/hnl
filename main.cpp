@@ -306,7 +306,9 @@ auto AnalyseEvents(std::string const& process, int number)
             auto& muon = static_cast<Muon&>(*muon_branch.At(position));
             auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
             auto distance = transverse_distance(particle);
-            if (distance > 100) result.emplace_back(distance);
+            if (distance < 1) continue;
+            if (std::abs(particle.PID) == 13) result.emplace_back(distance);
+            else print("background");
         }
         if (!result.empty()) ++displaced_number;
     }
@@ -342,39 +344,6 @@ auto AnalyseEvents2(std::string const& process, int number)
     print("displaced", number_displaced);
     return static_cast<double>(number_displaced) / tree.reader.GetEntries();
 }
-
-// auto AnalyseEvents3(ExRootTreeReader& tree.reader)
-// {
-//     auto& particle_branch = *tree.reader.UseBranch("Particle");
-//     auto number_of_muons = 0;
-//     for (auto entry : range(tree.reader.GetEntries())) {
-//         tree.reader.ReadEntry(entry);
-//         std::vector<double> result;
-//         for (auto position : range(particle_branch.GetEntriesFast())) {
-//             auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
-//             auto distance = transverse_distance(particle);
-//             if (distance > 100 && distance < 2000)  result.emplace_back(distance);
-//         }
-//         if (!result.empty()) ++number_of_muons;
-//     }
-//     print("displaced", number_of_muons);
-//     return static_cast<double>(number_of_muons) / tree.reader.GetEntries();
-// }
-//
-// auto AnalyseEvents4(ExRootTreeReader& tree.reader)
-// {
-//     auto& particle_branch = *tree.reader.UseBranch("Particle");
-//     for (auto entry : range(tree.reader.GetEntries())) {
-//         tree.reader.ReadEntry(entry);
-//         std::vector<double> result;
-//         for (auto position : range(particle_branch.GetEntriesFast())) {
-//             auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
-//             (particle.PID == 9900012 || particle.PID == 9900014 || particle.PID == 9900016 || std::abs(particle.PID) == 13) ? print(position, ":      ", particle, transverse_distance(particle)) : print(position, ": ", particle, transverse_distance(particle));
-//         }
-//         print("");
-//     }
-//     return 0.;
-// }
 
 template<typename Result>
 void save_result(Result const& result, std::string const& process)
