@@ -127,6 +127,10 @@ struct Branch {
     {
         return range.end();
     }
+    void update()
+    {
+        range = boost::irange(0, array->GetEntriesFast());
+    }
     auto& at(int position)
     {
         return static_cast<Object&>(*array->At(position));
@@ -265,24 +269,32 @@ auto& get_particle(Muon& muon)
     return static_cast<GenParticle&>(*muon.Particle.GetObject());
 }
 
+template<typename Particle>
+void read_entry(Tree& tree, Branch<Particle>& branch, int entry)
+{
+    tree.reader.ReadEntry(entry);
+    branch.update();
+}
+
 auto AnalyseEvents(std::string const& process, int number)
 {
     Tree tree(file_name(process, number));
+    auto muon_branch = tree.use_branch<Muon>("Muon");
+    auto test = tree.use_branch<GenParticle>("Particle");
     // Loop over all events
     auto displaced_number = 0;
     for (auto entry : tree) {
         print("entry", entry);
         // Load selected branches with data from specified event
-        tree.reader.ReadEntry(entry);
+//         tree.reader.ReadEntry(entry);
+        read_entry(tree, muon_branch, entry);
         std::vector<double> result;
-    auto muon_branch = tree.use_branch<Muon>("Muon");
-    auto test = tree.use_branch<GenParticle>("Particle");
         print("muons", muon_branch.array->GetEntriesFast());
         for (auto position : muon_branch) {
             print("position", position);
             auto& muon = muon_branch.at(position);
             auto& particle = get_particle(muon);
-            print("ID",particle.PID);
+            print("ID", particle.PID);
             auto distance = transverse_distance(particle);
             if (distance < 1) continue;
             if (std::abs(particle.PID) == 13) result.emplace_back(distance);
