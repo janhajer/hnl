@@ -224,7 +224,7 @@ auto& get_mother(TClonesArray const& muons, TClonesArray const& particles, int p
 auto const neutrino_ID = 9900012;
 auto const muon_ID = 13;
 
-auto check_origin(TClonesArray const& particles, int position, int check_id)
+auto origin(TClonesArray const& particles, int position, int check_id)
 {
     auto id = check_id;
     while (std::abs(id) == check_id) {
@@ -236,10 +236,10 @@ auto check_origin(TClonesArray const& particles, int position, int check_id)
 }
 
 template<typename Muon>
-auto check_origin(TClonesArray const& muons, TClonesArray const& particles, int position, int check_id)
+auto origin(TClonesArray const& muons, TClonesArray const& particles, int position, int check_id)
 {
     auto& particle = get_particle<Muon>(muons, position);
-    return std::abs(particle.PID) == check_id ? check_origin(particles, particle.M1, check_id) : particle.PID;
+    return std::abs(particle.PID) == check_id ? origin(particles, particle.M1, check_id) : particle.PID;
 }
 
 auto secondary_vertex(TClonesArray const& muons, int position)
@@ -255,11 +255,8 @@ auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particle
     return boost::count_if(range(muons.GetEntriesFast()), [&muons, &particles](auto position) {
         auto cut = secondary_vertex(muons, position) > 100.;
         if (!cut) return cut;
-//         auto& mother = get_mother<Muon>(muons, particles, position);
-//         auto& grand_mother = get_grand_mother<Muon>(muons, particles, position);
-//         auto& grand_grand_mother = get_grand_grand_mother<Muon>(muons, particles, position);
-//         if (mother.PID != neutrino_ID && grand_mother.PID != neutrino_ID && grand_grand_mother.PID != neutrino_ID) print("Muon from", mother.PID, "and", grand_mother.PID, "and", grand_grand_mother.PID);
-        print(check_origin<Muon>(muons, particles, position, muon_ID));
+        auto id = origin<Muon>(muons, particles, position, muon_ID);
+        if(std::abs(id) != neutrino_ID) print("origin", id);
         return cut;
     });
 }
