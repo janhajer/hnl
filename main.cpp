@@ -233,7 +233,8 @@ int main(int argc, char** argv)
 {
     std::vector<std::string> arguments(argv, argv + argc);
     if(argc < 1) return 0;
-    auto process = arguments.front();
+    auto process = arguments.at(1);
+    print("string",process);
     print("starting from", file_name(process, 1));
     auto range = boost::irange(1, 49);
     auto result = transform(range, [&process](auto number) {
