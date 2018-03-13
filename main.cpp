@@ -195,14 +195,15 @@ auto secondary_vertex(TClonesArray const& muons, TClonesArray const& particles, 
     auto& muon =  static_cast<Muon&>(*muons.At(position));
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != 13) print("background");
-    auto & mother = static_cast<GenParticle&>(*particles.At(particle.M1));
-    print(mother.PID);
+    auto& mother_1 = static_cast<GenParticle&>(*particles.At(particle.M1));
+    auto& mother_2 = static_cast<GenParticle&>(*particles.At(particle.M2));
+    print(mother_1.PID, mother_2.PID);
     return transverse_distance(particle);
 }
 
 auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particles)
 {
-    return boost::count_if(range(muons.GetEntriesFast()), [&muons,&particles](auto position) {
+    return boost::count_if(range(muons.GetEntriesFast()), [&muons, &particles](auto position) {
         return secondary_vertex(muons, particles, position) > 100.;
     });
 }
@@ -217,7 +218,7 @@ auto analyse_events(std::string const& process, int point)
     return boost::count_if(range(reader.GetEntries()), [&reader, &muons, &particles](auto entry) {
         reader.ReadEntry(entry);
         auto number = number_of_displaced(muons, particles);
-        if(number > 1) print(number, "displaced muons");
+        if (number > 1) print(number, "displaced muons");
         return number > 0;
     }) / static_cast<double>(reader.GetEntries());
 }
