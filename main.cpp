@@ -11,6 +11,7 @@
 #include <boost/range/algorithm/transform.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
+#include <boost/range/algorithm/find_first_of.hpp>
 #include <boost/range/numeric.hpp>
 
 #include "TClonesArray.h"
@@ -60,8 +61,9 @@ auto& operator<<(std::ostream& stream, std::pair<Key_, Value_> const& pair)
 template<typename Element, template <typename, typename = std::allocator<Element>> class Container>
 auto & operator<<(std::ostream& stream, Container<Element> const& container)
 {
-    for (auto const& element : boost::adaptors::index(container)) stream << '\n' << element.index() << ": " << element.value();
-    return stream;
+    return stream << boost::accumulate(boost::adaptors::index(container), [](std::ostream & stream, auto const & element) {
+        return stream << '\n' << element.index() << ": " << element.value();
+    });
 }
 
 void print()
@@ -148,8 +150,8 @@ auto read_file(std::string const& file_name, Predicate predicate, int pos, std::
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
     for (auto& line : lines) {
-        std::vector<std::string> strings;
         boost::trim_if(line, boost::is_any_of("\t "));
+        std::vector<std::string> strings;
         boost::split(strings, line, [](char c) {
             return c == ' ';
         }, boost::token_compress_on);
@@ -217,7 +219,7 @@ auto analyse_events(std::string const& process, int number)
     return boost::count_if(range(reader.GetEntries()), [&](auto entry) {
         reader.ReadEntry(entry);
         return number_of_dispalced(muons) > 0;
-    }) / double(reader.GetEntries());
+    }) / static_cast<double>(reader.GetEntries());
 }
 
 template<typename Result>
@@ -231,10 +233,9 @@ void save_result(Result const& result, std::string const& process)
 
 int main(int argc, char** argv)
 {
+    if (argc < 2) return 0;
     std::vector<std::string> arguments(argv, argv + argc);
-    if(argc < 2) return 0;
     auto process = arguments.at(1);
-    print("string",process);
     print("starting from", file_name(process, 1));
     auto range = boost::irange(1, 49);
     auto result = transform(range, [&process](auto number) {
