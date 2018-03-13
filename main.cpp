@@ -117,53 +117,53 @@ auto banner_name(std::string const& process, int number)
     return base_path() + process + "/Events/" + name + "/" + join_name(name, "tag_1_banner.txt");
 }
 
-template<typename Object>
-struct Branch {
-    Branch(TClonesArray* input) : array(input), range(boost::irange(0, array->GetEntriesFast())) {}
-    Branch(TClonesArray& input) : array(&input), range(boost::irange(0, array->GetEntriesFast())) {}
-    auto begin()
-    {
-        return range.begin();
-    }
-    auto end()
-    {
-        return range.end();
-    }
-    void update()
-    {
-        range = boost::irange(0, array->GetEntriesFast());
-    }
-    auto& at(int position) const
-    {
-        return static_cast<Object&>(*array->At(position));
-    }
-    TClonesArray* array;
-    boost::integer_range<int> range;
-};
-
-struct Tree {
-    Tree(std::string const& file_name) : chain("Delphes"), reader(&chain), range(0, 0)
-    {
-        chain.Add(file_name.c_str());
-        range = boost::irange(0ll, reader.GetEntries());
-    }
-    template<typename Object>
-    Branch<Object> use_branch(std::string const& name)
-    {
-        return reader.UseBranch(name.c_str());
-    }
-    auto begin()
-    {
-        return range.begin();
-    }
-    auto end()
-    {
-        return range.end();
-    }
-    TChain chain;
-    ExRootTreeReader reader;
-    boost::integer_range<long long> range;
-};
+// template<typename Object>
+// struct Branch {
+//     Branch(TClonesArray* input) : array(input), range(boost::irange(0, array->GetEntriesFast())) {}
+//     Branch(TClonesArray& input) : array(&input), range(boost::irange(0, array->GetEntriesFast())) {}
+//     auto begin()
+//     {
+//         return range.begin();
+//     }
+//     auto end()
+//     {
+//         return range.end();
+//     }
+//     void update()
+//     {
+//         range = boost::irange(0, array->GetEntriesFast());
+//     }
+//     auto& at(int position) const
+//     {
+//         return static_cast<Object&>(*array->At(position));
+//     }
+//     TClonesArray* array;
+//     boost::integer_range<int> range;
+// };
+//
+// struct Tree {
+//     Tree(std::string const& file_name) : chain("Delphes"), reader(&chain), range(0, 0)
+//     {
+//         chain.Add(file_name.c_str());
+//         range = boost::irange(0ll, reader.GetEntries());
+//     }
+//     template<typename Object>
+//     Branch<Object> use_branch(std::string const& name)
+//     {
+//         return reader.UseBranch(name.c_str());
+//     }
+//     auto begin()
+//     {
+//         return range.begin();
+//     }
+//     auto end()
+//     {
+//         return range.end();
+//     }
+//     TChain chain;
+//     ExRootTreeReader reader;
+//     boost::integer_range<long long> range;
+// };
 
 struct File {
     File(std::string const& name) : file(name) {}
@@ -239,91 +239,45 @@ auto& get_particle(Muon& muon)
     return static_cast<GenParticle&>(*muon.Particle.GetObject());
 }
 
-template<typename Particle>
-void read_entry(Tree& tree, Branch<Particle>& branch, int entry)
-{
-    tree.reader.ReadEntry(entry);
-    branch.update();
-}
+// template<typename Particle>
+// void read_entry(Tree& tree, Branch<Particle>& branch, int entry)
+// {
+//     tree.reader.ReadEntry(entry);
+//     branch.update();
+// }
 
-auto muon_distance(Branch<Muon> const& muons, int position)
+auto secondary_vertex(TClonesArray const& muons, int position)
 {
-    auto& muon = muons.at(position);
+    auto& muon =  static_cast<Muon&>(*muons.At(position));
     auto& particle = get_particle(muon);
     auto distance = transverse_distance(particle);
-    if (distance < 10) return 0.f;
     if (std::abs(particle.PID) != 13) print("background");
     return distance;
 }
 
-auto number_of_dispalced(Branch<Muon> const& branch)
+auto number_of_dispalced(TClonesArray const& branch)
 {
-    return boost::count_if(range(branch.array->GetEntriesFast()), [&](auto position) {
-        return muon_distance(branch, position) > 10.;
+    return boost::count_if(range(branch.GetEntriesFast()), [&](auto position) {
+        return secondary_vertex(branch, position) > 10.;
     });
 }
 
 auto analyse_events(std::string const& process, int number)
 {
-    Tree tree(file_name(process, number));
-    auto muons = tree.use_branch<Muon>("Muon");
-    tree.use_branch<GenParticle>("Particle");
-    return boost::count_if(range(tree.reader.GetEntries()), [&](auto entry) {
-        read_entry(tree, muons, entry);
+    TChain chain("Delphes");
+    chain.Add(file_name(process, number).c_str());
+    ExRootTreeReader reader(&chain);
+//     Tree tree(file_name(process, number));
+    auto & muons = *reader.UseBranch("Muon");
+    reader.UseBranch("Particle");
+//     auto muons = tree.use_branch<Muon>("Muon");
+//     tree.use_branch<GenParticle>("Particle");
+    return boost::count_if(range(reader.GetEntries()), [&](auto entry) {
+        reader.ReadEntry(entry);
+//         read_entry(tree, muons, entry);
+//         array->GetEntriesFast()
         return number_of_dispalced(muons) > 0;
-    }) / double(tree.reader.GetEntries());
-}
-
-auto AnalyseEvents(std::string const& process, int number)
-{
-    Tree tree(file_name(process, number));
-    auto muons = tree.use_branch<Muon>("Muon");
-    tree.use_branch<GenParticle>("Particle");
-    auto displaced_number = 0;
-    for (auto entry : tree) {
-        read_entry(tree, muons, entry);
-        std::vector<double> result;
-        for (auto position : muons) {
-            auto& muon = muons.at(position);
-            auto& particle = get_particle(muon);
-            auto distance = transverse_distance(particle);
-            if (distance < 10) continue;
-            if (std::abs(particle.PID) == 13) result.emplace_back(distance);
-            else print("background");
-        }
-        if (!result.empty()) ++displaced_number;
-    }
-    return static_cast<double>(displaced_number) / tree.reader.GetEntries();
-}
-
-auto AnalyseEvents2(std::string const& process, int number)
-{
-    Tree tree(file_name(process, number));
-    auto& particle_branch = *tree.reader.UseBranch("Particle");
-    auto number_displaced = 0;
-    // loop over all events
-    for (auto entry : range(tree.reader.GetEntries())) {
-        tree.reader.ReadEntry(entry);
-        std::vector<double> result;
-        auto number_muons = 0;
-        // loop over all particles
-        for (auto position : range(particle_branch.GetEntriesFast())) {
-            auto& particle = static_cast<GenParticle&>(*particle_branch.At(position));
-            if (std::abs(particle.PID) != 13) continue;
-            auto distance = transverse_distance(particle);
-            if (particle.Status == 1) print("ID, Status", particle, distance);
-            ++number_muons;
-//             if (distance > 0) {
-            if (distance > 10 && distance < 200) {
-                result.emplace_back(distance);
-            }
-        }
-//         if (number_muons != 2)
-        print("number of muons", number_muons, result.size());
-        if (!result.empty()) ++number_displaced;
-    }
-    print("displaced", number_displaced);
-    return static_cast<double>(number_displaced) / tree.reader.GetEntries();
+    }) / double(reader.GetEntries());
 }
 
 template<typename Result>
@@ -337,13 +291,11 @@ void save_result(Result const& result, std::string const& process)
 
 int main(int argc, char** argv)
 {
-    std::vector<std::string> arguments(argv, argv + argc);
+//     std::vector<std::string> arguments(argv, argv + argc);
 //     auto process = "proton_scan"s;
     auto process = "lead_scan"s;
-
     print("starting from", file_name(process, 1));
     auto range = boost::irange(1, 49);
-//     auto range = boost::irange(1, 3);
     auto result = transform(range, [&process](auto number) {
         return get_mass(process, number) + " " + get_coupling(process, number) + " " + std::to_string(analyse_events(process, number)) + " " +  get_xsec(process, number) + " " + get_width(process, number);
     });
