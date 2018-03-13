@@ -197,7 +197,7 @@ auto secondary_vertex(TClonesArray const& muons, TClonesArray const& particles, 
     if (std::abs(particle.PID) != 13) print("background");
     auto& mother_1 = static_cast<GenParticle&>(*particles.At(particle.M1));
     auto& mother_2 = static_cast<GenParticle&>(*particles.At(particle.M2));
-    print(mother_1.PID, mother_2.PID);
+    mother_2.PID == -1 ? print(mother_1.PID) : print(mother_1.PID, mother_2.PID);
     return transverse_distance(particle);
 }
 
