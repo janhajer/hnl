@@ -229,10 +229,14 @@ auto check_origin(TClonesArray const& muons, TClonesArray const& particles, int 
 {
     auto id = check_id;
      while (std::abs(id) == check_id){
+         print("getting mother");
         auto & mother = get_mother<Muon>(muons, particles, position);
+         print("id");
         id = mother.PID;
+         print("pos");
         position = mother.M1;
     };
+         print("return");
     return id;
 }
 
