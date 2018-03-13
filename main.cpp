@@ -77,7 +77,7 @@ void print(Object const& object, Arguments ... arguments)
 template<typename Container>
 void print_line(Container const& container)
 {
-    for(auto const& element : container) std::cout << element << ", ";
+    for (auto const& element : container) std::cout << element << ", ";
     std::cout << std::endl;
 }
 
@@ -219,9 +219,9 @@ auto origin(TClonesArray const& particles, int position, int check_id)
     while (position != -1) {
         auto& mother = get<GenParticle>(particles, position);
         position = mother.M1;
-        auto id = mother.PID;
-        ids.emplace_back(id);
-        if (std::abs(id) == check_id) return std::vector<int>{id};
+        ids.emplace_back(mother.PID);
+        print(mother.PID);
+        if (std::abs(mother.PID) == check_id) return std::vector<int> {mother.PID};
     };
     return ids;
 }
@@ -230,7 +230,7 @@ template<typename Muon>
 auto origin(TClonesArray const& muons, TClonesArray const& particles, int position, int check_id)
 {
     auto& particle = get_particle<Muon>(muons, position);
-    return std::abs(particle.PID) == check_id ? std::vector<int>{particle.PID} : origin(particles, particle.M1, check_id);
+    return std::abs(particle.PID) == check_id ? std::vector<int> {particle.PID} : origin(particles, particle.M1, check_id);
 }
 
 auto secondary_vertex(TClonesArray const& muons, int position)
