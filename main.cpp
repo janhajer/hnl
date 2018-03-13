@@ -225,7 +225,8 @@ auto analyse_events(std::string const& process, int number)
 template<typename Result>
 void save_result(Result const& result, std::string const& process)
 {
-    for (auto i : result) print(i);
+//     for (auto i : result) print(i);
+    print(result);
     std::ofstream file("./" + process + ".dat");
     std::ostream_iterator<std::string> iterator(file, "\n");
     boost::copy(result, iterator);
