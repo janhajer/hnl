@@ -74,6 +74,13 @@ void print(Object const& object, Arguments ... arguments)
     print(arguments ...);
 }
 
+template<typename Container>
+void print_line(Container const& container)
+{
+    for(auto const& element : container) std::cout << element << ", ";
+    std::cout << std::endl;
+}
+
 auto base_path()
 {
     return "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion/";
@@ -203,50 +210,34 @@ auto& get_particle(TClonesArray const& muons, int position)
     return get_particle(get<Object>(muons, position));
 }
 
-template<typename Muon>
-auto& get_mother(TClonesArray const& muons, TClonesArray const& particles, int position)
-{
-    return get<GenParticle>(particles, get_particle<Muon>(muons, position).M1);
-}
-
-// template<typename Muon>
-// auto& get_grand_mother(TClonesArray const& muons, TClonesArray const& particles, int position)
-// {
-//     return get<GenParticle>(particles, get_mother<Muon>(muons, particles, position).M1);
-// }
-//
-// template<typename Muon>
-// auto& get_grand_grand_mother(TClonesArray const& muons, TClonesArray const& particles, int position)
-// {
-//     return get<GenParticle>(particles, get_grand_mother<Muon>(muons, particles, position).M1);
-// }
-
 auto const neutrino_ID = 9900012;
 auto const muon_ID = 13;
 
 auto origin(TClonesArray const& particles, int position, int check_id)
 {
-    auto id = check_id;
-    while (std::abs(id) == check_id) {
+    std::vector<int> ids;
+    while (position != -1) {
         auto& mother = get<GenParticle>(particles, position);
-        id = mother.PID;
         position = mother.M1;
+        auto id = mother.PID;
+        ids.emplace_back(id);
+        if (std::abs(id) == check_id) return std::vector<int>{id};
     };
-    return id;
+    return ids;
 }
 
 template<typename Muon>
 auto origin(TClonesArray const& muons, TClonesArray const& particles, int position, int check_id)
 {
     auto& particle = get_particle<Muon>(muons, position);
-    return std::abs(particle.PID) == check_id ? origin(particles, particle.M1, check_id) : particle.PID;
+    return std::abs(particle.PID) == check_id ? std::vector<int>{particle.PID} : origin(particles, particle.M1, check_id);
 }
 
 auto secondary_vertex(TClonesArray const& muons, int position)
 {
     auto& muon =  get<Muon>(muons, position);
     auto& particle = get_particle(muon);
-    if (std::abs(particle.PID) != 13) print("background");
+    if (std::abs(particle.PID) != 13) print("Misidentified muon");
     return transverse_distance(particle);
 }
 
@@ -255,8 +246,8 @@ auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particle
     return boost::count_if(range(muons.GetEntriesFast()), [&muons, &particles](auto position) {
         auto cut = secondary_vertex(muons, position) > 100.;
         if (!cut) return cut;
-        auto id = origin<Muon>(muons, particles, position, muon_ID);
-        if(std::abs(id) != neutrino_ID) print("origin", id);
+        auto ids = origin<Muon>(muons, particles, position, neutrino_ID);
+        if (std::abs(ids.front()) != neutrino_ID) print_line(ids);
         return cut;
     });
 }
