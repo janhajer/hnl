@@ -221,17 +221,19 @@ auto& get_mother(TClonesArray const& muons, TClonesArray const& particles, int p
 //     return get<GenParticle>(particles, get_grand_mother<Muon>(muons, particles, position).M1);
 // }
 
+auto const neutrino_ID = 9900012;
+auto const muon_ID = 13;
+
 template<typename Muon>
-auto check_origin(TClonesArray const& muons, TClonesArray const& particles, int position)
+auto check_origin(TClonesArray const& muons, TClonesArray const& particles, int position, int check_id)
 {
-    auto id = 13;
-    GenParticle* mother;
-     while (std::abs(id) == 13){
-        mother = &get_mother<Muon>(muons, particles, position);
-        id = mother->PID;
-        position = mother->M1;
+    auto id = check_id;
+     while (std::abs(id) == check_id){
+        auto & mother = get_mother<Muon>(muons, particles, position);
+        id = mother.PID;
+        position = mother.M1;
     };
-    return mother->PID;
+    return id;
 }
 
 auto secondary_vertex(TClonesArray const& muons, int position)
@@ -242,8 +244,6 @@ auto secondary_vertex(TClonesArray const& muons, int position)
     return transverse_distance(particle);
 }
 
-auto const neutrino_ID = 9900012;
-
 auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particles)
 {
     return boost::count_if(range(muons.GetEntriesFast()), [&muons, &particles](auto position) {
@@ -253,7 +253,7 @@ auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particle
 //         auto& grand_mother = get_grand_mother<Muon>(muons, particles, position);
 //         auto& grand_grand_mother = get_grand_grand_mother<Muon>(muons, particles, position);
 //         if (mother.PID != neutrino_ID && grand_mother.PID != neutrino_ID && grand_grand_mother.PID != neutrino_ID) print("Muon from", mother.PID, "and", grand_mother.PID, "and", grand_grand_mother.PID);
-        print(check_origin<Muon>(muons, particles, position));
+        print(check_origin<Muon>(muons, particles, position, muon_ID));
         return cut;
     });
 }
