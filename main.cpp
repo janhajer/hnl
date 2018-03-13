@@ -220,7 +220,6 @@ auto origin(TClonesArray const& particles, int position, int check_id)
         auto& mother = get<GenParticle>(particles, position);
         position = mother.M1;
         ids.emplace_back(mother.PID);
-        print(mother.PID);
         if (std::abs(mother.PID) == check_id) return std::vector<int> {mother.PID};
     };
     return ids;
