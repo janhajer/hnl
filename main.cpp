@@ -232,7 +232,7 @@ void save_result(Result const& result, std::string const& process)
 int main(int argc, char** argv)
 {
     std::vector<std::string> arguments(argv, argv + argc);
-    if(argc < 1) return 0;
+    if(argc < 2) return 0;
     auto process = arguments.at(1);
     print("string",process);
     print("starting from", file_name(process, 1));
