@@ -1,17 +1,13 @@
 #include <iostream>
 #include <fstream>
 
-#include <boost/optional.hpp>
-
 #include <boost/algorithm/string.hpp>
 
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/adaptor/transformed.hpp>
-#include <boost/range/algorithm/transform.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
-#include <boost/range/algorithm/find_first_of.hpp>
 #include <boost/range/numeric.hpp>
 
 #include "TClonesArray.h"
@@ -88,9 +84,9 @@ auto x_sec_file_name(std::string const& process)
     return base_path() + process + "/cross_sections";
 }
 
-auto to_string(int number)
+auto to_string(int point)
 {
-    return (number < 10 ? "0" : "") + std::to_string(number);
+    return (point < 10 ? "0" : "") + std::to_string(point);
 }
 
 auto join_name(std::string const& first, std::string const& second)
@@ -98,24 +94,24 @@ auto join_name(std::string const& first, std::string const& second)
     return first + "_" + second;
 }
 
-auto run_name(int number)
+auto run_name(int point)
 {
-    return join_name("run", to_string(number));
+    return join_name("run", to_string(point));
 }
 
-auto to_folder(int number)
+auto to_folder(int point)
 {
-    return join_name(run_name(number), "decayed_1");
+    return join_name(run_name(point), "decayed_1");
 }
 
-auto file_name(std::string const& process, int number)
+auto file_name(std::string const& process, int point)
 {
-    return base_path() + process + "/Events/" + to_folder(number) + "/tag_1_delphes_events.root";
+    return base_path() + process + "/Events/" + to_folder(point) + "/tag_1_delphes_events.root";
 }
 
-auto banner_name(std::string const& process, int number)
+auto banner_name(std::string const& process, int point)
 {
-    auto name = run_name(number);
+    auto name = run_name(point);
     return base_path() + process + "/Events/" + name + "/" + join_name(name, "tag_1_banner.txt");
 }
 
@@ -160,30 +156,30 @@ auto read_file(std::string const& file_name, Predicate predicate, int pos, std::
     return name + " value not found"s;
 }
 
-auto get_xsec(std::string const& process, int number)
+auto get_xsec(std::string const& process, int point)
 {
-    return read_file(x_sec_file_name(process), [number](std::vector<std::string> const & strings) {
-        return strings.size() >= 2 && strings.at(0) == to_folder(number);
+    return read_file(x_sec_file_name(process), [point](std::vector<std::string> const & strings) {
+        return strings.size() >= 2 && strings.at(0) == to_folder(point);
     }, 2, "cross section");
 }
 
-auto get_mass(std::string const& process, int number)
+auto get_mass(std::string const& process, int point)
 {
-    return read_file(banner_name(process, number), [number](std::vector<std::string> const & strings) {
+    return read_file(banner_name(process, point), [point](std::vector<std::string> const & strings) {
         return strings.size() > 2 && strings.at(0) == std::to_string(9900012) && strings.at(2) == "#" && strings.at(3) == "mn1";
     }, 1, "mass");
 }
 
-auto get_coupling(std::string const& process, int number)
+auto get_coupling(std::string const& process, int point)
 {
-    return read_file(banner_name(process, number), [number](std::vector<std::string> const & strings) {
+    return read_file(banner_name(process, point), [point](std::vector<std::string> const & strings) {
         return strings.size() > 3 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(3) == "vmun1";
     }, 1, "coupling");
 }
 
-auto get_width(std::string const& process, int number)
+auto get_width(std::string const& process, int point)
 {
-    return read_file(banner_name(process, number), [number](std::vector<std::string> const & strings) {
+    return read_file(banner_name(process, point), [point](std::vector<std::string> const & strings) {
         return strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(1) == std::to_string(9900012);
     }, 2, "width");
 }
@@ -194,39 +190,42 @@ auto& get_particle(Object const& object)
     return static_cast<GenParticle&>(*object.Particle.GetObject());
 }
 
-auto secondary_vertex(TClonesArray const& muons, int position)
+auto secondary_vertex(TClonesArray const& muons, TClonesArray const& particles, int position)
 {
     auto& muon =  static_cast<Muon&>(*muons.At(position));
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != 13) print("background");
+    auto & mother = static_cast<GenParticle&>(*particles.At(particle.M1));
+    print(mother.PID);
     return transverse_distance(particle);
 }
 
-auto number_of_dispalced(TClonesArray const& branch)
+auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particles)
 {
-    return boost::count_if(range(branch.GetEntriesFast()), [&](auto position) {
-        return secondary_vertex(branch, position) > 100.;
+    return boost::count_if(range(muons.GetEntriesFast()), [&muons,&particles](auto position) {
+        return secondary_vertex(muons, particles, position) > 100.;
     });
 }
 
-auto analyse_events(std::string const& process, int number)
+auto analyse_events(std::string const& process, int point)
 {
     TChain chain("Delphes");
-    chain.Add(file_name(process, number).c_str());
+    chain.Add(file_name(process, point).c_str());
     ExRootTreeReader reader(&chain);
     auto& muons = *reader.UseBranch("Muon");
-    reader.UseBranch("Particle");
-    return boost::count_if(range(reader.GetEntries()), [&](auto entry) {
+    auto& particles = *reader.UseBranch("Particle");
+    return boost::count_if(range(reader.GetEntries()), [&reader, &muons, &particles](auto entry) {
         reader.ReadEntry(entry);
-        return number_of_dispalced(muons) > 0;
+        auto number = number_of_displaced(muons, particles);
+        if(number > 1) print(number, "displaced muons");
+        return number > 0;
     }) / static_cast<double>(reader.GetEntries());
 }
 
 template<typename Result>
 void save_result(Result const& result, std::string const& process)
 {
-//     for (auto i : result) print(i);
-    print(result);
+    for (auto i : result) print(i);
     std::ofstream file("./" + process + ".dat");
     std::ostream_iterator<std::string> iterator(file, "\n");
     boost::copy(result, iterator);
@@ -238,9 +237,9 @@ int main(int argc, char** argv)
     std::vector<std::string> arguments(argv, argv + argc);
     auto process = arguments.at(1);
     print("starting from", file_name(process, 1));
-    auto range = boost::irange(1, 49);
-    auto result = transform(range, [&process](auto number) {
-        return get_mass(process, number) + " " + get_coupling(process, number) + " " + std::to_string(analyse_events(process, number)) + " " +  get_xsec(process, number) + " " + get_width(process, number);
+    auto points = boost::irange(1, 49);
+    auto result = transform(points, [&process](auto point) {
+        return get_mass(process, point) + " " + get_coupling(process, point) + " " + std::to_string(analyse_events(process, point)) + " " +  get_xsec(process, point) + " " + get_width(process, point);
     });
     save_result(result, process);
 }
