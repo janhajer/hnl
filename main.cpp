@@ -195,15 +195,19 @@ auto secondary_vertex(TClonesArray const& muons, TClonesArray const& particles, 
     auto& muon =  static_cast<Muon&>(*muons.At(position));
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != 13) print("background");
-    auto& mother_1 = static_cast<GenParticle&>(*particles.At(particle.M1));
-    particle.M2 == -1 ? print(mother_1.PID) : print(mother_1.PID, static_cast<GenParticle&>(*particles.At(particle.M2)).PID);
+//     auto& mother_1 = static_cast<GenParticle&>(*particles.At(particle.M1));
+//     particle.M2 == -1 ? print(mother_1.PID) : print(mother_1.PID, static_cast<GenParticle&>(*particles.At(particle.M2)).PID);
     return transverse_distance(particle);
 }
 
 auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particles)
 {
     return boost::count_if(range(muons.GetEntriesFast()), [&muons, &particles](auto position) {
-        return secondary_vertex(muons, particles, position) > 100.;
+        auto cut = secondary_vertex(muons, particles, position) > 100.;
+        if(!cut) return cut;
+        auto& mother_1 = static_cast<GenParticle&>(*particles.At(get_particle(static_cast<Muon&>(*muons.At(position))).M1));
+        print(mother_1.PID);
+        return cut;
     });
 }
 
