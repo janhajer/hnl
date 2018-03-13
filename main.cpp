@@ -190,23 +190,46 @@ auto& get_particle(Object const& object)
     return static_cast<GenParticle&>(*object.Particle.GetObject());
 }
 
-auto secondary_vertex(TClonesArray const& muons, TClonesArray const& particles, int position)
+
+template<typename Object>
+auto& get(TClonesArray const& array, int position)
 {
-    auto& muon =  static_cast<Muon&>(*muons.At(position));
+    return static_cast<Object&>(*array.At(position));
+}
+
+template<typename Object>
+auto & get_particle(TClonesArray const& muons, int position){
+    return get_particle(get<Object>(muons, position));
+}
+
+template<typename Muon>
+auto& get_mother(TClonesArray const& muons, TClonesArray const& particles, int position)
+{
+    return get<GenParticle>(particles, get_particle<Muon>(muons, position).M1);
+}
+
+template<typename Muon>
+auto& get_grand_mother(TClonesArray const& muons, TClonesArray const& particles, int position)
+{
+    return get<GenParticle>(particles, get_mother<Muon>(muons, particles, position).M1);
+}
+
+auto secondary_vertex(TClonesArray const& muons, int position)
+{
+    auto& muon =  get<Muon>(muons, position);
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != 13) print("background");
-//     auto& mother_1 = static_cast<GenParticle&>(*particles.At(particle.M1));
-//     particle.M2 == -1 ? print(mother_1.PID) : print(mother_1.PID, static_cast<GenParticle&>(*particles.At(particle.M2)).PID);
     return transverse_distance(particle);
 }
 
 auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particles)
 {
     return boost::count_if(range(muons.GetEntriesFast()), [&muons, &particles](auto position) {
-        auto cut = secondary_vertex(muons, particles, position) > 100.;
-        if(!cut) return cut;
-        auto& mother_1 = static_cast<GenParticle&>(*particles.At(get_particle(static_cast<Muon&>(*muons.At(position))).M1));
-        print(mother_1.PID);
+        auto cut = secondary_vertex(muons, position) > 100.;
+        if (!cut) return cut;
+        auto& mother = get_mother<Muon>(muons, particles, position);
+        auto& grand_mother = get_grand_mother<Muon>(muons, particles, position);
+        mother.PID == 9900012 ? print(mother.PID) : print(grand_mother.PID);
         return cut;
     });
 }
