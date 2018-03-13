@@ -10,6 +10,7 @@
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/transform.hpp>
 #include <boost/range/algorithm/copy.hpp>
+#include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/numeric.hpp>
 
 #include "TClonesArray.h"
@@ -119,6 +120,7 @@ auto banner_name(std::string const& process, int number)
 template<typename Object>
 struct Branch {
     Branch(TClonesArray* input) : array(input), range(boost::irange(0, array->GetEntriesFast())) {}
+    Branch(TClonesArray& input) : array(&input), range(boost::irange(0, array->GetEntriesFast())) {}
     auto begin()
     {
         return range.begin();
@@ -131,7 +133,7 @@ struct Branch {
     {
         range = boost::irange(0, array->GetEntriesFast());
     }
-    auto& at(int position)
+    auto& at(int position) const
     {
         return static_cast<Object&>(*array->At(position));
     }
@@ -232,38 +234,6 @@ auto get_width(std::string const& process, int number)
     }, 2, "width");
 }
 
-// auto particle_distance(TClonesArray const& particle_branch, int number)
-// {
-//     auto& particle = static_cast<GenParticle&>(*particle_branch.At(number));
-//     return std::abs(particle.PID) == 13 ? transverse_distance(particle) : 0;
-// }
-//
-// auto muon_distance(TClonesArray const& muon_branch, int number)
-// {
-//     auto& muon = static_cast<Muon&>(*muon_branch.At(number));
-//     auto& particle = static_cast<GenParticle&>(*muon.Particle.GetObject());
-//     return transverse_distance(particle);
-// }
-//
-// template<typename Function>
-// auto displacement(TClonesArray const& branch, Function const& function)
-// {
-//     return boost::accumulate(range(branch.GetEntriesFast()), 0, [&](auto & sum, auto number) {
-//         return sum += function(number) > 10 ? 1 : 0 ;
-//     }) > 0;
-// }
-//
-// auto analyse_events(Tree& tree)
-// {
-//     auto& muon_branch = *tree.reader.UseBranch("Muon");
-//     return boost::accumulate(tree, 0., [&](auto & sum, auto entry) {
-//     tree.reader.ReadEntry(entry);
-//         return sum += displacement(muon_branch, [&](auto number) {
-//             return particle_distance(muon_branch, number);
-//         }) ? 1 : 0;
-//     }) / tree.reader.GetEntries();
-// }
-
 auto& get_particle(Muon& muon)
 {
     return static_cast<GenParticle&>(*muon.Particle.GetObject());
@@ -276,22 +246,48 @@ void read_entry(Tree& tree, Branch<Particle>& branch, int entry)
     branch.update();
 }
 
+auto muon_distance(Branch<Muon> const& muons, int position)
+{
+    auto& muon = muons.at(position);
+    auto& particle = get_particle(muon);
+    auto distance = transverse_distance(particle);
+    if (distance < 10) return 0.f;
+    if (std::abs(particle.PID) != 13) print("background");
+    return distance;
+}
+
+auto number_of_dispalced(Branch<Muon> const& branch)
+{
+    return boost::count_if(range(branch.array->GetEntriesFast()), [&](auto position) {
+        return muon_distance(branch, position) > 10.;
+    });
+}
+
+auto analyse_events(std::string const& process, int number)
+{
+    Tree tree(file_name(process, number));
+    auto muons = tree.use_branch<Muon>("Muon");
+    tree.use_branch<GenParticle>("Particle");
+    return boost::count_if(range(tree.reader.GetEntries()), [&](auto entry) {
+        read_entry(tree, muons, entry);
+        return number_of_dispalced(muons) > 0;
+    }) / tree.reader.GetEntries();
+}
+
 auto AnalyseEvents(std::string const& process, int number)
 {
     Tree tree(file_name(process, number));
-    auto muon_branch = tree.use_branch<Muon>("Muon");
+    auto muons = tree.use_branch<Muon>("Muon");
     tree.use_branch<GenParticle>("Particle");
-    // Loop over all events
     auto displaced_number = 0;
     for (auto entry : tree) {
-        // Load selected branches with data from specified event
-        read_entry(tree, muon_branch, entry);
+        read_entry(tree, muons, entry);
         std::vector<double> result;
-        for (auto position : muon_branch) {
-            auto& muon = muon_branch.at(position);
+        for (auto position : muons) {
+            auto& muon = muons.at(position);
             auto& particle = get_particle(muon);
             auto distance = transverse_distance(particle);
-            if (distance < 1) continue;
+            if (distance < 10) continue;
             if (std::abs(particle.PID) == 13) result.emplace_back(distance);
             else print("background");
         }
@@ -349,7 +345,7 @@ int main(int argc, char** argv)
     auto range = boost::irange(1, 49);
 //     auto range = boost::irange(1, 3);
     auto result = transform(range, [&process](auto number) {
-        return get_mass(process, number) + " " + get_coupling(process, number) + " " + std::to_string(AnalyseEvents(process, number)) + " " +  get_xsec(process, number) + " " + get_width(process, number);
+        return get_mass(process, number) + " " + get_coupling(process, number) + " " + std::to_string(analyse_events(process, number)) + " " +  get_xsec(process, number) + " " + get_width(process, number);
     });
     save_result(result, process);
 }
