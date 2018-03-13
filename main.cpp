@@ -224,20 +224,22 @@ auto& get_mother(TClonesArray const& muons, TClonesArray const& particles, int p
 auto const neutrino_ID = 9900012;
 auto const muon_ID = 13;
 
+auto check_origin(TClonesArray const& particles, int position, int check_id)
+{
+    auto id = check_id;
+    while (std::abs(id) == check_id) {
+        auto& mother = get<GenParticle>(particles, position);
+        id = mother.PID;
+        position = mother.M1;
+    };
+    return id;
+}
+
 template<typename Muon>
 auto check_origin(TClonesArray const& muons, TClonesArray const& particles, int position, int check_id)
 {
-    auto id = check_id;
-     while (std::abs(id) == check_id){
-         print("getting mother");
-        auto & mother = get_mother<Muon>(muons, particles, position);
-         print("id");
-        id = mother.PID;
-         print("pos");
-        position = mother.M1;
-    };
-         print("return");
-    return id;
+    auto& particle = get_particle<Muon>(muons, position);
+    return std::abs(particle.PID) == check_id ? particle.PID : check_origin(particles, particle.M1, check_id);
 }
 
 auto secondary_vertex(TClonesArray const& muons, int position)
