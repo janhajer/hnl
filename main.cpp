@@ -239,7 +239,7 @@ template<typename Muon>
 auto check_origin(TClonesArray const& muons, TClonesArray const& particles, int position, int check_id)
 {
     auto& particle = get_particle<Muon>(muons, position);
-    return std::abs(particle.PID) == check_id ? particle.PID : check_origin(particles, particle.M1, check_id);
+    return std::abs(particle.PID) == check_id ? check_origin(particles, particle.M1, check_id) : particle.PID;
 }
 
 auto secondary_vertex(TClonesArray const& muons, int position)
