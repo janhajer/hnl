@@ -271,7 +271,7 @@ auto analyse_events(std::string const& process, int number)
     return boost::count_if(range(tree.reader.GetEntries()), [&](auto entry) {
         read_entry(tree, muons, entry);
         return number_of_dispalced(muons) > 0;
-    }) / tree.reader.GetEntries();
+    }) / double(tree.reader.GetEntries());
 }
 
 auto AnalyseEvents(std::string const& process, int number)
