@@ -228,7 +228,8 @@ auto check_origin(TClonesArray const& muons, TClonesArray const& particles, int 
     GenParticle* mother;
     do {
         mother = &get_mother<Muon>(muons, particles, position);
-        position = mother->PID;
+        id = mother->PID;
+        position = mother->M1;
     } while (std::abs(id) == 13);
     return mother->PID;
 }
