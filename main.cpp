@@ -239,7 +239,7 @@ auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particle
         auto& mother = get_mother<Muon>(muons, particles, position);
         auto& grand_mother = get_grand_mother<Muon>(muons, particles, position);
         auto& grand_grand_mother = get_grand_grand_mother<Muon>(muons, particles, position);
-        if (mother.PID != neutrino_ID || grand_mother.PID != neutrino_ID || grand_grand_mother.PID != neutrino_ID) print("Muon from", mother.PID, "and", grand_mother.PID, "and", grand_grand_mother.PID);
+        if (mother.PID != neutrino_ID && grand_mother.PID != neutrino_ID && grand_grand_mother.PID != neutrino_ID) print("Muon from", mother.PID, "and", grand_mother.PID, "and", grand_grand_mother.PID);
         return cut;
     });
 }
