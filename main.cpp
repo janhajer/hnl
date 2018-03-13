@@ -18,6 +18,9 @@
 
 using namespace std::string_literals;
 
+auto const neutrino_ID = 9900012;
+auto const muon_ID = 13;
+
 template<typename Object>
 auto sqr(Object const& object)
 {
@@ -173,7 +176,7 @@ auto get_xsec(std::string const& process, int point)
 auto get_mass(std::string const& process, int point)
 {
     return read_file(banner_name(process, point), [point](std::vector<std::string> const & strings) {
-        return strings.size() > 2 && strings.at(0) == std::to_string(9900012) && strings.at(2) == "#" && strings.at(3) == "mn1";
+        return strings.size() > 2 && strings.at(0) == std::to_string(neutrino_ID) && strings.at(2) == "#" && strings.at(3) == "mn1";
     }, 1, "mass");
 }
 
@@ -187,7 +190,7 @@ auto get_coupling(std::string const& process, int point)
 auto get_width(std::string const& process, int point)
 {
     return read_file(banner_name(process, point), [point](std::vector<std::string> const & strings) {
-        return strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(1) == std::to_string(9900012);
+        return strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(1) == std::to_string(neutrino_ID);
     }, 2, "width");
 }
 
@@ -210,17 +213,14 @@ auto& get_particle(TClonesArray const& muons, int position)
     return get_particle(get<Object>(muons, position));
 }
 
-auto const neutrino_ID = 9900012;
-auto const muon_ID = 13;
-
 auto origin(TClonesArray const& particles, int position, int check_id)
 {
     std::vector<int> ids;
     while (position != -1) {
         auto& mother = get<GenParticle>(particles, position);
-        position = mother.M1;
-        ids.emplace_back(mother.PID);
         if (std::abs(mother.PID) == check_id) return std::vector<int> {mother.PID};
+        ids.emplace_back(mother.PID);
+        position = mother.M1;
     };
     return ids;
 }
@@ -243,11 +243,11 @@ auto secondary_vertex(TClonesArray const& muons, int position)
 auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particles)
 {
     return boost::count_if(range(muons.GetEntriesFast()), [&muons, &particles](auto position) {
-        auto cut = secondary_vertex(muons, position) > 100.;
-        if (!cut) return cut;
+        auto hit = secondary_vertex(muons, position) > 1.;
+        if (!hit) return hit;
         auto ids = origin<Muon>(muons, particles, position, neutrino_ID);
         if (std::abs(ids.front()) != neutrino_ID) print_line(ids);
-        return cut;
+        return hit;
     });
 }
 
@@ -260,9 +260,7 @@ auto analyse_events(std::string const& process, int point)
     auto& particles = *reader.UseBranch("Particle");
     return boost::count_if(range(reader.GetEntries()), [&reader, &muons, &particles](auto entry) {
         reader.ReadEntry(entry);
-        auto number = number_of_displaced(muons, particles);
-//         if (number > 1) print(number, "displaced muons");
-        return number > 0;
+        return number_of_displaced(muons, particles) > 0;
     }) / static_cast<double>(reader.GetEntries());
 }
 
