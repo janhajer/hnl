@@ -224,13 +224,13 @@ auto& get_mother(TClonesArray const& muons, TClonesArray const& particles, int p
 template<typename Muon>
 auto check_origin(TClonesArray const& muons, TClonesArray const& particles, int position)
 {
-    auto id = 0;
+    auto id = 13;
     GenParticle* mother;
-    do {
+     while (std::abs(id) == 13){
         mother = &get_mother<Muon>(muons, particles, position);
         id = mother->PID;
         position = mother->M1;
-    } while (std::abs(id) == 13);
+    };
     return mother->PID;
 }
 
