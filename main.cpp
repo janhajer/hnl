@@ -19,7 +19,7 @@
 using namespace std::string_literals;
 
 auto const neutrino_ID = 9900012;
-auto const muon_ID = 13;
+// auto const muon_ID = 13;
 
 template<typename Object>
 auto sqr(Object const& object)
@@ -199,7 +199,6 @@ auto& get_particle(Object const& object)
 {
     return static_cast<GenParticle&>(*object.Particle.GetObject());
 }
-
 
 template<typename Object>
 auto& get(TClonesArray const& array, int position)
