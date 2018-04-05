@@ -19,7 +19,7 @@
 using namespace std::string_literals;
 
 auto const neutrino_ID = 9900012;
-// auto const muon_ID = 13;
+auto const muon_ID = 13;
 
 template<typename Object>
 auto sqr(Object const& object)
@@ -84,14 +84,25 @@ void print_line(Container const& container)
     std::cout << std::endl;
 }
 
+std::string join_folder(std::string const& string)
+{
+    return string;
+}
+
+template<typename ... Arguments>
+std::string join_folder(std::string const& string, Arguments ... arguments)
+{
+    return string + "/" + join_folder(arguments...);
+}
+
 auto base_path()
 {
-    return "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion/";
+    return "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion";
 }
 
 auto x_sec_file_name(std::string const& process)
 {
-    return base_path() + process + "/cross_sections";
+    return join_folder(base_path(), process, "cross_sections");
 }
 
 auto to_string(int point)
@@ -116,13 +127,13 @@ auto to_folder(int point)
 
 auto file_name(std::string const& process, int point)
 {
-    return base_path() + process + "/Events/" + to_folder(point) + "/tag_1_delphes_events.root";
+    return join_folder(base_path(), process, "Events", to_folder(point), "tag_1_delphes_events.root");
 }
 
 auto banner_name(std::string const& process, int point)
 {
     auto name = run_name(point);
-    return base_path() + process + "/Events/" + name + "/" + join_name(name, "tag_1_banner.txt");
+    return join_folder(base_path(), process, "Events", name, join_name(name, "tag_1_banner.txt"));
 }
 
 struct File {
@@ -235,7 +246,7 @@ auto secondary_vertex(TClonesArray const& muons, int position)
 {
     auto& muon =  get<Muon>(muons, position);
     auto& particle = get_particle(muon);
-    if (std::abs(particle.PID) != 13) print("Misidentified muon");
+    if (std::abs(particle.PID) != muon_ID) print("Misidentified muon");
     return transverse_distance(particle);
 }
 
