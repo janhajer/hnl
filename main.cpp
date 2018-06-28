@@ -186,21 +186,21 @@ auto get_xsec(std::string const& process, int point)
 
 auto get_mass(std::string const& process, int point)
 {
-    return read_file(banner_name(process, point), [point](std::vector<std::string> const & strings) {
+    return read_file(banner_name(process, point), [](std::vector<std::string> const & strings) {
         return strings.size() > 2 && strings.at(0) == std::to_string(neutrino_ID) && strings.at(2) == "#" && strings.at(3) == "mn1";
     }, 1, "mass");
 }
 
 auto get_coupling(std::string const& process, int point)
 {
-    return read_file(banner_name(process, point), [point](std::vector<std::string> const & strings) {
+    return read_file(banner_name(process, point), [](std::vector<std::string> const & strings) {
         return strings.size() > 3 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(3) == "vmun1";
     }, 1, "coupling");
 }
 
 auto get_width(std::string const& process, int point)
 {
-    return read_file(banner_name(process, point), [point](std::vector<std::string> const & strings) {
+    return read_file(banner_name(process, point), [](std::vector<std::string> const & strings) {
         return strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(1) == std::to_string(neutrino_ID);
     }, 2, "width");
 }
