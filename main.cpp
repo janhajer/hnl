@@ -9,12 +9,23 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/numeric.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
 
 #include "TClonesArray.h"
 
 #include "ExRootAnalysis/ExRootTreeReader.h"
 
 #include "classes/DelphesClasses.h"
+
+
+void find_file(std::string const& name) {
+    boost::filesystem::path base_path(name);
+    if(!boost::filesystem::is_directory(base_path)) return;
+    for(auto& folder_path : boost::make_iterator_range(boost::filesystem::directory_iterator(base_path), {})) {
+        std::cout << folder_path << "\n";
+    }
+}
 
 using namespace std::string_literals;
 
@@ -285,11 +296,14 @@ void save_result(Result const& result, std::string const& process)
 
 int main(int argc, char** argv)
 {
-    if (argc < 2) return 0;
+    if (argc < 2) {
+        print("Please pass the process name as argument");
+        return 0;
+    }
     std::vector<std::string> arguments(argv, argv + argc);
     auto process = arguments.at(1);
     print("starting from", file_name(process, 1));
-    auto points = boost::irange(1, 49);
+    auto points = boost::irange(1, 100);
     auto result = transform(points, [&process](auto point) {
         return get_mass(process, point) + " " + get_coupling(process, point) + " " + std::to_string(analyse_events(process, point)) + " " +  get_xsec(process, point) + " " + get_width(process, point);
     });
