@@ -120,12 +120,14 @@ auto is_x_sec = [](boost::filesystem::path const& path)
 
 auto x_sec_file_name(boost::filesystem::path const& path)
 {
-        auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
+    auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
     auto range = files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_x_sec);
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
-    if (paths.size() != 1) print("Not the expected Banner", transform(paths,[](auto const& path){return path.string();}));
+    if (paths.size() != 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
+        return path.string();
+    }));
     return paths.at(0);
 //     return join_folder(base_path(), process, "cross_sections");
 }
@@ -162,12 +164,14 @@ auto is_delphes = [](boost::filesystem::path const& path)
 
 auto file_name(boost::filesystem::path const& path)
 {
-        auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
+    auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
     auto range = files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_delphes);
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
-    if (paths.size() != 1) print("Not the expected Banner", transform(paths,[](auto const& path){return path.string();}));
+    if (paths.size() != 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
+        return path.string();
+    }));
     return paths.at(0);
 //     return join_folder(base_path(), process, "Events", to_folder(point), "tag_1_delphes_events.root");
 }
@@ -185,7 +189,9 @@ auto banner_name(boost::filesystem::path const& path)
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
-    if (paths.size() != 1) print("Not the expected Banner", transform(paths,[](auto const& path){return path.string();}));
+    if (paths.size() != 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
+        return path.string();
+    }));
     return paths.at(0);
 //     return boost::range::sort(paths, [](auto const& one, auto const& two) {
 //     return join_folder(base_path(), process, "Events", name, join_name(name, "tag_1_banner.txt"));
@@ -211,7 +217,7 @@ auto function(std::string const& path_name)
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
-    return boost::range::sort(paths, [](auto const& one, auto const& two) {
+    return boost::range::sort(paths, [](auto const & one, auto const & two) {
         return doj::alphanum_comp(one.string(), two.string()) < 0;
     });
 }
@@ -377,13 +383,15 @@ int main(int argc, char** argv)
     std::vector<std::string> arguments(argv, argv + argc);
     auto process = arguments.at(1);
 //     print("starting from", file_name(process, 1));
-        auto result = transform(function(event_folder(process)), [](auto folder) {
-        return get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
+    auto result = transform(function(event_folder(process)), [](auto folder) {
+        auto res = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
+        print(res);
+        return "res";
     });
-    for (auto const& folder : function(event_folder(process))) print(folder);
+//     for (auto const& folder : function(event_folder(process))) print(folder);
 //     auto points = boost::irange(1, 100);
 //     auto result = transform(points, [&process](auto point) {
 //         return get_mass(process, point) + " " + get_coupling(process, point) + " " + std::to_string(analyse_events(process, point)) + " " +  get_xsec(process, point) + " " + get_width(process, point);
 //     });
-//     save_result(result, process);
+    save_result(result, process);
 }
