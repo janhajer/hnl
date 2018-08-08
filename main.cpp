@@ -157,6 +157,7 @@ auto to_folder(int point)
 
 auto event_folder(std::string const& process)
 {
+        print("event folder");
     return join_folder(base_path(), process, "Events");
 }
 
@@ -222,6 +223,8 @@ auto is_decayed_folder = [](boost::filesystem::path const& path)
 
 auto function(std::string const& path_name)
 {
+
+        print("decay folder");
     auto range = find_folder(path_name) | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_decayed_folder);
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
@@ -396,6 +399,7 @@ int main(int argc, char** argv)
     std::vector<std::string> arguments(argv, argv + argc);
     auto process = arguments.at(1);
 //     print("starting from", file_name(process, 1));
+        print("starting");
     auto result = transform(function(event_folder(process)), [](auto folder) {
         print("main loop");
         auto res = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
