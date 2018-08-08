@@ -21,6 +21,8 @@
 
 #include "classes/DelphesClasses.h"
 
+#include "alphanum.hpp"
+
 using namespace std::string_literals;
 
 auto const neutrino_ID = 9900012;
@@ -170,7 +172,9 @@ auto function(std::string const& path_name)
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
-    return boost::range::sort(paths);
+    return boost::range::sort(paths, [](auto const& one, auto const& two) {
+        return doj::alphanum_comp(one.string(), two.string());
+    });
 }
 
 struct File {
