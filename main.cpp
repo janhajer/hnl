@@ -9,7 +9,7 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/numeric.hpp>
-// #include <boost/filesystem.hpp>
+#include <boost/filesystem.hpp>
 // #include <boost/range/iterator_range.hpp>
 
 #include "TClonesArray.h"
@@ -19,13 +19,14 @@
 #include "classes/DelphesClasses.h"
 
 
-// void find_file(std::string const& name) {
-//     boost::filesystem::path base_path(name);
-//     if(!boost::filesystem::is_directory(base_path)) return;
-//     for(auto& folder_path : boost::make_iterator_range(boost::filesystem::directory_iterator(base_path), {})) {
-//         std::cout << folder_path << "\n";
+auto find_file(std::string const& name) {
+    boost::filesystem::path base_path(name);
+    if(!boost::filesystem::is_directory(base_path)) return boost::iterator_range<boost::filesystem::directory_iterator>{};
+//     for(auto& folder_path :
+        return boost::make_iterator_range(boost::filesystem::directory_iterator(base_path), {});
+//         ){ std::cout << folder_path << "\n";
 //     }
-// }
+}
 
 using namespace std::string_literals;
 
@@ -133,6 +134,11 @@ auto run_name(int point)
 auto to_folder(int point)
 {
     return join_name(run_name(point), "decayed_1");
+}
+
+auto event_folder(std::string const& process)
+{
+    return join_folder(base_path(), process, "Events");
 }
 
 auto file_name(std::string const& process, int point)
@@ -306,8 +312,9 @@ int main(int argc, char** argv)
     auto process = arguments.at(1);
     print("starting from", file_name(process, 1));
     auto points = boost::irange(1, 100);
-    auto result = transform(points, [&process](auto point) {
-        return get_mass(process, point) + " " + get_coupling(process, point) + " " + std::to_string(analyse_events(process, point)) + " " +  get_xsec(process, point) + " " + get_width(process, point);
-    });
-    save_result(result, process);
+    for(auto const& folder: find_file(event_folder(process))) print(folder);
+//     auto result = transform(points, [&process](auto point) {
+//         return get_mass(process, point) + " " + get_coupling(process, point) + " " + std::to_string(analyse_events(process, point)) + " " +  get_xsec(process, point) + " " + get_width(process, point);
+//     });
+//     save_result(result, process);
 }

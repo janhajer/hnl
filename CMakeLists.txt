@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.8)
 project(Neutrino)
 
 find_package(ROOT)
-find_package(Boost)
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 include_directories("${ROOT_INCLUDE_DIRS}")
 include_directories("${Boost_INCLUDE_DIR}")
