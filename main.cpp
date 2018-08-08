@@ -191,8 +191,8 @@ auto is_banner = [](boost::filesystem::path const& path)
 
 auto banner_name(boost::filesystem::path const& path)
 {
-        print("banner name");
-    auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
+        print("banner name", path.string());
+    auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path.string()), {});
         print("has iterator");
     auto range = files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_banner);
         print("is filtered");
