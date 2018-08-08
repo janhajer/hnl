@@ -193,7 +193,9 @@ auto banner_name(boost::filesystem::path const& path)
 {
         print("banner name");
     auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
+        print("has iterator");
     auto range = files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_banner);
+        print("is filtered");
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
@@ -233,7 +235,7 @@ auto function(std::string const& path_name)
         return doj::alphanum_comp(one.string(), two.string()) < 0;
     });
     print(transform(sorted, [](auto const & path) {
-        return path.string();
+        return path.string() + "\n";
     }));
     return sorted;
 }
