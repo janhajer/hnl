@@ -232,7 +232,9 @@ auto function(std::string const& path_name)
     auto sorted = boost::range::sort(paths, [](auto const & one, auto const & two) {
         return doj::alphanum_comp(one.string(), two.string()) < 0;
     });
-    print(sorted);
+    print(transform(sorted, [](auto const & path) {
+        return path.string();
+    }));
     return sorted;
 }
 
