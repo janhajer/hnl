@@ -61,7 +61,6 @@ std::ostream& operator<<(std::ostream& stream, GenParticle const& particle)
     return stream << "(" << particle.PID << ", " << particle.Status << ")";
 }
 
-
 template<typename Key_, typename Value_>
 auto& operator<<(std::ostream& stream, std::pair<Key_, Value_> const& pair)
 {
@@ -255,7 +254,7 @@ auto origin(TClonesArray const& muons, TClonesArray const& particles, int positi
 
 auto secondary_vertex(TClonesArray const& muons, int position)
 {
-    auto& muon =  get<Muon>(muons, position);
+    auto& muon = get<Muon>(muons, position);
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != muon_ID) print("Misidentified muon");
     auto dist = transverse_distance(particle);
