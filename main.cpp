@@ -108,7 +108,7 @@ std::string join_folder(std::string const& string, Arguments ... arguments)
 
 auto base_path()
 {
-    return "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion";
+    return "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion/results";
 }
 
 auto x_sec_file_name(std::string const& process)
@@ -258,7 +258,9 @@ auto secondary_vertex(TClonesArray const& muons, int position)
     auto& muon =  get<Muon>(muons, position);
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != muon_ID) print("Misidentified muon");
-    return transverse_distance(particle);
+    auto dist = transverse_distance(particle);
+    if(dist > 1.) print(dist);
+    return dist;
 }
 
 auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particles)
@@ -279,10 +281,11 @@ auto analyse_events(std::string const& process, int point)
     ExRootTreeReader reader(&chain);
     auto& muons = *reader.UseBranch("Muon");
     auto& particles = *reader.UseBranch("Particle");
-    return boost::count_if(range(reader.GetEntries()), [&reader, &muons, &particles](auto entry) {
+    auto entries = reader.GetEntries();
+    return entries == 0 ? 0. : boost::count_if(range(reader.GetEntries()), [&reader, &muons, &particles](auto entry) {
         reader.ReadEntry(entry);
         return number_of_displaced(muons, particles) > 0;
-    }) / static_cast<double>(reader.GetEntries());
+    }) / static_cast<double>(entries);
 }
 
 template<typename Result>
