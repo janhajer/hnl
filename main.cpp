@@ -229,9 +229,11 @@ auto function(std::string const& path_name)
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
-    return boost::range::sort(paths, [](auto const & one, auto const & two) {
+    auto sorted = boost::range::sort(paths, [](auto const & one, auto const & two) {
         return doj::alphanum_comp(one.string(), two.string()) < 0;
     });
+    print(sorted);
+    return sorted;
 }
 
 struct File {
@@ -400,7 +402,7 @@ int main(int argc, char** argv)
     auto process = arguments.at(1);
 //     print("starting from", file_name(process, 1));
         print("starting");
-    auto result = transform(function(event_folder(process)), [](auto folder) {
+    auto result = transform(function(event_folder(process)), [](auto const& folder) {
         print("main loop");
         auto res = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
         print(res);
