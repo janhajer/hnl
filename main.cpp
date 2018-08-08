@@ -173,7 +173,7 @@ auto function(std::string const& path_name)
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
     return boost::range::sort(paths, [](auto const& one, auto const& two) {
-        return doj::alphanum_comp(one.string(), two.string());
+        return doj::alphanum_comp(one.string(), two.string()) > 0;
     });
 }
 
