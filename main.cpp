@@ -190,6 +190,7 @@ auto is_banner = [](boost::filesystem::path const& path)
 
 auto banner_name(boost::filesystem::path const& path)
 {
+        print("banner name");
     auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
     auto range = files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_banner);
     //workaround as ranges of paths can not be sorted
@@ -258,6 +259,8 @@ public:
 template<typename Predicate>
 auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos, std::string const& name = "")
 {
+
+        print("read file");
     File file(path);
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
@@ -282,6 +285,8 @@ auto get_xsec(boost::filesystem::path const& path)
 
 auto get_mass(boost::filesystem::path const& path)
 {
+
+        print("get mass");
     return read_file(banner_name(path), [](auto const & strings) {
         return strings.size() > 2 && strings.at(0) == std::to_string(neutrino_ID) && strings.at(2) == "#" && strings.at(3) == "mn1";
     }, 1, "mass");
@@ -392,6 +397,7 @@ int main(int argc, char** argv)
     auto process = arguments.at(1);
 //     print("starting from", file_name(process, 1));
     auto result = transform(function(event_folder(process)), [](auto folder) {
+        print("main loop");
         auto res = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
         print(res);
         return "res";
