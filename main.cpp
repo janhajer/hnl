@@ -10,7 +10,7 @@
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/numeric.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/regex.hpp>
+// #include <boost/regex.hpp>
 
 #include "TClonesArray.h"
 
@@ -142,30 +142,32 @@ auto banner_name(std::string const& process, int point)
     return join_folder(base_path(), process, "Events", name, join_name(name, "tag_1_banner.txt"));
 }
 
-auto find_file(std::string const& name)
+auto find_folder(std::string const& path_name)
 {
-    boost::filesystem::path base_path(name);
-    if (!boost::filesystem::is_directory(base_path)) print("Path:", name, "does not exist");
-    return boost::make_iterator_range(boost::filesystem::directory_iterator(base_path), {});
+    boost::filesystem::path path(path_name);
+    if (!boost::filesystem::is_directory(path)) print("Path:", path_name, "does not exist");
+    return boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
 }
 
 auto is_directory = static_cast<bool (*)(const boost::filesystem::path&)>(&boost::filesystem::is_directory);
 
-auto function(std::string const& name)
+bool hasEnding (std::string const &fullString, std::string const &ending) {
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
+    }
+}
+
+auto function(std::string const& path_name)
 {
-    const boost::regex my_filter(".*_decayed_1");
-    boost::smatch what;
-
+//     const boost::regex my_filter(".*_decayed_1");
+//     boost::smatch what;
     auto is_correct = [&](const boost::filesystem::path & path) {
-        return boost::regex_match(path.filename().string(), what, my_filter);
+//         return boost::regex_match(path.filename().string(), what, my_filter);
+        return hasEnding(path.filename().string(), "_decayed_1");
     };
-
-    auto range = find_file(name)
-                 | boost::adaptors::filtered(is_directory)
-                 | boost::adaptors::filtered(is_correct);
-
-//     for (auto& entry : range) print(entry.path()); // There are only files matching defined pattern "somefiles*.txt".
-                 return range;
+    return find_folder(path_name) | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_correct);
 }
 
 struct File {
