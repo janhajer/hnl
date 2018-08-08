@@ -153,7 +153,7 @@ auto is_directory = static_cast<bool (*)(const boost::filesystem::path&)>(&boost
 
 auto function(std::string const& name)
 {
-    const boost::regex my_filter("*_decayed_1");
+    const boost::regex my_filter(".*_decayed_1");
     boost::smatch what;
 
     auto is_correct = [&](const boost::filesystem::path & path) {
