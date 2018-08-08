@@ -5,6 +5,7 @@
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/adaptor/filtered.hpp>
+#include <boost/range/algorithm/sort.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
@@ -151,23 +152,19 @@ auto find_folder(std::string const& path_name)
 
 auto is_directory = static_cast<bool (*)(const boost::filesystem::path&)>(&boost::filesystem::is_directory);
 
-bool hasEnding (std::string const &fullString, std::string const &ending) {
-    if (fullString.length() >= ending.length()) {
-        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
-    } else {
-        return false;
-    }
+auto hasEnding(std::string const& fullString, std::string const& ending)
+{
+    return fullString.length() >= ending.length() ? 0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending) : false;
 }
+
+auto is_correct = [](const boost::filesystem::path& path)
+{
+    return hasEnding(path.filename().string(), "_decayed_1");
+};
 
 auto function(std::string const& path_name)
 {
-//     const boost::regex my_filter(".*_decayed_1");
-//     boost::smatch what;
-    auto is_correct = [&](const boost::filesystem::path & path) {
-//         return boost::regex_match(path.filename().string(), what, my_filter);
-        return hasEnding(path.filename().string(), "_decayed_1");
-    };
-    return find_folder(path_name) | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_correct);
+    return boost::range::sort(find_folder(path_name) | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_correct));
 }
 
 struct File {
