@@ -125,10 +125,13 @@ auto x_sec_file_name(boost::filesystem::path const& path)
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
-    if (paths.size() != 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
+
+    if (paths.size() == 1) return paths.at(0);
+    if (paths.size() > 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
         return path.string();
     }));
-    return paths.at(0);
+    else print("No Banner");
+    return boost::filesystem::path();
 //     return join_folder(base_path(), process, "cross_sections");
 }
 
@@ -169,10 +172,13 @@ auto file_name(boost::filesystem::path const& path)
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
-    if (paths.size() != 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
+
+    if (paths.size() == 1) return paths.at(0);
+    if (paths.size() > 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
         return path.string();
     }));
-    return paths.at(0);
+    else print("No Banner");
+    return boost::filesystem::path();
 //     return join_folder(base_path(), process, "Events", to_folder(point), "tag_1_delphes_events.root");
 }
 
@@ -189,10 +195,12 @@ auto banner_name(boost::filesystem::path const& path)
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
-    if (paths.size() != 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
+    if (paths.size() == 1) return paths.at(0);
+    if (paths.size() > 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
         return path.string();
     }));
-    return paths.at(0);
+    else print("No Banner");
+    return boost::filesystem::path();
 //     return boost::range::sort(paths, [](auto const& one, auto const& two) {
 //     return join_folder(base_path(), process, "Events", name, join_name(name, "tag_1_banner.txt"));
 }
@@ -267,7 +275,7 @@ auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos
 auto get_xsec(boost::filesystem::path const& path)
 {
     return read_file(banner_name(path), [](auto const & strings) {
-        return strings.size() > 4 && strings.at(0) == "#" && strings.at(2) == "Integrated" && strings.at(3) == "weight" && strings.at(4) == "(pb)" && strings.at(4) == ":";
+        return strings.size() > 4 && strings.at(0) == "#" && strings.at(1) == "Integrated" && strings.at(2) == "weight" && strings.at(3) == "(pb)" && strings.at(4) == ":";
 //         return strings.size() >= 2 && strings.at(0) == to_folder(point);
     }, 5, "cross section");
 }
