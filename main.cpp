@@ -1,3 +1,5 @@
+
+//    #define BOOST_RANGE_ENABLE_CONCEPT_ASSERT 0
 #include <iostream>
 #include <fstream>
 
@@ -164,7 +166,11 @@ auto is_correct = [](const boost::filesystem::path& path)
 
 auto function(std::string const& path_name)
 {
-    return boost::range::sort(find_folder(path_name) | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_correct));
+    auto range = find_folder(path_name) | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_correct);
+    //workaround as ranges of paths can not be sorted
+    std::vector<boost::filesystem::path> paths;
+    boost::range::copy(range, std::back_inserter(paths));
+    return boost::range::sort(paths);
 }
 
 struct File {
