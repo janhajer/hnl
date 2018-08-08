@@ -2,31 +2,21 @@
 #include <fstream>
 
 #include <boost/algorithm/string.hpp>
-
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/indexed.hpp>
+#include <boost/range/adaptor/filtered.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/numeric.hpp>
 #include <boost/filesystem.hpp>
-// #include <boost/range/iterator_range.hpp>
+#include <boost/regex.hpp>
 
 #include "TClonesArray.h"
 
 #include "ExRootAnalysis/ExRootTreeReader.h"
 
 #include "classes/DelphesClasses.h"
-
-
-auto find_file(std::string const& name) {
-    boost::filesystem::path base_path(name);
-    if(!boost::filesystem::is_directory(base_path)) return boost::iterator_range<boost::filesystem::directory_iterator>{};
-//     for(auto& folder_path :
-        return boost::make_iterator_range(boost::filesystem::directory_iterator(base_path), {});
-//         ){ std::cout << folder_path << "\n";
-//     }
-}
 
 using namespace std::string_literals;
 
@@ -152,6 +142,32 @@ auto banner_name(std::string const& process, int point)
     return join_folder(base_path(), process, "Events", name, join_name(name, "tag_1_banner.txt"));
 }
 
+auto find_file(std::string const& name)
+{
+    boost::filesystem::path base_path(name);
+    if (!boost::filesystem::is_directory(base_path)) print("Path:", name, "does not exist");
+    return boost::make_iterator_range(boost::filesystem::directory_iterator(base_path), {});
+}
+
+auto is_directory = static_cast<bool (*)(const boost::filesystem::path&)>(&boost::filesystem::is_directory);
+
+auto function(std::string const& name)
+{
+    const boost::regex my_filter("*_decayed_1");
+    boost::smatch what;
+
+    auto is_correct = [&](const boost::filesystem::path & path) {
+        return boost::regex_match(path.filename().string(), what, my_filter);
+    };
+
+    auto range = find_file(name)
+                 | boost::adaptors::filtered(is_directory)
+                 | boost::adaptors::filtered(is_correct);
+
+//     for (auto& entry : range) print(entry.path()); // There are only files matching defined pattern "somefiles*.txt".
+                 return range;
+}
+
 struct File {
     File(std::string const& name) : file(name) {}
     ~File()
@@ -264,7 +280,7 @@ auto secondary_vertex(TClonesArray const& muons, int position)
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != muon_ID) print("Misidentified muon");
     auto dist = transverse_distance(particle);
-    if(dist > 1.) print(dist);
+    if (dist > 1.) print(dist);
     return dist;
 }
 
@@ -312,7 +328,7 @@ int main(int argc, char** argv)
     auto process = arguments.at(1);
     print("starting from", file_name(process, 1));
     auto points = boost::irange(1, 100);
-    for(auto const& folder: find_file(event_folder(process))) print(folder);
+    for (auto const& folder : function(event_folder(process))) print(folder);
 //     auto result = transform(points, [&process](auto point) {
 //         return get_mass(process, point) + " " + get_coupling(process, point) + " " + std::to_string(analyse_events(process, point)) + " " +  get_xsec(process, point) + " " + get_width(process, point);
 //     });
