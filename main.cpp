@@ -406,12 +406,20 @@ int main(int argc, char** argv)
     auto process = arguments.at(1);
 //     print("starting from", file_name(process, 1));
         print("starting");
-    auto result = transform(function(event_folder(process)), [](auto const& folder) {
+
+    std::vector<std::string> result;
+    for(auto const& folder : function(event_folder(process))) {
         print("main loop");
         auto res = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
         print(res);
-        return "res";
-    });
+        result.emplace_back(res);
+    }
+//     auto result = transform(function(event_folder(process)), [](auto const& folder) {
+//         print("main loop");
+//         auto res = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
+//         print(res);
+//         return "res";
+//     });
 //     for (auto const& folder : function(event_folder(process))) print(folder);
 //     auto points = boost::irange(1, 100);
 //     auto result = transform(points, [&process](auto point) {
