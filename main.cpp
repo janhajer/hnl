@@ -302,23 +302,19 @@ auto origin(Muon const& muon, TTreeReaderArray<GenParticle> const& particles, in
 
 auto secondary_vertex(Muon const& muon)
 {
-//     auto& muon = get(muons, position);
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != muon_ID) print("Misidentified muon");
     return transverse_distance(particle);
 }
 
-// auto is_hard(TClonesArray const& muons, int position)
-// {
-//     auto& muon = get<Muon>(muons, position);
-//     return muon.PT;
-// }
+auto is_hard(Muon const& muon)
+{
+    return secondary_vertex(muon) < .1 && muon.PT > 25;
+}
 
 auto number_of_displaced(TTreeReaderArray<Muon> const& muons, TTreeReaderArray<GenParticle> const& particles)
 {
     return boost::count_if(muons, [&particles](auto muon) {
-        print(muon);
-        print(particles.GetSize());
         auto hit = secondary_vertex(muon) > 1.;
         if (!hit) return hit;
         auto ids = origin(muon, particles, neutrino_ID);
@@ -327,17 +323,12 @@ auto number_of_displaced(TTreeReaderArray<Muon> const& muons, TTreeReaderArray<G
     });
 }
 
-// auto number_of_hard(TClonesArray const& muons, TClonesArray const& particles)
-// {
-//     return boost::count_if(range(muons.GetEntriesFast()), [&muons, &particles](auto position) {
-//         auto hit = secondary_vertex(muons, position) < 1.;
-//         if (!hit) return hit;
-// //         if (is_hard(muons, position)) return
-// //                 auto ids = origin<Muon>(muons, particles, position, neutrino_ID);
-// //         if (std::abs(ids.front()) != neutrino_ID) print_line(ids);
-//         return hit;
-//     });
-// }
+auto number_of_hard(TTreeReaderArray<Muon> const& muons)
+{
+    return boost::count_if(muons, [](auto muon) {
+        return is_hard(muon);
+    });
+}
 
 auto analyse_events(boost::filesystem::path const& path)
 {
@@ -348,33 +339,10 @@ auto analyse_events(boost::filesystem::path const& path)
     auto number = 0;
     auto entries = reader.GetEntries(false);
     while (reader.Next()) {
-        if (number_of_displaced(muons, particles) > 0) ++number;
-//         auto size = muons.GetSize();
-//         if (size > 1) print("next event", size);
-//         for (auto const& muon : muons) {
-//             if (size > 1) print("next muon", muon);
-//         }
+        if (number_of_displaced(muons, particles) > 0 && number_of_hard(muons) > 0) ++number;
     }
-
-//     auto number = boost::count_if(range(reader.GetEntries()), [&reader, &muons, &particles](auto entry) {
-//         reader.ReadEntry(entry);
-//         return number_of_displaced(muons, particles) > 0 && number_of_hard(muons, particles) > 0;
-//     });
     print(entries, number / static_cast<double>(entries));
     return entries == 0 ? 0. : number / static_cast<double>(entries);
-
-//     TChain chain("Delphes");
-//     chain.Add(delphes_file(path).c_str());
-//     ExRootTreeReader reader(&chain);
-//     auto& muons = *reader.UseBranch("Muon");
-//     auto& particles = *reader.UseBranch("Particle");
-//     auto entries = reader.GetEntries();
-//     auto number = boost::count_if(range(reader.GetEntries()), [&reader, &muons, &particles](auto entry) {
-//         reader.ReadEntry(entry);
-//         return number_of_displaced(muons, particles) > 0 && number_of_hard(muons, particles) > 0;
-//     });
-//     print(number, entries, number / static_cast<double>(entries));
-//     return entries == 0 ? 0. : number / static_cast<double>(entries);
 }
 
 template<typename Result>
