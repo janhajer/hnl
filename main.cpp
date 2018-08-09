@@ -296,7 +296,7 @@ auto secondary_vertex(TClonesArray const& muons, int position)
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != muon_ID) print("Misidentified muon");
     auto dist = transverse_distance(particle);
-//     if (dist > 1.) print(dist);
+    if (dist > 1.) print(dist);
     return dist;
 }
 
