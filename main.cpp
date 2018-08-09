@@ -269,23 +269,23 @@ auto& get_particle(Object const& object)
     return static_cast<GenParticle&>(*object.Particle.GetObject());
 }
 
-template<typename Object>
-auto& get(TClonesArray const& array, int position)
+// template<typename Object>
+auto& get(TTreeReaderArray<GenParticle> const& array, int position)
 {
-    return static_cast<Object&>(*array.At(position));
+    return array.At(position);
 }
 
-template<typename Object>
-auto& get_particle(TClonesArray const& muons, int position)
-{
-    return get_particle(get<Object>(muons, position));
-}
+// template<typename Object>
+// auto& get_particle(TClonesArray const& muons, int position)
+// {
+//     return get_particle(get<Object>(muons, position));
+// }
 
-auto origin(TClonesArray const& particles, int position, int check_id)
+auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int check_id)
 {
     std::vector<int> ids;
     while (position != -1) {
-        auto& mother = get<GenParticle>(particles, position);
+        auto& mother = get(particles, position);
         if (std::abs(mother.PID) == check_id) return std::vector<int> {mother.PID};
         ids.emplace_back(mother.PID);
         position = mother.M1;
@@ -293,49 +293,49 @@ auto origin(TClonesArray const& particles, int position, int check_id)
     return ids;
 }
 
-template<typename Muon>
-auto origin(TClonesArray const& muons, TClonesArray const& particles, int position, int check_id)
+// template<typename Muon>
+auto origin(Muon const& muon, TTreeReaderArray<GenParticle> const& particles, int check_id)
 {
-    auto& particle = get_particle<Muon>(muons, position);
+    auto& particle = get_particle(muon);
     return std::abs(particle.PID) == check_id ? std::vector<int> {particle.PID} : origin(particles, particle.M1, check_id);
 }
 
-auto secondary_vertex(TClonesArray const& muons, int position)
+auto secondary_vertex(Muon const& muon)
 {
-    auto& muon = get<Muon>(muons, position);
+//     auto& muon = get(muons, position);
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != muon_ID) print("Misidentified muon");
     return transverse_distance(particle);
 }
 
-auto is_hard(TClonesArray const& muons, int position)
-{
-    auto& muon = get<Muon>(muons, position);
-    return muon.PT;
-}
+// auto is_hard(TClonesArray const& muons, int position)
+// {
+//     auto& muon = get<Muon>(muons, position);
+//     return muon.PT;
+// }
 
-auto number_of_displaced(TClonesArray const& muons, TClonesArray const& particles)
+auto number_of_displaced(TTreeReaderArray<Muon> const& muons, TTreeReaderArray<GenParticle> const& particles)
 {
-    return boost::count_if(range(muons.GetEntriesFast()), [&muons, &particles](auto position) {
-        auto hit = secondary_vertex(muons, position) > 1.;
+    return boost::count_if(muons, [&particles](auto muon) {
+        auto hit = secondary_vertex(muon) > 1.;
         if (!hit) return hit;
-        auto ids = origin<Muon>(muons, particles, position, neutrino_ID);
+        auto ids = origin(muon, particles, neutrino_ID);
         if (std::abs(ids.front()) != neutrino_ID) print_line(ids);
         return hit;
     });
 }
 
-auto number_of_hard(TClonesArray const& muons, TClonesArray const& particles)
-{
-    return boost::count_if(range(muons.GetEntriesFast()), [&muons, &particles](auto position) {
-        auto hit = secondary_vertex(muons, position) < 1.;
-        if (!hit) return hit;
-//         if (is_hard(muons, position)) return
-//                 auto ids = origin<Muon>(muons, particles, position, neutrino_ID);
-//         if (std::abs(ids.front()) != neutrino_ID) print_line(ids);
-        return hit;
-    });
-}
+// auto number_of_hard(TClonesArray const& muons, TClonesArray const& particles)
+// {
+//     return boost::count_if(range(muons.GetEntriesFast()), [&muons, &particles](auto position) {
+//         auto hit = secondary_vertex(muons, position) < 1.;
+//         if (!hit) return hit;
+// //         if (is_hard(muons, position)) return
+// //                 auto ids = origin<Muon>(muons, particles, position, neutrino_ID);
+// //         if (std::abs(ids.front()) != neutrino_ID) print_line(ids);
+//         return hit;
+//     });
+// }
 
 auto analyse_events(boost::filesystem::path const& path)
 {
@@ -343,16 +343,23 @@ auto analyse_events(boost::filesystem::path const& path)
     TTreeReader reader("Delphes", &file);
     TTreeReaderArray<Muon> muons(reader, "Muon");
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
+    auto number = 0;
+    auto entries = reader.GetEntries(false);
     while (reader.Next()) {
-        auto size = muons.GetSize();
-        if(size > 1) print("next event", size);
-        for (auto const& muon : muons) {
-        if(size > 1) print("next muon", muon);
-//         print("next muon");
-//             print(muon);
-        }
+        if (number_of_displaced(muons, particles) > 0) ++number;
+//         auto size = muons.GetSize();
+//         if (size > 1) print("next event", size);
+//         for (auto const& muon : muons) {
+//             if (size > 1) print("next muon", muon);
+//         }
     }
-    return 0;
+
+//     auto number = boost::count_if(range(reader.GetEntries()), [&reader, &muons, &particles](auto entry) {
+//         reader.ReadEntry(entry);
+//         return number_of_displaced(muons, particles) > 0 && number_of_hard(muons, particles) > 0;
+//     });
+    print(entries, number / static_cast<double>(entries));
+    return entries == 0 ? 0. : number / static_cast<double>(entries);
 
 //     TChain chain("Delphes");
 //     chain.Add(delphes_file(path).c_str());
