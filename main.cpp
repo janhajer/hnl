@@ -108,16 +108,16 @@ auto base_path()
     return "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion/results";
 }
 
+auto event_folder(std::string const& process)
+{
+    return join_folder(base_path(), process, "Events");
+}
+
 auto is_regular_file = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_regular_file);
 
 auto has_ending(std::string const& string, std::string const& ending)
 {
     return string.length() >= ending.length() ? 0 == string.compare(string.length() - ending.length(), ending.length(), ending) : false;
-}
-
-auto event_folder(std::string const& process)
-{
-    return join_folder(base_path(), process, "Events");
 }
 
 template<typename Function>
@@ -128,6 +128,26 @@ auto get_paths(boost::filesystem::path const& path, Function function)
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
     return paths;
+}
+
+auto is_directory = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_directory);
+
+auto is_decayed_folder = [](boost::filesystem::path const& path)
+{
+    return has_ending(path.filename().string(), "_decayed_1");
+};
+
+auto decayed_folder(std::string const& path_name)
+{
+    boost::filesystem::path path(path_name);
+    if (!boost::filesystem::is_directory(path)) print("Path:", path_name, "does not exist");
+    auto paths = get_paths(path, [](auto const & range) {
+        return range | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_decayed_folder);
+    });
+    auto sorted = boost::range::sort(paths, [](auto const & one, auto const & two) {
+        return doj::alphanum_comp(one.string(), two.string()) < 0;
+    });
+    return sorted;
 }
 
 template<typename Function>
@@ -162,29 +182,7 @@ auto banner_file(boost::filesystem::path const& path)
         return files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_banner);
     });
 }
-
-auto is_directory = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_directory);
-
-auto is_decayed_folder = [](boost::filesystem::path const& path)
-{
-    return has_ending(path.filename().string(), "_decayed_1");
-};
-
-auto decayed_folder(std::string const& path_name)
-{
-    boost::filesystem::path path(path_name);
-    if (!boost::filesystem::is_directory(path)) print("Path:", path_name, "does not exist");
-    auto paths = get_paths(path, [](auto const & range) {
-        return range | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_decayed_folder);
-    });
-    auto sorted = boost::range::sort(paths, [](auto const & one, auto const & two) {
-        return doj::alphanum_comp(one.string(), two.string()) < 0;
-    });
-    return sorted;
-}
-
 struct File {
-//     File(std::string const& name) : file(name) {}
     File(boost::filesystem::path const& path) : file(path.string()) {}
     ~File()
     {
@@ -321,10 +319,12 @@ auto analyse_events(boost::filesystem::path const& path)
     auto& muons = *reader.UseBranch("Muon");
     auto& particles = *reader.UseBranch("Particle");
     auto entries = reader.GetEntries();
-    return entries == 0 ? 0. : boost::count_if(range(reader.GetEntries()), [&reader, &muons, &particles](auto entry) {
+    auto number = boost::count_if(range(reader.GetEntries()), [&reader, &muons, &particles](auto entry) {
         reader.ReadEntry(entry);
         return number_of_displaced(muons, particles) > 0;
-    }) / static_cast<double>(entries);
+    });
+    print(number, entries, number / static_cast<double>(entries));
+    return entries == 0 ? 0. : number / static_cast<double>(entries);
 }
 
 template<typename Result>
@@ -345,6 +345,7 @@ int main(int argc, char** argv)
     std::vector<std::string> arguments(argv, argv + argc);
     auto process = arguments.at(1);
     std::vector<std::string> results;
+    print("mass coupling efficiency crosssection width");
     for (auto const& folder : decayed_folder(event_folder(process))) {
         auto result = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
         print(result);
