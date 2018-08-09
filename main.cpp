@@ -137,7 +137,7 @@ auto is_decayed_folder = [](boost::filesystem::path const& path)
     return has_ending(path.filename().string(), "_decayed_1");
 };
 
-auto decayed_folder(std::string const& path_name)
+auto decayed_folders(std::string const& path_name)
 {
     boost::filesystem::path path(path_name);
     if (!boost::filesystem::is_directory(path)) print("Path:", path_name, "does not exist");
@@ -296,7 +296,7 @@ auto secondary_vertex(TClonesArray const& muons, int position)
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != muon_ID) print("Misidentified muon");
     auto dist = transverse_distance(particle);
-    if (dist > 1.) print(dist);
+//     if (dist > 1.) print(dist);
     return dist;
 }
 
@@ -346,7 +346,7 @@ int main(int argc, char** argv)
     auto process = arguments.at(1);
     std::vector<std::string> results;
     print("mass coupling efficiency crosssection width");
-    for (auto const& folder : decayed_folder(event_folder(process))) {
+    for (auto const& folder : decayed_folders(event_folder(process))) {
         auto result = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
         print(result);
         results.emplace_back(result);
