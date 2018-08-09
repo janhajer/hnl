@@ -317,6 +317,7 @@ auto secondary_vertex(Muon const& muon)
 auto number_of_displaced(TTreeReaderArray<Muon> const& muons, TTreeReaderArray<GenParticle> const& particles)
 {
     return boost::count_if(muons, [&particles](auto muon) {
+        print(muon);
         auto hit = secondary_vertex(muon) > 1.;
         if (!hit) return hit;
         auto ids = origin(muon, particles, neutrino_ID);
