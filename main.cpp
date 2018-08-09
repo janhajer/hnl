@@ -318,6 +318,7 @@ auto number_of_displaced(TTreeReaderArray<Muon> const& muons, TTreeReaderArray<G
 {
     return boost::count_if(muons, [&particles](auto muon) {
         print(muon);
+        print(particles.GetSize());
         auto hit = secondary_vertex(muon) > 1.;
         if (!hit) return hit;
         auto ids = origin(muon, particles, neutrino_ID);
