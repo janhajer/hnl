@@ -270,10 +270,10 @@ auto& get_particle(Object const& object)
 }
 
 // template<typename Object>
-auto& get(TTreeReaderArray<GenParticle> const& array, int position)
-{
-    return array.At(position);
-}
+// auto& get(TTreeReaderArray<GenParticle> const& array, int position)
+// {
+//     return array.At(position);
+// }
 
 // template<typename Object>
 // auto& get_particle(TClonesArray const& muons, int position)
@@ -285,7 +285,7 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int ch
 {
     std::vector<int> ids;
     while (position != -1) {
-        auto& mother = get(particles, position);
+        auto& mother = particles.At(position);
         if (std::abs(mother.PID) == check_id) return std::vector<int> {mother.PID};
         ids.emplace_back(mother.PID);
         position = mother.M1;
@@ -309,7 +309,7 @@ auto secondary_vertex(Muon const& muon)
 
 auto is_hard(Muon const& muon)
 {
-    return secondary_vertex(muon) < .1 && muon.PT > 25;
+    return secondary_vertex(muon) < 1. && muon.PT > 25;
 }
 
 auto number_of_displaced(TTreeReaderArray<Muon> const& muons, TTreeReaderArray<GenParticle> const& particles)
