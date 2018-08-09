@@ -49,6 +49,12 @@ auto transform(Container const& container, Function const& function)
     return container | boost::adaptors::transformed(function);
 }
 
+std::ostream& operator<<(std::ostream& stream, boost::filesystem::path const& path)
+{
+    return stream << path.string();
+}
+
+
 std::ostream& operator<<(std::ostream& stream, GenParticle const& particle)
 {
     return stream << "(" << particle.PID << ", " << particle.Status << ")";
@@ -63,9 +69,8 @@ auto& operator<<(std::ostream& stream, std::pair<Key_, Value_> const& pair)
 template<typename Element, template <typename, typename = std::allocator<Element>> class Container>
 auto & operator<<(std::ostream& stream, Container<Element> const& container)
 {
-    return stream << boost::accumulate(boost::adaptors::index(container), [](std::ostream & stream, auto const & element) {
-        return stream << '\n' << element.index() << ": " << element.value();
-    });
+    for (auto const& element : boost::adaptors::index(container)) stream << '\n' << element.index() << ": " << element.value();
+    return stream;
 }
 
 void print()
@@ -116,18 +121,21 @@ auto event_folder(std::string const& process)
 }
 
 template<typename Function>
-auto get_file(boost::filesystem::path const& path, Function function)
+auto get_paths(boost::filesystem::path const& path, Function function)
 {
-    auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
-    auto range = function(files);
+    auto range = function(boost::make_iterator_range(boost::filesystem::directory_iterator(path), {}));
     //workaround as ranges of paths can not be sorted
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
+    return paths;
+}
+
+template<typename Function>
+auto get_file(boost::filesystem::path const& path, Function function)
+{
+    auto paths = get_paths(path, function);
     if (paths.size() == 1) return paths.front();
-    if (paths.size() > 1) print("Too many potential files:", transform(paths, [](auto const & path) {
-        return path.string();
-    }));
-    else print("No file");
+    paths.size() > 1 ? print("Too many potential files:", paths) : print("No file");
     return boost::filesystem::path();
 }
 
@@ -138,36 +146,10 @@ auto is_delphes = [](boost::filesystem::path const& path)
 
 auto delphes_file(boost::filesystem::path const& path)
 {
-    return get_file(path,[](auto const& files){
+    return get_file(path, [](auto const & files) {
         return files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_delphes);
     });
-//     auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
-//     auto range = files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_delphes);
-//     //workaround as ranges of paths can not be sorted
-//     std::vector<boost::filesystem::path> paths;
-//     boost::range::copy(range, std::back_inserter(paths));
-//     if (paths.size() == 1) return paths.at(0);
-//     if (paths.size() > 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
-//         return path.string();
-//     }));
-//     else print("No Banner");
-//     return boost::filesystem::path();
 }
-
-// auto delphes_file(boost::filesystem::path const& path)
-// {
-//     auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
-//     auto range = files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_delphes);
-//     //workaround as ranges of paths can not be sorted
-//     std::vector<boost::filesystem::path> paths;
-//     boost::range::copy(range, std::back_inserter(paths));
-//     if (paths.size() == 1) return paths.at(0);
-//     if (paths.size() > 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
-//         return path.string();
-//     }));
-//     else print("No Banner");
-//     return boost::filesystem::path();
-// }
 
 auto is_banner = [](boost::filesystem::path const& path)
 {
@@ -176,27 +158,9 @@ auto is_banner = [](boost::filesystem::path const& path)
 
 auto banner_file(boost::filesystem::path const& path)
 {
-    return get_file(path,[](auto const& files){
+    return get_file(path, [](auto const & files) {
         return files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_banner);
     });
-//     auto files = boost::make_iterator_range(boost::filesystem::directory_iterator(path.string()), {});
-//     auto range = files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_banner);
-//     //workaround as ranges of paths can not be sorted
-//     std::vector<boost::filesystem::path> paths;
-//     boost::range::copy(range, std::back_inserter(paths));
-//     if (paths.size() == 1) return paths.at(0);
-//     if (paths.size() > 1) print("Not the expected Banner", transform(paths, [](auto const & path) {
-//         return path.string();
-//     }));
-//     else print("No Banner");
-//     return boost::filesystem::path();
-}
-
-auto find_folder(std::string const& path_name)
-{
-    boost::filesystem::path path(path_name);
-    if (!boost::filesystem::is_directory(path)) print("Path:", path_name, "does not exist");
-    return boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
 }
 
 auto is_directory = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_directory);
@@ -208,10 +172,11 @@ auto is_decayed_folder = [](boost::filesystem::path const& path)
 
 auto decayed_folder(std::string const& path_name)
 {
-    auto range = find_folder(path_name) | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_decayed_folder);
-    //workaround as ranges of paths can not be sorted
-    std::vector<boost::filesystem::path> paths;
-    boost::range::copy(range, std::back_inserter(paths));
+    boost::filesystem::path path(path_name);
+    if (!boost::filesystem::is_directory(path)) print("Path:", path_name, "does not exist");
+    auto paths = get_paths(path, [](auto const & range) {
+        return range | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_decayed_folder);
+    });
     auto sorted = boost::range::sort(paths, [](auto const & one, auto const & two) {
         return doj::alphanum_comp(one.string(), two.string()) < 0;
     });
@@ -219,7 +184,7 @@ auto decayed_folder(std::string const& path_name)
 }
 
 struct File {
-    File(std::string const& name) : file(name) {}
+//     File(std::string const& name) : file(name) {}
     File(boost::filesystem::path const& path) : file(path.string()) {}
     ~File()
     {
@@ -247,7 +212,6 @@ template<typename Predicate>
 auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos, std::string const& name = "")
 {
 
-    print("read file");
     File file(path);
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
@@ -334,7 +298,7 @@ auto secondary_vertex(TClonesArray const& muons, int position)
     auto& particle = get_particle(muon);
     if (std::abs(particle.PID) != muon_ID) print("Misidentified muon");
     auto dist = transverse_distance(particle);
-    if (dist > 1.) print(dist);
+//     if (dist > 1.) print(dist);
     return dist;
 }
 
@@ -380,7 +344,11 @@ int main(int argc, char** argv)
     }
     std::vector<std::string> arguments(argv, argv + argc);
     auto process = arguments.at(1);
-    std::vector<std::string> result;
-    for (auto const& folder : decayed_folder(event_folder(process))) result.emplace_back(get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder));
-    save_result(result, process);
+    std::vector<std::string> results;
+    for (auto const& folder : decayed_folder(event_folder(process))) {
+        auto result = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
+        print(result);
+        results.emplace_back(result);
+    }
+    save_result(results, process);
 }
