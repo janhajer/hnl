@@ -339,7 +339,7 @@ auto number_of_hard(TClonesArray const& muons, TClonesArray const& particles)
 
 auto analyse_events(boost::filesystem::path const& path)
 {
-    TFile file(path.string().c_str(), "read");
+    TFile file(delphes_file(path).c_str(), "read");
     TTreeReader reader("Delphes", &file);
     TTreeReaderArray<Muon> muons(reader, "Muon");
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
