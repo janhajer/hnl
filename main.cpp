@@ -344,10 +344,12 @@ auto analyse_events(boost::filesystem::path const& path)
     TTreeReaderArray<Muon> muons(reader, "Muon");
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
     while (reader.Next()) {
-        print("next event");
+        auto size = muons.GetSize();
+        if(size > 1) print("next event", size);
         for (auto const& muon : muons) {
-        print("next muon");
-            print(muon);
+        if(size > 1) print("next muon", muon);
+//         print("next muon");
+//             print(muon);
         }
     }
     return 0;
