@@ -338,7 +338,9 @@ auto analyse_events(boost::filesystem::path const& path)
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
     auto number = 0;
     auto entries = reader.GetEntries(false);
+    auto size = 0;
     while (reader.Next()) {
+        size = particles.GetSize();
         if (number_of_displaced(muons, particles) > 0 && number_of_hard(muons) > 0) ++number;
     }
     print(entries, number / static_cast<double>(entries));
