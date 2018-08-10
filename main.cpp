@@ -38,18 +38,6 @@ auto transverse_distance(Particle const& particle)
     return std::sqrt(sqr(particle.X) + sqr(particle.Y));
 }
 
-// template<typename Integer>
-// auto irange(Integer integer)
-// {
-//     return boost::irange(static_cast<Integer>(0), integer);
-// }
-
-// template<typename Container, typename Function>
-// auto transform(Container const& container, Function const& function)
-// {
-//     return container | boost::adaptors::transformed(function);
-// }
-
 std::ostream& operator<<(std::ostream& stream, boost::filesystem::path const& path)
 {
     return stream << path.string();
@@ -147,10 +135,9 @@ auto decayed_folders(std::string const& path_name)
     auto paths = get_paths(path, [](auto const & range) {
         return range | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_decayed_folder);
     });
-    auto sorted = boost::range::sort(paths, [](auto const & one, auto const & two) {
+    return boost::range::sort(paths, [](auto const & one, auto const & two) {
         return doj::alphanum_comp(one.string(), two.string()) < 0;
     });
-    return sorted;
 }
 
 template<typename Function>
@@ -211,7 +198,7 @@ public:
     }
 };
 
-auto create_strings(std::string const& line)
+auto split_line(std::string const& line)
 {
     std::vector<std::string> strings;
     boost::split(strings, line, [](char c) {
@@ -223,25 +210,14 @@ auto create_strings(std::string const& line)
 template<typename Predicate>
 auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos)
 {
-
     File file(path);
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-//     for (auto& line : lines) {
-//         boost::trim_if(line, boost::is_any_of("\t "));
-//         std::vector<std::string> strings;
-//         boost::split(strings, line, [](char c) {
-//             return c == ' ';
-//         }, boost::token_compress_on);
-//         if (predicate(strings)) return strings.at(pos);
-//     }
-//     return "value not found"s;
     auto found = boost::range::find_if(lines, [&predicate](auto & line) {
         boost::trim_if(line, boost::is_any_of("\t "));
-        auto strings = create_strings(line);
-        return predicate(strings);
+        return predicate(split_line(line));
     });
-    return found == lines.end() ? "value not found"s : create_strings(*found).at(pos);
+    return found == lines.end() ? "value not found"s : split_line(*found).at(pos);
 }
 
 auto get_xsec(boost::filesystem::path const& path)
@@ -311,7 +287,7 @@ auto is_hard(Muon const& muon)
 auto number_of_displaced(TTreeReaderArray<Muon> const& muons, TTreeReaderArray<GenParticle> const& particles)
 {
     return boost::count_if(muons, [&particles](auto muon) {
-        auto hit = secondary_vertex(muon) > 1.;
+        auto hit = secondary_vertex(muon) > 1. && secondary_vertex(muon) < 300.;
         if (!hit) return hit;
         auto ids = origin(muon, particles, neutrino_ID);
         if (std::abs(ids.front()) != neutrino_ID) print_line(ids);
@@ -326,15 +302,25 @@ auto number_of_hard(TTreeReaderArray<Muon> const& muons)
     });
 }
 
-template<typename Function>
-auto count_if(TTreeReader& reader, Function function)
+template<typename Predicate>
+auto count_if(TTreeReader& reader, Predicate predicate)
 {
     auto counter = 0;
-    while (reader.Next()) if (function()) ++counter;
+    while (reader.Next()) if (predicate()) ++counter;
     return counter;
 }
 
-auto analyse_events(boost::filesystem::path const& path)
+auto get_signal(TTreeReader& reader)
+{
+    TTreeReaderArray<Muon> muons(reader, "Muon");
+    TTreeReaderArray<GenParticle> particles(reader, "Particle");
+    return count_if(reader, [&]() {
+        particles.IsEmpty();
+        return number_of_displaced(muons, particles) > 0 && number_of_hard(muons) > 0;
+    });
+}
+
+auto get_efficiency(boost::filesystem::path const& path)
 {
     TFile file(delphes_file(path).c_str(), "read");
     TTreeReader reader("Delphes", &file);
@@ -343,13 +329,7 @@ auto analyse_events(boost::filesystem::path const& path)
         print("No events");
         return 0.;
     }
-    TTreeReaderArray<Muon> muons(reader, "Muon");
-    TTreeReaderArray<GenParticle> particles(reader, "Particle");
-    auto number = count_if(reader, [&]() {
-        particles.IsEmpty();
-        return number_of_displaced(muons, particles) > 0 && number_of_hard(muons) > 0;
-    });
-    return number / static_cast<double>(entries);
+    return get_signal(reader) / static_cast<double>(entries);
 }
 
 template<typename Result>
@@ -372,7 +352,7 @@ int main(int argc, char** argv)
     std::vector<std::string> results;
     print("mass coupling efficiency crosssection width");
     for (auto const& folder : decayed_folders(event_folder(process))) {
-        auto result = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(analyse_events(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
+        auto result = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(get_efficiency(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
         print(result);
         results.emplace_back(result);
     }
