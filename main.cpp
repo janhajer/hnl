@@ -281,13 +281,13 @@ auto secondary_vertex(Muon const& muon)
 
 auto is_hard(Muon const& muon)
 {
-    return secondary_vertex(muon) < 1. && muon.PT > 25;
+    return secondary_vertex(muon) < 5. && muon.PT > 25;
 }
 
 auto number_of_displaced(TTreeReaderArray<Muon> const& muons, TTreeReaderArray<GenParticle> const& particles)
 {
     return boost::count_if(muons, [&particles](auto muon) {
-        auto hit = secondary_vertex(muon) > 1. && secondary_vertex(muon) < 300.;
+        auto hit = secondary_vertex(muon) > 5. && secondary_vertex(muon) < 300.;
         if (!hit) return hit;
         auto ids = origin(muon, particles, neutrino_ID);
         if (std::abs(ids.front()) != neutrino_ID) print_line(ids);
