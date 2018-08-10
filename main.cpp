@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 
-#include <boost/algorithm/string.hpp>
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/adaptor/filtered.hpp>
@@ -10,17 +9,12 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/numeric.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
-#include "TClonesArray.h"
+#include "TFile.h"
 #include "TTreeReader.h"
 #include "TTreeReaderArray.h"
-#include "TFile.h"
-#include "TH1F.h"
-#include "TTreeReader.h"
-#include "TTreeReaderValue.h"
-
-#include "ExRootAnalysis/ExRootTreeReader.h"
 
 #include "classes/DelphesClasses.h"
 
@@ -43,17 +37,17 @@ auto transverse_distance(Particle const& particle)
     return std::sqrt(sqr(particle.X) + sqr(particle.Y));
 }
 
-template<typename Integer>
-auto range(Integer integer)
-{
-    return boost::irange(static_cast<Integer>(0), integer);
-}
+// template<typename Integer>
+// auto irange(Integer integer)
+// {
+//     return boost::irange(static_cast<Integer>(0), integer);
+// }
 
-template<typename Container, typename Function>
-auto transform(Container const& container, Function const& function)
-{
-    return container | boost::adaptors::transformed(function);
-}
+// template<typename Container, typename Function>
+// auto transform(Container const& container, Function const& function)
+// {
+//     return container | boost::adaptors::transformed(function);
+// }
 
 std::ostream& operator<<(std::ostream& stream, boost::filesystem::path const& path)
 {
@@ -123,13 +117,6 @@ auto event_folder(std::string const& process)
     return join_folder(base_path(), process, "Events");
 }
 
-auto is_regular_file = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_regular_file);
-
-auto has_ending(std::string const& string, std::string const& ending)
-{
-    return string.length() >= ending.length() ? 0 == string.compare(string.length() - ending.length(), ending.length(), ending) : false;
-}
-
 template<typename Function>
 auto get_paths(boost::filesystem::path const& path, Function function)
 {
@@ -138,6 +125,11 @@ auto get_paths(boost::filesystem::path const& path, Function function)
     std::vector<boost::filesystem::path> paths;
     boost::range::copy(range, std::back_inserter(paths));
     return paths;
+}
+
+auto has_ending(std::string const& string, std::string const& ending)
+{
+    return string.length() >= ending.length() ? 0 == string.compare(string.length() - ending.length(), ending.length(), ending) : false;
 }
 
 auto is_directory = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_directory);
@@ -168,6 +160,8 @@ auto get_file(boost::filesystem::path const& path, Function function)
     paths.size() > 1 ? print("Too many potential files:", paths) : print("No file");
     return boost::filesystem::path();
 }
+
+auto is_regular_file = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_regular_file);
 
 auto is_delphes = [](boost::filesystem::path const& path)
 {
@@ -217,7 +211,7 @@ public:
 };
 
 template<typename Predicate>
-auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos, std::string const& name = "")
+auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos)
 {
 
     File file(path);
@@ -231,36 +225,35 @@ auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos
         }, boost::token_compress_on);
         if (predicate(strings)) return strings.at(pos);
     }
-    return name + " value not found"s;
+    return "value not found"s;
 }
 
 auto get_xsec(boost::filesystem::path const& path)
 {
     return read_file(banner_file(path), [](auto const & strings) {
         return strings.size() > 4 && strings.at(0) == "#" && strings.at(1) == "Integrated" && strings.at(2) == "weight" && strings.at(3) == "(pb)" && strings.at(4) == ":";
-//         return strings.size() >= 2 && strings.at(0) == to_folder(point);
-    }, 5, "cross section");
+    }, 5);
 }
 
 auto get_mass(boost::filesystem::path const& path)
 {
     return read_file(banner_file(path), [](auto const & strings) {
         return strings.size() > 2 && strings.at(0) == std::to_string(neutrino_ID) && strings.at(2) == "#" && strings.at(3) == "mn1";
-    }, 1, "mass");
+    }, 1);
 }
 
 auto get_coupling(boost::filesystem::path const& path)
 {
     return read_file(banner_file(path), [](auto const & strings) {
         return strings.size() > 3 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(3) == "vmun1";
-    }, 1, "coupling");
+    }, 1);
 }
 
 auto get_width(boost::filesystem::path const& path)
 {
     return read_file(banner_file(path), [](auto const & strings) {
         return strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(1) == std::to_string(neutrino_ID);
-    }, 2, "width");
+    }, 2);
 }
 
 template<typename Object>
@@ -268,18 +261,6 @@ auto& get_particle(Object const& object)
 {
     return static_cast<GenParticle&>(*object.Particle.GetObject());
 }
-
-// template<typename Object>
-// auto& get(TTreeReaderArray<GenParticle> const& array, int position)
-// {
-//     return array.At(position);
-// }
-
-// template<typename Object>
-// auto& get_particle(TClonesArray const& muons, int position)
-// {
-//     return get_particle(get<Object>(muons, position));
-// }
 
 auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int check_id)
 {
@@ -293,7 +274,6 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int ch
     return ids;
 }
 
-// template<typename Muon>
 auto origin(Muon const& muon, TTreeReaderArray<GenParticle> const& particles, int check_id)
 {
     auto& particle = get_particle(muon);
@@ -330,19 +310,30 @@ auto number_of_hard(TTreeReaderArray<Muon> const& muons)
     });
 }
 
+template<typename Function>
+auto count_if(TTreeReader & reader, Function function){
+    auto counter = 0;
+    while (reader.Next()) if(function()) ++counter;
+    return counter;
+}
+
 auto analyse_events(boost::filesystem::path const& path)
 {
     TFile file(delphes_file(path).c_str(), "read");
     TTreeReader reader("Delphes", &file);
     TTreeReaderArray<Muon> muons(reader, "Muon");
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
-    auto number = 0;
-    auto entries = reader.GetEntries(false);
+//     auto number = 0;
     auto size = 0;
-    while (reader.Next()) {
+//     while (reader.Next()) {
+//         size = particles.GetSize();
+//         if (number_of_displaced(muons, particles) > 0 && number_of_hard(muons) > 0) ++number;
+//     }
+    auto number = count_if(reader,[&](){
         size = particles.GetSize();
-        if (number_of_displaced(muons, particles) > 0 && number_of_hard(muons) > 0) ++number;
-    }
+        return number_of_displaced(muons, particles) > 0 && number_of_hard(muons) > 0;
+    });
+    auto entries = reader.GetEntries(false);
     print(entries, number / static_cast<double>(entries));
     return entries == 0 ? 0. : number / static_cast<double>(entries);
 }
