@@ -311,9 +311,10 @@ auto number_of_hard(TTreeReaderArray<Muon> const& muons)
 }
 
 template<typename Function>
-auto count_if(TTreeReader & reader, Function function){
+auto count_if(TTreeReader& reader, Function function)
+{
     auto counter = 0;
-    while (reader.Next()) if(function()) ++counter;
+    while (reader.Next()) if (function()) ++counter;
     return counter;
 }
 
@@ -321,21 +322,18 @@ auto analyse_events(boost::filesystem::path const& path)
 {
     TFile file(delphes_file(path).c_str(), "read");
     TTreeReader reader("Delphes", &file);
+    auto entries = reader.GetEntries(false);
+    if (entries == 0) {
+        print("No events");
+        return 0.;
+    }
     TTreeReaderArray<Muon> muons(reader, "Muon");
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
-//     auto number = 0;
-    auto size = 0;
-//     while (reader.Next()) {
-//         size = particles.GetSize();
-//         if (number_of_displaced(muons, particles) > 0 && number_of_hard(muons) > 0) ++number;
-//     }
-    auto number = count_if(reader,[&](){
-        size = particles.GetSize();
+    auto number = count_if(reader, [&]() {
+        particles.IsEmpty();
         return number_of_displaced(muons, particles) > 0 && number_of_hard(muons) > 0;
     });
-    auto entries = reader.GetEntries(false);
-    print(entries, number / static_cast<double>(entries));
-    return entries == 0 ? 0. : number / static_cast<double>(entries);
+    return number / static_cast<double>(entries);
 }
 
 template<typename Result>
