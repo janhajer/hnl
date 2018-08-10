@@ -211,6 +211,15 @@ public:
     }
 };
 
+auto create_strings(std::string const& line)
+{
+    std::vector<std::string> strings;
+    boost::split(strings, line, [](char c) {
+        return c == ' ';
+    }, boost::token_compress_on);
+    return strings;
+}
+
 template<typename Predicate>
 auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos)
 {
@@ -218,24 +227,21 @@ auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos
     File file(path);
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-    for (auto& line : lines) {
-        boost::trim_if(line, boost::is_any_of("\t "));
-        std::vector<std::string> strings;
-        boost::split(strings, line, [](char c) {
-            return c == ' ';
-        }, boost::token_compress_on);
-        if (predicate(strings)) return strings.at(pos);
-    }
-    return "value not found"s;
-//     auto found = boost::range::find_if(lines, [&predicate](auto & line) {
+//     for (auto& line : lines) {
 //         boost::trim_if(line, boost::is_any_of("\t "));
 //         std::vector<std::string> strings;
 //         boost::split(strings, line, [](char c) {
 //             return c == ' ';
 //         }, boost::token_compress_on);
-//         return predicate(strings);
-//     });
-//     return found == lines.end() ? "value not found"s : std::to_string(found->at(pos));
+//         if (predicate(strings)) return strings.at(pos);
+//     }
+//     return "value not found"s;
+    auto found = boost::range::find_if(lines, [&predicate](auto & line) {
+        boost::trim_if(line, boost::is_any_of("\t "));
+        auto strings = create_strings(line);
+        return predicate(strings);
+    });
+    return found == lines.end() ? "value not found"s : create_strings(*found).at(pos);
 }
 
 auto get_xsec(boost::filesystem::path const& path)
