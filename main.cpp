@@ -8,6 +8,7 @@
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
+#include <boost/range/algorithm/find_if.hpp>
 #include <boost/range/numeric.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -217,15 +218,23 @@ auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos
     File file(path);
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-    for (auto& line : lines) {
+//     for (auto& line : lines) {
+//         boost::trim_if(line, boost::is_any_of("\t "));
+//         std::vector<std::string> strings;
+//         boost::split(strings, line, [](char c) {
+//             return c == ' ';
+//         }, boost::token_compress_on);
+//         if (predicate(strings)) return strings.at(pos);
+//     }
+    auto found = boost::range::find_if(lines, [&predicate](auto & line) {
         boost::trim_if(line, boost::is_any_of("\t "));
         std::vector<std::string> strings;
         boost::split(strings, line, [](char c) {
             return c == ' ';
         }, boost::token_compress_on);
-        if (predicate(strings)) return strings.at(pos);
-    }
-    return "value not found"s;
+        return predicate(strings);
+    });
+    return found == lines.end() ? "value not found"s : std::to_string(found->at(pos));
 }
 
 auto get_xsec(boost::filesystem::path const& path)
