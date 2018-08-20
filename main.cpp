@@ -450,7 +450,9 @@ auto get_result(boost::filesystem::path const& folder)
     result += " " + get_e_coupling(folder);
     result += " " + get_mu_coupling(folder);
     result += " " + get_tau_coupling(folder);
+    print("getting eff");
     result += " " + std::to_string(get_efficiency(folder));
+    print("got eff");
     result += " " + get_xsec(folder);
     result += " " + get_width(folder);
     print(result);
