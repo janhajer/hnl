@@ -311,8 +311,9 @@ auto& get_particle(Lepton const& lepton)
 
 auto get_particles(Jet const& jet)
 {
+    print("getting part from jet");
     std::vector<GenParticle> particles;
-    while (auto* object = jet.Particles.MakeIterator()->Next()) particles.emplace_back(*static_cast<GenParticle*>(object));
+    while (auto* object = static_cast<TRefArrayIter*>(jet.Particles.MakeIterator())->Next()) particles.emplace_back(*static_cast<GenParticle*>(object));
     return particles;
 }
 
