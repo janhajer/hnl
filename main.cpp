@@ -234,10 +234,10 @@ auto get_mass(boost::filesystem::path const& path)
     }, 1);
 }
 
-auto get_coupling(boost::filesystem::path const& path)
+auto get_coupling(boost::filesystem::path const& path, std::string const& name)
 {
-    return read_file(banner_file(path), [](auto const & strings) {
-        return strings.size() > 3 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(3) == "vmun1";
+    return read_file(banner_file(path), [&name](auto const & strings) {
+        return strings.size() > 3 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(3) == name;
     }, 1);
 }
 
@@ -335,10 +335,23 @@ auto get_efficiency(boost::filesystem::path const& path)
 template<typename Result>
 void save_result(Result const& result, std::string const& process)
 {
-    for (auto i : result) print(i);
+    print_line(result);
     std::ofstream file("./" + process + ".dat");
     std::ostream_iterator<std::string> iterator(file, "\n");
     boost::copy(result, iterator);
+}
+
+auto get_result(boost::filesystem::path const& folder)
+{
+    auto result = get_mass(folder);
+    result += " " + get_coupling(folder, "ven1");
+    result += " " + get_coupling(folder, "vmun1");
+    result += " " + get_coupling(folder, "vtan1");
+    result += " " + std::to_string(get_efficiency(folder));
+    result += " " + get_xsec(folder);
+    result += " " + get_width(folder);
+    print(result);
+    return result;
 }
 
 int main(int argc, char** argv)
@@ -349,12 +362,8 @@ int main(int argc, char** argv)
     }
     std::vector<std::string> arguments(argv, argv + argc);
     auto process = arguments.at(1);
+    print("mass", "coupling", "efficiency", "crosssection", "width");
     std::vector<std::string> results;
-    print("mass coupling efficiency crosssection width");
-    for (auto const& folder : decayed_folders(event_folder(process))) {
-        auto result = get_mass(folder) + " " + get_coupling(folder) + " " + std::to_string(get_efficiency(folder)) + " " +  get_xsec(folder) + " " + get_width(folder);
-        print(result);
-        results.emplace_back(result);
-    }
+    for (auto const& folder : decayed_folders(event_folder(process))) results.emplace_back(get_result(folder));
     save_result(results, process);
 }
