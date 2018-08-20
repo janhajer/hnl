@@ -311,11 +311,10 @@ auto& get_particle(Lepton const& lepton)
 
 auto get_particles(Jet const& jet)
 {
-    print("getting part from jet");
     std::vector<GenParticle> particles;
-    auto * it = static_cast<TRefArrayIter*>(jet.Particles.MakeIterator());
-    if(!it) return particles;
-    while (auto* object = it->Next()) particles.emplace_back(*static_cast<GenParticle*>(object));
+    auto* iterator = static_cast<TRefArrayIter*>(jet.Particles.MakeIterator());
+    if (!iterator) return particles;
+    while (auto* object = iterator->Next()) particles.emplace_back(*static_cast<GenParticle*>(object));
     return particles;
 }
 
@@ -363,15 +362,11 @@ auto secondary_vertex(Lepton const& lepton)
 template<>
 auto secondary_vertex(Jet const& lepton)
 {
-    print("sec vert", lepton);
     using namespace boost::accumulators;
     accumulator_set<float, stats<tag::mean>> distances;
     for (auto const& particle : get_particles(lepton)) {
-        print("id", particle.PID);
         if (std::abs(particle.PID) != get_id<Jet>()) print("Misidentified tau");
-        auto d = transverse_distance(particle);
-        print(d);
-        distances(d);
+        distances(transverse_distance(particle));
     }
     return mean(distances);
 }
@@ -423,26 +418,18 @@ auto get_taus(TTreeReaderArray<Jet> const& jets)
 
 auto get_signal(TTreeReader& reader)
 {
-    print("signal");
     TTreeReaderArray<Electron> electrons(reader, "Electron");
     TTreeReaderArray<Muon> muons(reader, "Muon");
     TTreeReaderArray<Jet> jets(reader, "Jet");
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
     return count_if(reader, [&]() {
         particles.IsEmpty();
-        print("get_tau");
         auto taus = get_taus(jets);
-        print("disp");
         auto displaced = number_of_displaced(electrons, particles);
-        print("hard");
         auto hard = number_of_hard(electrons);
-        print("disp 2");
         displaced += number_of_displaced(muons, particles);
-        print("hard 2");
         hard += number_of_hard(muons);
-        print("disp 3");
         displaced += number_of_displaced(taus, particles);
-        print("hard 3");
         hard += number_of_hard(taus);
         return displaced > 0 && hard > 0;
     });
@@ -475,9 +462,7 @@ auto get_result(boost::filesystem::path const& folder)
     result += " " + get_e_coupling(folder);
     result += " " + get_mu_coupling(folder);
     result += " " + get_tau_coupling(folder);
-    print("getting eff");
     result += " " + std::to_string(get_efficiency(folder));
-    print("got eff");
     result += " " + get_xsec(folder);
     result += " " + get_width(folder);
     print(result);
@@ -486,7 +471,7 @@ auto get_result(boost::filesystem::path const& folder)
 
 auto get_header()
 {
-    std::string header = "mass";
+    std::string header = "# mass";
     header += " e_coupling";
     header += " mu_coupling";
     header += " tau_coupling";
