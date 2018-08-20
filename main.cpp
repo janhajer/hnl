@@ -128,7 +128,7 @@ std::string join_folder(std::string const& string, Arguments ... arguments)
 
 auto base_path()
 {
-    return "~/scratch/results";
+    return ""s + getenv("HOME") + "/scratch/results";
 }
 
 auto event_folder(std::string const& process)
