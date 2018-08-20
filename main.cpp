@@ -58,6 +58,16 @@ std::ostream& operator<<(std::ostream& stream, Muon const& muon)
     return stream << "(" << muon.PT << ", " << muon.Eta << ")";
 }
 
+std::ostream& operator<<(std::ostream& stream, Electron const& muon)
+{
+    return stream << "(" << muon.PT << ", " << muon.Eta << ")";
+}
+
+std::ostream& operator<<(std::ostream& stream, Jet const& muon)
+{
+    return stream << "(" << muon.PT << ", " << muon.Eta << ")";
+}
+
 template<typename Key_, typename Value_>
 auto& operator<<(std::ostream& stream, std::pair<Key_, Value_> const& pair)
 {
@@ -350,11 +360,14 @@ auto secondary_vertex(Lepton const& lepton)
 template<>
 auto secondary_vertex(Jet const& lepton)
 {
+    print("sec vert", lepton);
     using namespace boost::accumulators;
-    accumulator_set<double, stats<tag::mean>> distances;
+    accumulator_set<float, stats<tag::mean>> distances;
     for (auto const& particle : get_particles(lepton)) {
         if (std::abs(particle.PID) != get_id<Jet>()) print("Misidentified tau");
-        distances(transverse_distance(particle));
+        auto d = transverse_distance(particle);
+        print(d);
+        distances(d);
     }
     return mean(distances);
 }
