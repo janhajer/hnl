@@ -98,7 +98,7 @@ std::string join_folder(std::string const& string, Arguments ... arguments)
 
 auto base_path()
 {
-    return "/home/ucl/cp3/hajer/scratch/2.6.2_heavyion/results";
+    return "/home/ucl/cp3/hajer/scratch/results";
 }
 
 auto event_folder(std::string const& process)
