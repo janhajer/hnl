@@ -234,11 +234,26 @@ auto get_mass(boost::filesystem::path const& path)
     }, 1);
 }
 
-auto get_coupling(boost::filesystem::path const& path, std::string const& name)
+auto get_coupling(boost::filesystem::path const& path, int pos, std::string const& name)
 {
-    return read_file(banner_file(path), [&name](auto const & strings) {
-        return strings.size() > 3 && strings.at(0) == std::to_string(4) && strings.at(2) == "#" && strings.at(3) == name;
+    return read_file(banner_file(path), [&name, pos](auto const & strings) {
+        return strings.size() > 3 && strings.at(0) == std::to_string(pos) && strings.at(2) == "#" && strings.at(3) == name;
     }, 1);
+}
+
+auto get_e_coupling(boost::filesystem::path const& path)
+{
+    return get_coupling(path, 1, "ven1");
+}
+
+auto get_mu_coupling(boost::filesystem::path const& path)
+{
+    return get_coupling(path, 4, "vmun1");
+}
+
+auto get_tau_coupling(boost::filesystem::path const& path)
+{
+    return get_coupling(path, 7, "vtan1");
 }
 
 auto get_width(boost::filesystem::path const& path)
@@ -291,7 +306,10 @@ auto number_of_displaced(TTreeReaderArray<Muon> const& muons, TTreeReaderArray<G
         auto hit = distance > 1;
         if (!hit) return hit;
         auto ids = origin(muon, particles, neutrino_ID);
-        if (std::abs(ids.front()) != neutrino_ID) {print_line(ids); print(distance);};
+        if (std::abs(ids.front()) != neutrino_ID) {
+            print_line(ids);
+            print(distance);
+        };
         return hit;
     });
 }
@@ -345,14 +363,26 @@ void save_result(Result const& result, std::string const& process)
 auto get_result(boost::filesystem::path const& folder)
 {
     auto result = get_mass(folder);
-    result += " " + get_coupling(folder, "ven1");
-    result += " " + get_coupling(folder, "vmun1");
-    result += " " + get_coupling(folder, "vtan1");
+    result += " " + get_e_coupling(folder);
+    result += " " + get_mu_coupling(folder);
+    result += " " + get_tau_coupling(folder);
     result += " " + std::to_string(get_efficiency(folder));
     result += " " + get_xsec(folder);
     result += " " + get_width(folder);
     print(result);
     return result;
+}
+
+auto get_header(){
+    std::string header = "mass";
+    header += " e_coupling";
+    header += " mu_coupling";
+    header += " tau_coupling";
+    header += " efficiency";
+    header += " crosssection";
+    header += " width";
+    print(header);
+    return header;
 }
 
 int main(int argc, char** argv)
@@ -363,8 +393,7 @@ int main(int argc, char** argv)
     }
     std::vector<std::string> arguments(argv, argv + argc);
     auto process = arguments.at(1);
-    print("mass", "coupling", "efficiency", "crosssection", "width");
-    std::vector<std::string> results;
+    std::vector<std::string> results{get_header()};
     for (auto const& folder : decayed_folders(event_folder(process))) results.emplace_back(get_result(folder));
     save_result(results, process);
 }
