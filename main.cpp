@@ -10,6 +10,9 @@
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/algorithm/find_if.hpp>
 #include <boost/range/numeric.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
@@ -24,7 +27,9 @@
 using namespace std::string_literals;
 
 auto const neutrino_ID = 9900012;
+auto const electron_ID = 11;
 auto const muon_ID = 13;
+auto const tau_ID = 15;
 
 template<typename Object>
 auto sqr(Object const& object)
@@ -85,6 +90,31 @@ void print_line(Container const& container)
     std::cout << std::endl;
 }
 
+template<typename Lepton>
+auto get_id()
+{
+    print("code gone wrong");
+    return 0;
+}
+
+template <>
+auto get_id<Electron>()
+{
+    return electron_ID;
+}
+
+template <>
+auto get_id<Muon>()
+{
+    return muon_ID;
+}
+
+template <>
+auto get_id<Jet>()
+{
+    return tau_ID;
+}
+
 std::string join_folder(std::string const& string)
 {
     return string;
@@ -98,7 +128,7 @@ std::string join_folder(std::string const& string, Arguments ... arguments)
 
 auto base_path()
 {
-    return "/home/ucl/cp3/hajer/scratch/results";
+    return "~/scratch/results";
 }
 
 auto event_folder(std::string const& process)
@@ -263,10 +293,17 @@ auto get_width(boost::filesystem::path const& path)
     }, 2);
 }
 
-template<typename Object>
-auto& get_particle(Object const& object)
+template<typename Lepton>
+auto& get_particle(Lepton const& lepton)
 {
-    return static_cast<GenParticle&>(*object.Particle.GetObject());
+    return static_cast<GenParticle&>(*lepton.Particle.GetObject());
+}
+
+auto get_particles(Jet const& jet)
+{
+    std::vector<GenParticle> particles;
+    while (auto* object = jet.Particles.MakeIterator()->Next()) particles.emplace_back(*static_cast<GenParticle*>(object));
+    return particles;
 }
 
 auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int check_id)
@@ -281,31 +318,61 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int ch
     return ids;
 }
 
-auto origin(Muon const& muon, TTreeReaderArray<GenParticle> const& particles, int check_id)
+template<typename Lepton>
+auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, int check_id)
 {
-    auto& particle = get_particle(muon);
+    auto& particle = get_particle(lepton);
     return std::abs(particle.PID) == check_id ? std::vector<int> {particle.PID} : origin(particles, particle.M1, check_id);
 }
 
-auto secondary_vertex(Muon const& muon)
+template<typename One, typename Two>
+auto insert(One& one, Two const& two)
 {
-    auto& particle = get_particle(muon);
-    if (std::abs(particle.PID) != muon_ID) print("Misidentified muon");
+    one.insert(one.end(), two.begin(), two.end());
+}
+
+template<>
+auto origin(Jet const& lepton, TTreeReaderArray<GenParticle> const& gen_particles, int check_id)
+{
+    std::vector<int> result;
+    for (auto const& particle : get_particles(lepton)) std::abs(particle.PID) == check_id ? result.emplace_back(particle.PID) : insert(result, origin(gen_particles, particle.M1, check_id));
+    return result;
+}
+
+template<typename Lepton>
+auto secondary_vertex(Lepton const& lepton)
+{
+    auto& particle = get_particle(lepton);
+    if (std::abs(particle.PID) != get_id<Lepton>()) print("Misidentified lepton");
     return transverse_distance(particle);
 }
 
-auto is_hard(Muon const& muon)
+template<>
+auto secondary_vertex(Jet const& lepton)
 {
-    return secondary_vertex(muon) < 1. && muon.PT > 25;
+    using namespace boost::accumulators;
+    accumulator_set<double, stats<tag::mean>> distances;
+    for (auto const& particle : get_particles(lepton)) {
+        if (std::abs(particle.PID) != get_id<Jet>()) print("Misidentified tau");
+        distances(transverse_distance(particle));
+    }
+    return mean(distances);
 }
 
-auto number_of_displaced(TTreeReaderArray<Muon> const& muons, TTreeReaderArray<GenParticle> const& particles)
+template<typename Lepton>
+auto is_hard(Lepton const& lepton)
 {
-    return boost::count_if(muons, [&particles](auto muon) {
-        auto distance = secondary_vertex(muon);
+    return secondary_vertex(lepton) < 1. && lepton.PT > 25;
+}
+
+template<typename Leptons>
+auto number_of_displaced(Leptons const& leptons, TTreeReaderArray<GenParticle> const& particles)
+{
+    return boost::count_if(leptons, [&particles](auto lepton) {
+        auto distance = secondary_vertex(lepton);
         auto hit = distance > 1;
         if (!hit) return hit;
-        auto ids = origin(muon, particles, neutrino_ID);
+        auto ids = origin(lepton, particles, neutrino_ID);
         if (std::abs(ids.front()) != neutrino_ID) {
             print_line(ids);
             print(distance);
@@ -314,10 +381,11 @@ auto number_of_displaced(TTreeReaderArray<Muon> const& muons, TTreeReaderArray<G
     });
 }
 
-auto number_of_hard(TTreeReaderArray<Muon> const& muons)
+template<typename Leptons>
+auto number_of_hard(Leptons const& leptons)
 {
-    return boost::count_if(muons, [](auto muon) {
-        return is_hard(muon);
+    return boost::count_if(leptons, [](auto lepton) {
+        return is_hard(lepton);
     });
 }
 
@@ -329,13 +397,29 @@ auto count_if(TTreeReader& reader, Predicate predicate)
     return counter;
 }
 
+auto get_taus(TTreeReaderArray<Jet> const& jets)
+{
+    return boost::adaptors::filter(jets, [](auto const & jet) {
+        return jet.TauTag;
+    });
+}
+
 auto get_signal(TTreeReader& reader)
 {
+    TTreeReaderArray<Electron> electrons(reader, "Electron");
     TTreeReaderArray<Muon> muons(reader, "Muon");
+    TTreeReaderArray<Jet> jets(reader, "Jet");
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
     return count_if(reader, [&]() {
         particles.IsEmpty();
-        return number_of_displaced(muons, particles) > 0 && number_of_hard(muons) > 0;
+        auto taus = get_taus(jets);
+        auto displaced = number_of_displaced(electrons, particles);
+        auto hard = number_of_hard(electrons);
+        displaced += number_of_displaced(muons, particles);
+        hard += number_of_hard(muons);
+        displaced += number_of_displaced(taus, particles);
+        hard += number_of_hard(taus);
+        return displaced > 0 && hard > 0;
     });
 }
 
@@ -373,7 +457,8 @@ auto get_result(boost::filesystem::path const& folder)
     return result;
 }
 
-auto get_header(){
+auto get_header()
+{
     std::string header = "mass";
     header += " e_coupling";
     header += " mu_coupling";
@@ -393,7 +478,7 @@ int main(int argc, char** argv)
     }
     std::vector<std::string> arguments(argv, argv + argc);
     auto process = arguments.at(1);
-    std::vector<std::string> results{get_header()};
+    std::vector<std::string> results {get_header()};
     for (auto const& folder : decayed_folders(event_folder(process))) results.emplace_back(get_result(folder));
     save_result(results, process);
 }
