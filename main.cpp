@@ -406,6 +406,7 @@ auto get_taus(TTreeReaderArray<Jet> const& jets)
 
 auto get_signal(TTreeReader& reader)
 {
+    print("signal");
     TTreeReaderArray<Electron> electrons(reader, "Electron");
     TTreeReaderArray<Muon> muons(reader, "Muon");
     TTreeReaderArray<Jet> jets(reader, "Jet");
