@@ -412,12 +412,19 @@ auto get_signal(TTreeReader& reader)
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
     return count_if(reader, [&]() {
         particles.IsEmpty();
+        print("get_tau");
         auto taus = get_taus(jets);
+        print("disp");
         auto displaced = number_of_displaced(electrons, particles);
+        print("hard");
         auto hard = number_of_hard(electrons);
+        print("disp 2");
         displaced += number_of_displaced(muons, particles);
+        print("hard 2");
         hard += number_of_hard(muons);
+        print("disp 3");
         displaced += number_of_displaced(taus, particles);
+        print("hard 3");
         hard += number_of_hard(taus);
         return displaced > 0 && hard > 0;
     });
