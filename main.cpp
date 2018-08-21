@@ -406,12 +406,12 @@ auto number_of_displaced(Leptons const& leptons, TTreeReaderArray<GenParticle> c
     return boost::count_if(leptons, [&particles](auto lepton) {
         auto distance = secondary_vertex(lepton);
         auto hit = distance > disp<typename Leptons::iterator::value_type>();
-        if (!hit) return hit;
-        auto ids = origin(lepton, particles, neutrino_ID);
-        if (std::abs(ids.front()) != neutrino_ID) {
-            print_line(ids);
-            print(distance);
-        };
+//         if (!hit) return hit;
+//         auto ids = origin(lepton, particles, neutrino_ID);
+//         if (std::abs(ids.front()) != neutrino_ID) {
+//             print_line(ids);
+//             print(distance);
+//         };
         return hit;
     });
 }
