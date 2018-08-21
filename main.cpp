@@ -391,10 +391,10 @@ auto max_disp()
     return 100.;
 }
 
-// template<>
-// auto disp<Jet>(){
-//     return 30.;
-// }
+template<>
+auto min_disp<Jet>(){
+    return 30.;
+}
 
 template<typename Lepton>
 auto hard()
