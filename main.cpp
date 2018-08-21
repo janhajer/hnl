@@ -370,7 +370,7 @@ auto secondary_vertex(Jet const& lepton)
         distances(transverse_distance(particle));
     }
     auto d = mean(distances);
-    if(d > 1) print("displaced tau", d);
+    if (d > 1) print("displaced tau", d);
     return d;
 }
 
@@ -431,10 +431,10 @@ auto get_signal(TTreeReader& reader)
         particles.IsEmpty();
         auto taus = get_taus(jets);
 //         print("number of taus", boost::size(taus));
-                auto displaced = number_of_displaced(muons, particles);
-        auto hard = number_of_hard(muons);
-//         auto displaced = number_of_displaced(electrons, particles) + number_of_displaced(muons, particles) + number_of_displaced(taus, particles);
-//         auto hard = number_of_hard(electrons) + number_of_hard(muons) + number_of_hard(taus);
+//         auto displaced = number_of_displaced(muons, particles);
+//         auto hard = number_of_hard(muons);
+        auto displaced = number_of_displaced(electrons, particles) + number_of_displaced(muons, particles) + number_of_displaced(taus, particles);
+        auto hard = number_of_hard(electrons) + number_of_hard(muons) + number_of_hard(taus);
 //         print(displaced, hard,  displaced > 0 && hard > 0);
         return displaced > 0 && hard > 0;
     });
