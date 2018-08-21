@@ -380,37 +380,43 @@ auto secondary_vertex(Jet const& lepton)
 }
 
 template<typename Lepton>
-auto disp(){
-    return 10.;
+auto min_disp(){
+    return 5.;
 }
 
-template<>
-auto disp<Jet>(){
-    return 30.;
+template<typename Lepton>
+auto max_disp(){
+    return 100.;
 }
+
+// template<>
+// auto disp<Jet>(){
+//     return 30.;
+// }
 
 template<typename Lepton>
 auto hard(){
     return 25.;
 }
 
-template<>
-auto hard<Jet>(){
-    return 50.;
-}
+// template<>
+// auto hard<Jet>(){
+//     return 50.;
+// }
 
 template<typename Lepton>
 auto is_hard(Lepton const& lepton)
 {
-    return secondary_vertex(lepton) < disp<Lepton>() && lepton.PT > hard<Lepton>();
+    return secondary_vertex(lepton) < min_disp<Lepton>() && lepton.PT > hard<Lepton>();
 }
 
 template<typename Leptons>
 auto number_of_displaced(Leptons const& leptons, TTreeReaderArray<GenParticle> const& particles)
 {
-    return boost::count_if(leptons, [&particles](auto lepton) {
+    using Lepton = typename Leptons::iterator::value_type;
+    return boost::count_if(leptons, [&](auto lepton) {
         auto distance = secondary_vertex(lepton);
-        auto hit = distance > disp<typename Leptons::iterator::value_type>();
+        auto hit = distance > min_disp<Lepton>() && distance < max_disp<Lepton>();
 //         if (!hit) return hit;
 //         auto ids = origin(lepton, particles, neutrino_ID);
 //         if (std::abs(ids.front()) != neutrino_ID) {
