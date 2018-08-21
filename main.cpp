@@ -382,7 +382,7 @@ auto secondary_vertex(Jet const& lepton)
 template<typename Lepton>
 auto min_disp()
 {
-    return 5.;
+    return 10.;
 }
 
 template<typename Lepton>
@@ -489,6 +489,7 @@ auto get_signal(TTreeReader& reader)
 
         auto displaced = number_of_displaced(electrons, particles) + number_of_displaced(muons, particles) + number_of_displaced(taus, particles);
         auto hard = number_of_hard(electrons) + number_of_hard(muons) + number_of_hard(taus);
+        if(displaced > 1 && hard > 1) print(displaced, hard);
         return displaced > 0 && hard > 0;
     });
 }
