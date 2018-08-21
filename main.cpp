@@ -374,10 +374,12 @@ auto secondary_vertex(Jet const& lepton)
     return d;
 }
 
+auto const disp = 1.;
+
 template<typename Lepton>
 auto is_hard(Lepton const& lepton)
 {
-    return secondary_vertex(lepton) < 1. && lepton.PT > 25;
+    return secondary_vertex(lepton) < disp && lepton.PT > 25;
 }
 
 template<typename Leptons>
@@ -385,7 +387,7 @@ auto number_of_displaced(Leptons const& leptons, TTreeReaderArray<GenParticle> c
 {
     return boost::count_if(leptons, [&particles](auto lepton) {
         auto distance = secondary_vertex(lepton);
-        auto hit = distance > 1.;
+        auto hit = distance > disp;
         if (!hit) return hit;
         auto ids = origin(lepton, particles, neutrino_ID);
         if (std::abs(ids.front()) != neutrino_ID) {
