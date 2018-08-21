@@ -382,7 +382,7 @@ auto number_of_displaced(Leptons const& leptons, TTreeReaderArray<GenParticle> c
 {
     return boost::count_if(leptons, [&particles](auto lepton) {
         auto distance = secondary_vertex(lepton);
-        auto hit = distance > 1;
+        auto hit = distance > 1.;
         if (!hit) return hit;
         auto ids = origin(lepton, particles, neutrino_ID);
         if (std::abs(ids.front()) != neutrino_ID) {
@@ -425,12 +425,9 @@ auto get_signal(TTreeReader& reader)
     return count_if(reader, [&]() {
         particles.IsEmpty();
         auto taus = get_taus(jets);
-        auto displaced = number_of_displaced(electrons, particles);
-        auto hard = number_of_hard(electrons);
-        displaced += number_of_displaced(muons, particles);
-        hard += number_of_hard(muons);
-        displaced += number_of_displaced(taus, particles);
-        hard += number_of_hard(taus);
+        auto displaced = number_of_displaced(electrons, particles) + number_of_displaced(muons, particles) + number_of_displaced(taus, particles);
+        auto hard = number_of_hard(electrons) + number_of_hard(muons) + number_of_hard(taus);
+        print(displaced, hard,  displaced > 0 && hard > 0);
         return displaced > 0 && hard > 0;
     });
 }
