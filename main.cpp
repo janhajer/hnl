@@ -1,6 +1,11 @@
 #include <iostream>
 #include <fstream>
 
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
 #include <boost/range/irange.hpp>
 #include <boost/range/size.hpp>
 #include <boost/range/numeric.hpp>
@@ -11,11 +16,6 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/algorithm/find_if.hpp>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/mean.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 
 #include "TFile.h"
 #include "TTreeReader.h"
@@ -374,12 +374,20 @@ auto secondary_vertex(Jet const& lepton)
     return d;
 }
 
-auto const disp = 10.;
+template<typename Lepton>
+auto disp(){
+    return 10.;
+}
+
+template<>
+auto disp<Jet>(){
+    return 30.;
+}
 
 template<typename Lepton>
 auto is_hard(Lepton const& lepton)
 {
-    return secondary_vertex(lepton) < disp && lepton.PT > 25;
+    return secondary_vertex(lepton) < disp<Lepton>() && lepton.PT > 25.;
 }
 
 template<typename Leptons>
@@ -387,7 +395,7 @@ auto number_of_displaced(Leptons const& leptons, TTreeReaderArray<GenParticle> c
 {
     return boost::count_if(leptons, [&particles](auto lepton) {
         auto distance = secondary_vertex(lepton);
-        auto hit = distance > disp;
+        auto hit = distance > disp<typename Leptons::iterator::value_type>();
         if (!hit) return hit;
         auto ids = origin(lepton, particles, neutrino_ID);
         if (std::abs(ids.front()) != neutrino_ID) {
