@@ -2,14 +2,15 @@
 #include <fstream>
 
 #include <boost/range/irange.hpp>
+#include <boost/range/size.hpp>
+#include <boost/range/numeric.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/adaptor/filtered.hpp>
-#include <boost/range/algorithm/sort.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+#include <boost/range/algorithm/sort.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/algorithm/find_if.hpp>
-#include <boost/range/numeric.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/mean.hpp>
@@ -368,7 +369,9 @@ auto secondary_vertex(Jet const& lepton)
         if (std::abs(particle.PID) != get_id<Jet>()) print("Misidentified tau");
         distances(transverse_distance(particle));
     }
-    return mean(distances);
+    auto d = mean(distances);
+    if(d > 1) print("displaced tau", d);
+    return d;
 }
 
 template<typename Lepton>
@@ -425,6 +428,7 @@ auto get_signal(TTreeReader& reader)
     return count_if(reader, [&]() {
         particles.IsEmpty();
         auto taus = get_taus(jets);
+        print("number of taus", boost::size(taus));
         auto displaced = number_of_displaced(electrons, particles) + number_of_displaced(muons, particles) + number_of_displaced(taus, particles);
         auto hard = number_of_hard(electrons) + number_of_hard(muons) + number_of_hard(taus);
         print(displaced, hard,  displaced > 0 && hard > 0);
