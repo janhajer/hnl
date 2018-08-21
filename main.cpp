@@ -319,38 +319,38 @@ auto get_particles(Jet const& jet)
     return particles;
 }
 
-auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int check_id)
-{
-    std::vector<int> ids;
-    while (position != -1) {
-        auto& mother = particles.At(position);
-        if (std::abs(mother.PID) == check_id) return std::vector<int> {mother.PID};
-        ids.emplace_back(mother.PID);
-        position = mother.M1;
-    };
-    return ids;
-}
+// auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int check_id)
+// {
+//     std::vector<int> ids;
+//     while (position != -1) {
+//         auto& mother = particles.At(position);
+//         if (std::abs(mother.PID) == check_id) return std::vector<int> {mother.PID};
+//         ids.emplace_back(mother.PID);
+//         position = mother.M1;
+//     };
+//     return ids;
+// }
 
-template<typename Lepton>
-auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, int check_id)
-{
-    auto& particle = get_particle(lepton);
-    return std::abs(particle.PID) == check_id ? std::vector<int> {particle.PID} : origin(particles, particle.M1, check_id);
-}
-
-template<typename One, typename Two>
-auto insert(One& one, Two const& two)
-{
-    one.insert(one.end(), two.begin(), two.end());
-}
-
-template<>
-auto origin(Jet const& lepton, TTreeReaderArray<GenParticle> const& gen_particles, int check_id)
-{
-    std::vector<int> result;
-    for (auto const& particle : get_particles(lepton)) std::abs(particle.PID) == check_id ? result.emplace_back(particle.PID) : insert(result, origin(gen_particles, particle.M1, check_id));
-    return result;
-}
+// template<typename Lepton>
+// auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, int check_id)
+// {
+//     auto& particle = get_particle(lepton);
+//     return std::abs(particle.PID) == check_id ? std::vector<int> {particle.PID} : origin(particles, particle.M1, check_id);
+// }
+//
+// template<typename One, typename Two>
+// auto insert(One& one, Two const& two)
+// {
+//     one.insert(one.end(), two.begin(), two.end());
+// }
+//
+// template<>
+// auto origin(Jet const& lepton, TTreeReaderArray<GenParticle> const& gen_particles, int check_id)
+// {
+//     std::vector<int> result;
+//     for (auto const& particle : get_particles(lepton)) std::abs(particle.PID) == check_id ? result.emplace_back(particle.PID) : insert(result, origin(gen_particles, particle.M1, check_id));
+//     return result;
+// }
 
 template<typename Lepton>
 auto secondary_vertex(Lepton const& lepton)
@@ -374,9 +374,9 @@ auto secondary_vertex(Jet const& lepton)
 //     if (!hit) print("Misidentified tau", boost::adaptors::transform(particles, [](auto const& particle){
 //         return std::to_string(particle.PID) + " ";
 //     }));
-    auto d = mean(distances);
+    return mean(distances);
 //     if (d > 1) print("displaced tau", d);
-    return d;
+//     return d;
 }
 
 template<typename Lepton>
