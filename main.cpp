@@ -380,12 +380,14 @@ auto secondary_vertex(Jet const& lepton)
 }
 
 template<typename Lepton>
-auto min_disp(){
+auto min_disp()
+{
     return 5.;
 }
 
 template<typename Lepton>
-auto max_disp(){
+auto max_disp()
+{
     return 100.;
 }
 
@@ -395,7 +397,8 @@ auto max_disp(){
 // }
 
 template<typename Lepton>
-auto hard(){
+auto hard()
+{
     return 25.;
 }
 
@@ -425,6 +428,30 @@ auto number_of_displaced(Leptons const& leptons, TTreeReaderArray<GenParticle> c
 //         };
         return hit;
     });
+}
+
+template<typename Lepton, typename Predicate>
+auto find_erase(std::vector<Lepton>& leptons, Predicate predicate) -> boost::optional<Lepton> {
+    auto found = boost::range::find_if(leptons, predicate);
+    if (found == leptons.end()) return boost::none;
+    auto lepton = *found;
+    leptons.erase(found);
+    return lepton;
+}
+
+// template<typename Lepton>
+auto do_find(std::vector<Muon> leptons)
+{
+    auto displaced = find_erase(leptons, [](auto const & lepton) {
+        return secondary_vertex(lepton);
+    });
+    if (!displaced) return false;
+    auto hard = find_erase(leptons, [](auto const & lepton) {
+        return is_hard(lepton);
+    });
+    if (!hard) return false;
+    auto dR = displaced->P4().DeltaR(hard->P4());
+    return dR < 3.;
 }
 
 template<typename Leptons>
@@ -459,12 +486,9 @@ auto get_signal(TTreeReader& reader)
     return count_if(reader, [&]() {
         particles.IsEmpty();
         auto taus = get_taus(jets);
-//         print("number of taus", boost::size(taus));
-//         auto displaced = number_of_displaced(muons, particles);
-//         auto hard = number_of_hard(muons);
+
         auto displaced = number_of_displaced(electrons, particles) + number_of_displaced(muons, particles) + number_of_displaced(taus, particles);
         auto hard = number_of_hard(electrons) + number_of_hard(muons) + number_of_hard(taus);
-//         print(displaced, hard,  displaced > 0 && hard > 0);
         return displaced > 0 && hard > 0;
     });
 }
