@@ -366,11 +366,14 @@ auto secondary_vertex(Jet const& lepton)
     using namespace boost::accumulators;
     accumulator_set<float, stats<tag::mean>> distances;
     auto hit = false;
-    for (auto const& particle : get_particles(lepton)) {
+    auto particles = get_particles(lepton);
+    for (auto const& particle : particles) {
         if (std::abs(particle.PID) == get_id<Jet>()) hit = true;
         distances(transverse_distance(particle));
     }
-    if (!hit) print("Misidentified tau");
+    if (!hit) print("Misidentified tau", boost::adaptors::transform(particles, [](auto const& particle){
+        return particle.PID;
+    }));
     auto d = mean(distances);
 //     if (d > 1) print("displaced tau", d);
     return d;
