@@ -428,10 +428,12 @@ auto get_signal(TTreeReader& reader)
     return count_if(reader, [&]() {
         particles.IsEmpty();
         auto taus = get_taus(jets);
-        print("number of taus", boost::size(taus));
-        auto displaced = number_of_displaced(electrons, particles) + number_of_displaced(muons, particles) + number_of_displaced(taus, particles);
-        auto hard = number_of_hard(electrons) + number_of_hard(muons) + number_of_hard(taus);
-        print(displaced, hard,  displaced > 0 && hard > 0);
+//         print("number of taus", boost::size(taus));
+                auto displaced = number_of_displaced(muons, particles);
+        auto hard = number_of_hard(muons);
+//         auto displaced = number_of_displaced(electrons, particles) + number_of_displaced(muons, particles) + number_of_displaced(taus, particles);
+//         auto hard = number_of_hard(electrons) + number_of_hard(muons) + number_of_hard(taus);
+//         print(displaced, hard,  displaced > 0 && hard > 0);
         return displaced > 0 && hard > 0;
     });
 }
