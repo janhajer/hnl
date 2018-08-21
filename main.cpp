@@ -385,9 +385,19 @@ auto disp<Jet>(){
 }
 
 template<typename Lepton>
+auto hard(){
+    return 25.;
+}
+
+template<>
+auto hard<Jet>(){
+    return 50.;
+}
+
+template<typename Lepton>
 auto is_hard(Lepton const& lepton)
 {
-    return secondary_vertex(lepton) < disp<Lepton>() && lepton.PT > 25.;
+    return secondary_vertex(lepton) < disp<Lepton>() && lepton.PT > hard<Lepton>();
 }
 
 template<typename Leptons>
