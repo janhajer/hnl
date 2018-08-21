@@ -372,7 +372,7 @@ auto secondary_vertex(Jet const& lepton)
         distances(transverse_distance(particle));
     }
     if (!hit) print("Misidentified tau", boost::adaptors::transform(particles, [](auto const& particle){
-        return particle.PID;
+        return std::to_string(particle.PID) + " ";
     }));
     auto d = mean(distances);
 //     if (d > 1) print("displaced tau", d);
