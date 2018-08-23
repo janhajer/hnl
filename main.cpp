@@ -409,7 +409,7 @@ auto constituents(Jet const& jet)
 template<typename Lepton>
 auto number_of_tracks(Lepton const&)
 {
-    return 100.;
+    return 100;
 }
 
 template<>
@@ -432,7 +432,7 @@ struct Lepton {
     {
         if (auto mother = origin(lepton, gen_particles, id<Input>())) particle = *mother;
         else particle = no_particle(lepton);
-        print(tracks);
+        if(tracks != 100) print(tracks);
     }
     TLorentzVector lorentz_vector;
     GenParticle particle;
