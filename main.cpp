@@ -450,7 +450,7 @@ struct Lepton {
     {
         if (auto mother = origin(lepton, gen_particles, id<Input>())) particle = *mother;
         else particle = no_particle(lepton);
-        if(tracks != 100) print(tracks, track_momentum(lepton).Pt());
+//         if(tracks != 100) print(tracks, track_momentum(lepton).Pt());
     }
     TLorentzVector lorentz_vector;
     GenParticle particle;
@@ -460,7 +460,7 @@ struct Lepton {
 auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = transverse_distance(lepton.particle);
-    return d > 10. && d < 100.;
+    return d > 10. && d < 100. && lepton.tracks > 4;
 }
 
 auto is_hard(Lepton const& lepton)
