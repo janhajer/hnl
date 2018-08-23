@@ -487,6 +487,7 @@ auto is_signal(std::vector<Lep> leptons)
     });
     if (!hard) return false;
     auto dR = displaced->lorentz_vector.DeltaR(hard->lorentz_vector);
+    print(dR);
     return dR < 3.;
 }
 
