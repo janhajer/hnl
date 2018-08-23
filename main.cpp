@@ -449,8 +449,10 @@ struct Lepton {
         , tracks(number_of_tracks(lepton))
     {
         if (auto mother = origin(lepton, gen_particles, id<Input>())) particle = *mother;
-        else particle = no_particle(lepton);
-//         if(tracks != 100) print(tracks, track_momentum(lepton).Pt());
+        else {particle = no_particle(lepton);
+//         if(tracks != 100)
+            print(tracks, track_momentum(lepton).Pt());
+        }
     }
     TLorentzVector lorentz_vector;
     GenParticle particle;
