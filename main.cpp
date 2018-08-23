@@ -424,6 +424,24 @@ auto number_of_tracks(Jet const& jet)
     return number;
 }
 
+template<typename Lepton>
+auto track_momentum(Lepton const&)
+{
+    return TLorentzVector{};
+}
+
+template<>
+auto track_momentum(Jet const& jet)
+{
+    TLorentzVector momentum;
+    for (auto pos = 0; pos < jet.Constituents.GetEntriesFast(); ++pos) {
+        auto* object = jet.Constituents.At(pos);
+        if (!object) continue;
+        if (object->IsA() == Track::Class()) momentum += static_cast<Track&>(*object).P4();
+    }
+    return momentum;
+}
+
 struct Lepton {
     template<typename Input>
     Lepton(Input const& lepton, TTreeReaderArray<GenParticle> const& gen_particles) :
@@ -432,7 +450,7 @@ struct Lepton {
     {
         if (auto mother = origin(lepton, gen_particles, id<Input>())) particle = *mother;
         else particle = no_particle(lepton);
-        if(tracks != 100) print(tracks);
+        if(tracks != 100) print(tracks, track_momentum(lepton).Pt());
     }
     TLorentzVector lorentz_vector;
     GenParticle particle;
