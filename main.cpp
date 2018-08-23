@@ -462,7 +462,9 @@ struct Lepton {
 auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = transverse_distance(lepton.particle);
-    return d > 10. && d < 100. && lepton.tracks > 4;
+    return d > 10. && d < 100.
+//     && lepton.tracks > 4
+;
 }
 
 auto is_hard(Lepton const& lepton)
@@ -535,7 +537,7 @@ auto efficiency(boost::filesystem::path const& path)
         print("No events");
         return 0.;
     }
-    return count_signals(reader) / static_cast<double>(entries);
+    return std::min(count_signals(reader),10) / static_cast<double>(entries);
 }
 
 template<typename Result>
