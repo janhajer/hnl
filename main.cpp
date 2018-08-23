@@ -52,7 +52,7 @@ std::ostream& operator<<(std::ostream& stream, boost::filesystem::path const& pa
 
 std::ostream& operator<<(std::ostream& stream, GenParticle const& particle)
 {
-    return stream << "(" << particle.PID << ", " << particle.Status << ")";
+    return stream << "(" << particle.PID << ", " << transverse_distance(particle) << ")";
 }
 
 std::ostream& operator<<(std::ostream& stream, Muon const& muon)
@@ -452,9 +452,9 @@ enum class Generation
 };
 
 struct Lep {
-    Lep(Electron const& electron) : lorentz_vector(electron.P4()), particles({get_particle(electron)}), generation(Generation::electron) {};
-    Lep(Muon const& muon) : lorentz_vector(muon.P4()), particles({get_particle(muon)}), generation(Generation::muon) {};
-    Lep(Jet const& jet) : lorentz_vector(jet.P4()), particles(get_particles(jet)), generation(Generation::tau) {print(particles);};
+    Lep(Electron const& electron) : lorentz_vector(electron.P4()), particles({get_particle(electron)}), generation(Generation::electron) {}
+    Lep(Muon const& muon) : lorentz_vector(muon.P4()), particles({get_particle(muon)}), generation(Generation::muon) {}
+    Lep(Jet const& jet) : lorentz_vector(jet.P4()), particles(get_particles(jet)), generation(Generation::tau) {print(particles);}
     TLorentzVector lorentz_vector;
     std::vector<GenParticle> particles;
     Generation generation;
