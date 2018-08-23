@@ -420,22 +420,22 @@ auto hard()
 //     return 50.;
 // }
 
-template<typename Leptons>
-auto number_of_displaced(Leptons const& leptons, TTreeReaderArray<GenParticle> const& particles)
-{
-    using Lepton = typename Leptons::iterator::value_type;
-    return boost::count_if(leptons, [&](auto lepton) {
-        auto distance = secondary_vertex(lepton);
-        auto hit = distance > min_disp<Lepton>() && distance < max_disp<Lepton>();
-//         if (!hit) return hit;
-//         auto ids = origin(lepton, particles, neutrino_ID);
-//         if (std::abs(ids.front()) != neutrino_ID) {
-//             print_line(ids);
-//             print(distance);
-//         };
-        return hit;
-    });
-}
+// template<typename Leptons>
+// auto number_of_displaced(Leptons const& leptons, TTreeReaderArray<GenParticle> const& particles)
+// {
+//     using Lepton = typename Leptons::iterator::value_type;
+//     return boost::count_if(leptons, [&](auto lepton) {
+//         auto distance = secondary_vertex(lepton);
+//         auto hit = distance > min_disp<Lepton>() && distance < max_disp<Lepton>();
+// //         if (!hit) return hit;
+// //         auto ids = origin(lepton, particles, neutrino_ID);
+// //         if (std::abs(ids.front()) != neutrino_ID) {
+// //             print_line(ids);
+// //             print(distance);
+// //         };
+//         return hit;
+//     });
+// }
 
 template<typename Lepton, typename Predicate>
 auto find_erase(std::vector<Lepton>& leptons, Predicate predicate) -> boost::optional<Lepton> {
@@ -463,12 +463,18 @@ struct Lep {
     Generation generation;
 };
 
-auto secondary_vertex(Lep const& lepton)
+auto distance(Lep const& lepton)
 {
     using namespace boost::accumulators;
     accumulator_set<float, stats<tag::max>> distances;
     for (auto const& particle : lepton.particles) distances(transverse_distance(particle));
     return max(distances);
+}
+
+auto has_secondary_vertex(Lep const& lepton)
+{
+    auto d = distance(lepton);
+    return d > 10. && d < 100.;
 }
 
 auto is_hard(Lep const& lepton)
@@ -479,7 +485,7 @@ auto is_hard(Lep const& lepton)
 auto is_signal(std::vector<Lep> leptons)
 {
     auto displaced = find_erase(leptons, [](auto const & lepton) {
-        return secondary_vertex(lepton);
+        return has_secondary_vertex(lepton);
     });
     if (!displaced) return false;
     auto hard = find_erase(leptons, [](auto const & lepton) {
