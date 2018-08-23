@@ -5,7 +5,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/mean.hpp>
+// #include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/max.hpp>
 #include <boost/range/irange.hpp>
 #include <boost/range/size.hpp>
 #include <boost/range/numeric.hpp>
@@ -16,7 +17,6 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/algorithm/find_if.hpp>
-#include <boost/any.hpp>
 
 #include "TFile.h"
 #include "TTreeReader.h"
@@ -454,7 +454,10 @@ enum class Generation
 struct Lep {
     Lep(Electron const& electron) : lorentz_vector(electron.P4()), particles({get_particle(electron)}), generation(Generation::electron) {}
     Lep(Muon const& muon) : lorentz_vector(muon.P4()), particles({get_particle(muon)}), generation(Generation::muon) {}
-    Lep(Jet const& jet) : lorentz_vector(jet.P4()), particles(get_particles(jet)), generation(Generation::tau) {print(particles);}
+    Lep(Jet const& jet) : lorentz_vector(jet.P4()), particles(get_particles(jet)), generation(Generation::tau)
+    {
+//         print(particles);
+    }
     TLorentzVector lorentz_vector;
     std::vector<GenParticle> particles;
     Generation generation;
@@ -463,9 +466,9 @@ struct Lep {
 auto secondary_vertex(Lep const& lepton)
 {
     using namespace boost::accumulators;
-    accumulator_set<float, stats<tag::mean>> distances;
+    accumulator_set<float, stats<tag::max>> distances;
     for (auto const& particle : lepton.particles) distances(transverse_distance(particle));
-    return mean(distances);
+    return max(distances);
 }
 
 auto is_hard(Lep const& lepton)
@@ -511,9 +514,10 @@ auto get_taus(TTreeReaderArray<Jet> const& jets)
 }
 
 template<typename Leptons>
-auto get_leptons(Leptons const& leptons){
+auto get_leptons(Leptons const& leptons)
+{
     std::vector<Lep> leps;
-    for(auto const& lepton : leptons) leps.emplace_back(lepton);
+    for (auto const& lepton : leptons) leps.emplace_back(lepton);
     return leps;
 }
 
