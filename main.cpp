@@ -39,6 +39,37 @@ auto sqr(Object const& object)
     return object * object;
 }
 
+// template<typename Element>
+// auto operator+(std::vector<Element>& one, std::vector<Element> const& two)
+// {
+//     one.insert(one.end(), two.begin(), two.end());
+//     return one;
+// }
+
+template<typename Element>
+auto operator+(std::vector<Element> const& one, std::vector<Element> const& two)
+{
+    auto copy = one;
+    copy.insert(copy.end(), two.begin(), two.end());
+    return copy;
+}
+
+template<typename Element>
+auto& operator+=(std::vector<Element>& one, std::vector<Element> const& two)
+{
+    one.insert(one.end(), two.begin(), two.end());
+    return one;
+}
+
+template<typename Element, typename Predicate>
+auto find_erase(std::vector<Element>& container, Predicate predicate) -> boost::optional<Element> {
+    auto found = boost::range::find_if(container, predicate);
+    if (found == container.end()) return boost::none;
+    auto element = *found;
+    container.erase(found);
+    return element;
+}
+
 template<typename Particle>
 auto transverse_distance(Particle const& particle)
 {
@@ -332,6 +363,16 @@ auto get_particles(Jet const& jet)
 //     return ids;
 // }
 
+auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int check_id) -> boost::optional<GenParticle> {
+    while (position != -1)
+    {
+        auto& mother = particles.At(position);
+        if (std::abs(mother.PID) == check_id) return mother;
+        position = mother.M1;
+    };
+    return boost::none;
+}
+
 // template<typename Lepton>
 // auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, int check_id)
 // {
@@ -339,28 +380,27 @@ auto get_particles(Jet const& jet)
 //     return std::abs(particle.PID) == check_id ? std::vector<int> {particle.PID} : origin(particles, particle.M1, check_id);
 // }
 
-template<typename Element>
-auto operator+(std::vector<Element>& one, std::vector<Element> const& two)
-{
-    one.insert(one.end(), two.begin(), two.end());
-    return one;
-}
 
-template<typename Element>
-auto operator+(std::vector<Element> const& one, std::vector<Element> const& two)
-{
-    auto copy = one;
-    copy.insert(copy.end(), two.begin(), two.end());
-    return copy;
-}
 
 // template<>
-// auto origin(Jet const& lepton, TTreeReaderArray<GenParticle> const& gen_particles, int check_id)
+// auto origin(Jet const& tau, TTreeReaderArray<GenParticle> const& gen_particles, int check_id)
 // {
 //     std::vector<int> result;
-//     for (auto const& particle : get_particles(lepton)) std::abs(particle.PID) == check_id ? result.emplace_back(particle.PID) : insert(result, origin(gen_particles, particle.M1, check_id));
+//     for (auto const& particle : get_particles(tau)) {
+//         if (std::abs(particle.PID) == check_id) result.emplace_back(particle.PID);
+//         else result += origin(gen_particles, particle.M1, check_id);
+//     }
 //     return result;
 // }
+
+auto origin(Jet const& tau, TTreeReaderArray<GenParticle> const& gen_particles, int check_id) -> boost::optional<GenParticle> {
+    for (auto const& particle : get_particles(tau))
+    {
+        if (std::abs(particle.PID) == check_id) return particle;
+        if (auto mother = origin(gen_particles, particle.M1, check_id)) return mother;
+    }
+    return boost::none;
+}
 
 // template<typename Lepton>
 // auto secondary_vertex(Lepton const& lepton)
@@ -391,29 +431,29 @@ auto operator+(std::vector<Element> const& one, std::vector<Element> const& two)
 
 
 
-template<typename Lepton>
-auto min_disp()
-{
-    return 10.;
-}
-
-template<typename Lepton>
-auto max_disp()
-{
-    return 100.;
-}
-
-template<>
-auto min_disp<Jet>()
-{
-    return 30.;
-}
-
-template<typename Lepton>
-auto hard()
-{
-    return 25.;
-}
+// template<typename Lepton>
+// auto min_disp()
+// {
+//     return 10.;
+// }
+//
+// template<typename Lepton>
+// auto max_disp()
+// {
+//     return 100.;
+// }
+//
+// template<>
+// auto min_disp<Jet>()
+// {
+//     return 30.;
+// }
+//
+// template<typename Lepton>
+// auto hard()
+// {
+//     return 25.;
+// }
 
 // template<>
 // auto hard<Jet>(){
@@ -437,52 +477,56 @@ auto hard()
 //     });
 // }
 
-template<typename Lepton, typename Predicate>
-auto find_erase(std::vector<Lepton>& leptons, Predicate predicate) -> boost::optional<Lepton> {
-    auto found = boost::range::find_if(leptons, predicate);
-    if (found == leptons.end()) return boost::none;
-    auto lepton = *found;
-    leptons.erase(found);
-    return lepton;
-}
-
 enum class Generation
 {
     electron, muon, tau
 };
 
-struct Lep {
-    Lep(Electron const& electron) : lorentz_vector(electron.P4()), particles({get_particle(electron)}), generation(Generation::electron) {}
-    Lep(Muon const& muon) : lorentz_vector(muon.P4()), particles({get_particle(muon)}), generation(Generation::muon) {}
-    Lep(Jet const& jet) : lorentz_vector(jet.P4()), particles(get_particles(jet)), generation(Generation::tau)
+struct Lepton {
+    Lepton(Electron const& electron) :
+        lorentz_vector(electron.P4()),
+        particle(get_particle(electron)),
+              generation(Generation::electron)
+    {}
+    Lepton(Muon const& muon) :
+        lorentz_vector(muon.P4()),
+        particle(get_particle(muon)),
+              generation(Generation::muon)
+    {}
+    Lepton(Jet const& jet, TTreeReaderArray<GenParticle> const& gen_particles) :
+        lorentz_vector(jet.P4()),
+        generation(Generation::tau)
     {
+        if(auto mother = origin(jet, gen_particles, tau_ID)) particle = *mother;
+        else particle = GenParticle();
 //         print(particles);
     }
     TLorentzVector lorentz_vector;
-    std::vector<GenParticle> particles;
+    GenParticle particle;
     Generation generation;
 };
 
-auto distance(Lep const& lepton)
+auto distance(Lepton const& lepton)
 {
-    using namespace boost::accumulators;
-    accumulator_set<float, stats<tag::max>> distances;
-    for (auto const& particle : lepton.particles) distances(transverse_distance(particle));
-    return max(distances);
+    return transverse_distance(lepton.particle);
+//     using namespace boost::accumulators;
+//     accumulator_set<float, stats<tag::max>> distances;
+//     for (auto const& particle : lepton.particles) distances(transverse_distance(particle));
+//     return max(distances);
 }
 
-auto has_secondary_vertex(Lep const& lepton)
+auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = distance(lepton);
     return d > 10. && d < 100.;
 }
 
-auto is_hard(Lep const& lepton)
+auto is_hard(Lepton const& lepton)
 {
     return lepton.lorentz_vector.Pt() > 25.;
 }
 
-auto is_signal(std::vector<Lep> leptons)
+auto is_signal(std::vector<Lepton> leptons)
 {
     auto displaced = find_erase(leptons, [](auto const & lepton) {
         return has_secondary_vertex(lepton);
@@ -505,6 +549,29 @@ auto is_signal(std::vector<Lep> leptons)
 //     });
 // }
 
+template<typename Container>
+auto get_leptons(Container const& container)
+{
+    std::vector<Lepton> leptons;
+    for (auto const& lepton : container) leptons.emplace_back(lepton);
+    return leptons;
+}
+
+template<typename Container>
+auto get_leptons(Container const& container, TTreeReaderArray<GenParticle> const& particles)
+{
+    std::vector<Lepton> leptons;
+    for (auto const& lepton : container) leptons.emplace_back(lepton, particles);
+    return leptons;
+}
+
+auto filter_taus(TTreeReaderArray<Jet> const& jets)
+{
+    return boost::adaptors::filter(jets, [](auto const & jet) {
+        return jet.TauTag;
+    });
+}
+
 template<typename Predicate>
 auto count_if(TTreeReader& reader, Predicate predicate)
 {
@@ -513,22 +580,7 @@ auto count_if(TTreeReader& reader, Predicate predicate)
     return counter;
 }
 
-auto get_taus(TTreeReaderArray<Jet> const& jets)
-{
-    return boost::adaptors::filter(jets, [](auto const & jet) {
-        return jet.TauTag;
-    });
-}
-
-template<typename Leptons>
-auto get_leptons(Leptons const& leptons)
-{
-    std::vector<Lep> leps;
-    for (auto const& lepton : leptons) leps.emplace_back(lepton);
-    return leps;
-}
-
-auto get_signal(TTreeReader& reader)
+auto count_signals(TTreeReader& reader)
 {
     TTreeReaderArray<Electron> electrons(reader, "Electron");
     TTreeReaderArray<Muon> muons(reader, "Muon");
@@ -536,18 +588,12 @@ auto get_signal(TTreeReader& reader)
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
     return count_if(reader, [&]() {
         particles.IsEmpty();
-        auto taus = get_taus(jets);
-        auto leptons = get_leptons(electrons) + get_leptons(muons) + get_leptons(taus);
+        auto leptons = get_leptons(electrons) + get_leptons(muons) + get_leptons(filter_taus(jets), particles);
         return is_signal(leptons);
-
-//         auto displaced = number_of_displaced(electrons, particles) + number_of_displaced(muons, particles) + number_of_displaced(taus, particles);
-//         auto hard = number_of_hard(electrons) + number_of_hard(muons) + number_of_hard(taus);
-//         if (displaced > 1 && hard > 1) print(displaced, hard);
-//         return displaced > 0 && hard > 0;
     });
 }
 
-auto get_efficiency(boost::filesystem::path const& path)
+auto efficiency(boost::filesystem::path const& path)
 {
     TFile file(delphes_file(path).c_str(), "read");
     TTreeReader reader("Delphes", &file);
@@ -556,13 +602,13 @@ auto get_efficiency(boost::filesystem::path const& path)
         print("No events");
         return 0.;
     }
-    return get_signal(reader) / static_cast<double>(entries);
+    return count_signals(reader) / static_cast<double>(entries);
 }
 
 template<typename Result>
 void save_result(Result const& result, std::string const& process)
 {
-    print_line(result);
+    print(result);
     std::ofstream file("./" + process + ".dat");
     std::ostream_iterator<std::string> iterator(file, "\n");
     boost::copy(result, iterator);
@@ -574,7 +620,7 @@ auto get_result(boost::filesystem::path const& folder)
     result += " " + get_e_coupling(folder);
     result += " " + get_mu_coupling(folder);
     result += " " + get_tau_coupling(folder);
-    result += " " + std::to_string(get_efficiency(folder));
+    result += " " + std::to_string(efficiency(folder));
     result += " " + get_xsec(folder);
     result += " " + get_width(folder);
     print(result);
