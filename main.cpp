@@ -220,8 +220,7 @@ struct File {
     std::ifstream file;
 };
 
-struct Line
-{
+struct Line {
     friend std::istream& operator>>(std::istream& stream, Line& line)
     {
         std::getline(stream, line.string);
@@ -385,7 +384,7 @@ auto name<Jet>()
 }
 
 template<typename Lepton>
-auto no_particle(Lepton const& )
+auto no_particle(Lepton const&)
 {
     print("no", name<Lepton>());
     GenParticle particle;
@@ -394,16 +393,50 @@ auto no_particle(Lepton const& )
     return particle;
 }
 
+auto constituents(Jet const& jet)
+{
+    TLorentzVector momentum;
+    for (auto pos = 0; pos < jet.Constituents.GetEntriesFast(); ++pos) {
+        auto* object = jet.Constituents.At(pos);
+        if (!object) continue;
+        if (object->IsA() == GenParticle::Class()) momentum += static_cast<GenParticle&>(*object).P4();
+        else if (object->IsA() == Track::Class()) momentum += static_cast<Track&>(*object).P4();
+        else if (object->IsA() == Tower::Class()) momentum += static_cast<Tower&>(*object).P4();
+    }
+    return momentum;
+}
+
+template<typename Lepton>
+auto number_of_tracks(Lepton const&)
+{
+    return 100.;
+}
+
+template<>
+auto number_of_tracks(Jet const& jet)
+{
+    auto number = 0;
+    for (auto pos = 0; pos < jet.Constituents.GetEntriesFast(); ++pos) {
+        auto* object = jet.Constituents.At(pos);
+        if (!object) continue;
+        if (object->IsA() == Track::Class()) ++number;
+    }
+    return number;
+}
+
 struct Lepton {
     template<typename Input>
     Lepton(Input const& lepton, TTreeReaderArray<GenParticle> const& gen_particles) :
         lorentz_vector(lepton.P4())
+        , tracks(number_of_tracks(lepton))
     {
         if (auto mother = origin(lepton, gen_particles, id<Input>())) particle = *mother;
         else particle = no_particle(lepton);
+        print(tracks);
     }
     TLorentzVector lorentz_vector;
     GenParticle particle;
+    int tracks;
 };
 
 auto has_secondary_vertex(Lepton const& lepton)
@@ -422,7 +455,7 @@ auto back_to_back(Lepton const& one, Lepton const& two)
     return one.lorentz_vector.DeltaR(two.lorentz_vector) > 4.;
 }
 
-auto is_signal(std::vector<Lepton> & leptons)
+auto is_signal(std::vector<Lepton>& leptons)
 {
     auto displaced = find_erase(leptons, [](auto const & lepton) {
         return has_secondary_vertex(lepton);
