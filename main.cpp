@@ -337,9 +337,9 @@ auto get_width(boost::filesystem::path const& path)
 }
 
 template<typename Lepton>
-auto& get_particle(Lepton const& lepton)
+auto get_particles(Lepton const& lepton)
 {
-    return static_cast<GenParticle&>(*lepton.Particle.GetObject());
+    return std::vector<GenParticle>({static_cast<GenParticle&>(*lepton.Particle.GetObject())});
 }
 
 auto get_particles(Jet const& jet)
@@ -393,8 +393,9 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int ch
 //     return result;
 // }
 
-auto origin(Jet const& tau, TTreeReaderArray<GenParticle> const& gen_particles, int check_id) -> boost::optional<GenParticle> {
-    for (auto const& particle : get_particles(tau))
+template<typename Lepton>
+auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& gen_particles, int check_id) -> boost::optional<GenParticle> {
+    for (auto const& particle : get_particles(lepton))
     {
         if (std::abs(particle.PID) == check_id) return particle;
         if (auto mother = origin(gen_particles, particle.M1, check_id)) return mother;
@@ -483,27 +484,50 @@ enum class Generation
 };
 
 struct Lepton {
-    Lepton(Electron const& electron) :
-        lorentz_vector(electron.P4()),
-        particle(get_particle(electron)),
-              generation(Generation::electron)
-    {}
-    Lepton(Muon const& muon) :
-        lorentz_vector(muon.P4()),
-        particle(get_particle(muon)),
-              generation(Generation::muon)
-    {}
-    Lepton(Jet const& jet, TTreeReaderArray<GenParticle> const& gen_particles) :
-        lorentz_vector(jet.P4()),
-        generation(Generation::tau)
+    Lepton(Electron const& electron, TTreeReaderArray<GenParticle> const& gen_particles) :
+        lorentz_vector(electron.P4())
+//         particle(get_particle(electron))
+//         ,generation(Generation::electron)
     {
-        if(auto mother = origin(jet, gen_particles, tau_ID)) particle = *mother;
-        else particle = GenParticle();
-//         print(particles);
+        if (auto mother = origin(electron, gen_particles, electron_ID)) {
+            particle = *mother;
+            print("electron");
+        }
+        else {
+            particle = GenParticle();
+            print("no electron");
+        }
+    }
+    Lepton(Muon const& muon, TTreeReaderArray<GenParticle> const& gen_particles) :
+        lorentz_vector(muon.P4())
+//         particle(get_particle(muon))
+//         ,generation(Generation::muon)
+    {
+        if (auto mother = origin(muon, gen_particles, muon_ID)){
+            particle = *mother;
+            print("muon");
+        }
+        else {
+            particle = GenParticle();
+            print("no muon");
+        }
+    }
+    Lepton(Jet const& jet, TTreeReaderArray<GenParticle> const& gen_particles) :
+        lorentz_vector(jet.P4())
+//         ,generation(Generation::tau)
+    {
+        if (auto mother = origin(jet, gen_particles, tau_ID)) {
+            particle = *mother;
+            print("tau");
+        }
+        else {
+            particle = GenParticle();
+            print("no tau");
+        }
     }
     TLorentzVector lorentz_vector;
     GenParticle particle;
-    Generation generation;
+//     Generation generation;
 };
 
 auto distance(Lepton const& lepton)
@@ -549,13 +573,13 @@ auto is_signal(std::vector<Lepton> leptons)
 //     });
 // }
 
-template<typename Container>
-auto get_leptons(Container const& container)
-{
-    std::vector<Lepton> leptons;
-    for (auto const& lepton : container) leptons.emplace_back(lepton);
-    return leptons;
-}
+// template<typename Container>
+// auto get_leptons(Container const& container)
+// {
+//     std::vector<Lepton> leptons;
+//     for (auto const& lepton : container) leptons.emplace_back(lepton);
+//     return leptons;
+// }
 
 template<typename Container>
 auto get_leptons(Container const& container, TTreeReaderArray<GenParticle> const& particles)
@@ -588,7 +612,7 @@ auto count_signals(TTreeReader& reader)
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
     return count_if(reader, [&]() {
         particles.IsEmpty();
-        auto leptons = get_leptons(electrons) + get_leptons(muons) + get_leptons(filter_taus(jets), particles);
+        auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) + get_leptons(filter_taus(jets), particles);
         return is_signal(leptons);
     });
 }
