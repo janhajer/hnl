@@ -3,10 +3,6 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-// #include <boost/accumulators/statistics/mean.hpp>
-#include <boost/accumulators/statistics/max.hpp>
 #include <boost/range/irange.hpp>
 #include <boost/range/size.hpp>
 #include <boost/range/numeric.hpp>
@@ -33,19 +29,6 @@ auto const electron_ID = 11;
 auto const muon_ID = 13;
 auto const tau_ID = 15;
 
-template<typename Object>
-auto sqr(Object const& object)
-{
-    return object * object;
-}
-
-// template<typename Element>
-// auto operator+(std::vector<Element>& one, std::vector<Element> const& two)
-// {
-//     one.insert(one.end(), two.begin(), two.end());
-//     return one;
-// }
-
 template<typename Element>
 auto operator+(std::vector<Element> const& one, std::vector<Element> const& two)
 {
@@ -68,6 +51,12 @@ auto find_erase(std::vector<Element>& container, Predicate predicate) -> boost::
     auto element = *found;
     container.erase(found);
     return element;
+}
+
+template<typename Object>
+auto sqr(Object const& object)
+{
+    return object * object;
 }
 
 template<typename Particle>
@@ -131,31 +120,6 @@ void print_line(Container const& container)
 {
     for (auto const& element : container) std::cout << element << ", ";
     std::cout << std::endl;
-}
-
-template<typename Lepton>
-auto get_id()
-{
-    print("code gone wrong");
-    return 0;
-}
-
-template <>
-auto get_id<Electron>()
-{
-    return electron_ID;
-}
-
-template <>
-auto get_id<Muon>()
-{
-    return muon_ID;
-}
-
-template <>
-auto get_id<Jet>()
-{
-    return tau_ID;
 }
 
 std::string join_folder(std::string const& string)
@@ -337,31 +301,18 @@ auto get_width(boost::filesystem::path const& path)
 }
 
 template<typename Lepton>
-auto get_particles(Lepton const& lepton)
-{
-    return std::vector<GenParticle>({static_cast<GenParticle&>(*lepton.Particle.GetObject())});
+auto get_particles(Lepton const& lepton) -> std::vector<GenParticle> {
+    return {static_cast<GenParticle&>(*lepton.Particle.GetObject())};
 }
 
-auto get_particles(Jet const& jet)
-{
+template<>
+auto get_particles(Jet const& jet) -> std::vector<GenParticle> {
     std::vector<GenParticle> particles;
     auto* iterator = static_cast<TRefArrayIter*>(jet.Particles.MakeIterator());
     if (!iterator) return particles;
     while (auto* object = iterator->Next()) particles.emplace_back(*static_cast<GenParticle*>(object));
     return particles;
 }
-
-// auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int check_id)
-// {
-//     std::vector<int> ids;
-//     while (position != -1) {
-//         auto& mother = particles.At(position);
-//         if (std::abs(mother.PID) == check_id) return std::vector<int> {mother.PID};
-//         ids.emplace_back(mother.PID);
-//         position = mother.M1;
-//     };
-//     return ids;
-// }
 
 auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int check_id) -> boost::optional<GenParticle> {
     while (position != -1)
@@ -373,26 +324,6 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int ch
     return boost::none;
 }
 
-// template<typename Lepton>
-// auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, int check_id)
-// {
-//     auto& particle = get_particle(lepton);
-//     return std::abs(particle.PID) == check_id ? std::vector<int> {particle.PID} : origin(particles, particle.M1, check_id);
-// }
-
-
-
-// template<>
-// auto origin(Jet const& tau, TTreeReaderArray<GenParticle> const& gen_particles, int check_id)
-// {
-//     std::vector<int> result;
-//     for (auto const& particle : get_particles(tau)) {
-//         if (std::abs(particle.PID) == check_id) result.emplace_back(particle.PID);
-//         else result += origin(gen_particles, particle.M1, check_id);
-//     }
-//     return result;
-// }
-
 template<typename Lepton>
 auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& gen_particles, int check_id) -> boost::optional<GenParticle> {
     for (auto const& particle : get_particles(lepton))
@@ -403,151 +334,62 @@ auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& gen_parti
     return boost::none;
 }
 
-// template<typename Lepton>
-// auto secondary_vertex(Lepton const& lepton)
-// {
-//     auto& particle = get_particle(lepton);
-//     if (std::abs(particle.PID) != get_id<Lepton>()) print("Misidentified lepton");
-//     return transverse_distance(particle);
-// }
-
-// template<>
-// auto secondary_vertex(Jet const& lepton)
-// {
-//     using namespace boost::accumulators;
-//     accumulator_set<float, stats<tag::mean>> distances;
-// //     auto hit = false;
-//     auto particles = get_particles(lepton);
-//     for (auto const& particle : particles) {
-// //         if (std::abs(particle.PID) == get_id<Jet>()) hit = true;
-//         distances(transverse_distance(particle));
-//     }
-// //     if (!hit) print("Misidentified tau", boost::adaptors::transform(particles, [](auto const& particle){
-// //         return std::to_string(particle.PID) + " ";
-// //     }));
-//     return mean(distances);
-// //     if (d > 1) print("displaced tau", d);
-// //     return d;
-// }
-
-
-
-// template<typename Lepton>
-// auto min_disp()
-// {
-//     return 10.;
-// }
-//
-// template<typename Lepton>
-// auto max_disp()
-// {
-//     return 100.;
-// }
-//
-// template<>
-// auto min_disp<Jet>()
-// {
-//     return 30.;
-// }
-//
-// template<typename Lepton>
-// auto hard()
-// {
-//     return 25.;
-// }
-
-// template<>
-// auto hard<Jet>(){
-//     return 50.;
-// }
-
-// template<typename Leptons>
-// auto number_of_displaced(Leptons const& leptons, TTreeReaderArray<GenParticle> const& particles)
-// {
-//     using Lepton = typename Leptons::iterator::value_type;
-//     return boost::count_if(leptons, [&](auto lepton) {
-//         auto distance = secondary_vertex(lepton);
-//         auto hit = distance > min_disp<Lepton>() && distance < max_disp<Lepton>();
-// //         if (!hit) return hit;
-// //         auto ids = origin(lepton, particles, neutrino_ID);
-// //         if (std::abs(ids.front()) != neutrino_ID) {
-// //             print_line(ids);
-// //             print(distance);
-// //         };
-//         return hit;
-//     });
-// }
-
-enum class Generation
-{
-    electron, muon, tau
-};
+auto no_particle(){
+    GenParticle particle;
+    particle.X = 0;
+    particle.Y = 0;
+    return particle;
+}
 
 struct Lepton {
     Lepton(Electron const& electron, TTreeReaderArray<GenParticle> const& gen_particles) :
         lorentz_vector(electron.P4())
-//         particle(get_particle(electron))
-//         ,generation(Generation::electron)
     {
         if (auto mother = origin(electron, gen_particles, electron_ID)) {
             particle = *mother;
-//             print("electron");
-        }
-        else {
-            particle = GenParticle();
+        } else {
+            particle = no_particle();
             print("no electron");
         }
     }
     Lepton(Muon const& muon, TTreeReaderArray<GenParticle> const& gen_particles) :
         lorentz_vector(muon.P4())
-//         particle(get_particle(muon))
-//         ,generation(Generation::muon)
     {
-        if (auto mother = origin(muon, gen_particles, muon_ID)){
+        if (auto mother = origin(muon, gen_particles, muon_ID)) {
             particle = *mother;
-//             print("muon");
-        }
-        else {
-            particle = GenParticle();
+        } else {
+            particle = no_particle();
             print("no muon");
         }
     }
     Lepton(Jet const& jet, TTreeReaderArray<GenParticle> const& gen_particles) :
         lorentz_vector(jet.P4())
-//         ,generation(Generation::tau)
     {
         if (auto mother = origin(jet, gen_particles, tau_ID)) {
             particle = *mother;
-//             print("tau");
-        }
-        else {
-            particle = GenParticle();
+        } else {
+            particle = no_particle();
             print("no tau");
         }
     }
     TLorentzVector lorentz_vector;
     GenParticle particle;
-//     Generation generation;
 };
-
-auto distance(Lepton const& lepton)
-{
-    return transverse_distance(lepton.particle);
-//     using namespace boost::accumulators;
-//     accumulator_set<float, stats<tag::max>> distances;
-//     for (auto const& particle : lepton.particles) distances(transverse_distance(particle));
-//     return max(distances);
-}
 
 auto has_secondary_vertex(Lepton const& lepton)
 {
-    auto d = distance(lepton);
+    auto d = transverse_distance(lepton.particle);
     return d > 10. && d < 100.;
 }
 
 auto is_hard(Lepton const& lepton)
 {
     return lepton.lorentz_vector.Pt() > 25.;
+}
+
+auto back_to_back(Lepton const& one, Lepton const& two)
+{
+    return one.lorentz_vector.DeltaR(two.lorentz_vector) > 4.;
 }
 
 auto is_signal(std::vector<Lepton> leptons)
@@ -560,9 +402,7 @@ auto is_signal(std::vector<Lepton> leptons)
         return is_hard(lepton);
     });
     if (!hard) return false;
-    auto dR = displaced->lorentz_vector.DeltaR(hard->lorentz_vector);
-//     print(dR);
-    return dR < 4.;
+    return !back_to_back(*displaced, *hard);
 }
 
 // template<typename Leptons>
