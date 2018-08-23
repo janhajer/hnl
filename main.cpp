@@ -499,7 +499,7 @@ auto count_signals(TTreeReader& reader)
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
     return count_if(reader, [&]() {
         particles.IsEmpty();
-        auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) /*+ get_leptons(filter_taus(jets), particles)*/;
+        auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) + get_leptons(filter_taus(jets), particles);
         return is_signal(leptons);
     });
 }
