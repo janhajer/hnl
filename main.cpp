@@ -540,7 +540,7 @@ auto efficiency_1(boost::filesystem::path const& path)
 
 auto same_sign(Lepton const& one, Lepton const& two)
 {
-    return one.charge == two.charge;
+    return one.charge == two.charge && one.charge > 0;
 }
 
 
