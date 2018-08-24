@@ -427,7 +427,7 @@ auto number_of_tracks(Jet const& jet)
 template<typename Lepton>
 auto track_momentum(Lepton const&)
 {
-    return TLorentzVector{};
+    return TLorentzVector {};
 }
 
 template<>
@@ -446,16 +446,19 @@ struct Lepton {
     template<typename Input>
     Lepton(Input const& lepton, TTreeReaderArray<GenParticle> const& gen_particles) :
         lorentz_vector(lepton.P4())
+        , charge(lepton.Charge)
 //         , tracks(number_of_tracks(lepton))
     {
         if (auto mother = origin(lepton, gen_particles, id<Input>())) particle = *mother;
-        else {particle = no_particle(lepton);
+        else {
+            particle = no_particle(lepton);
 //         if(tracks != 100)
 //             print(tracks, track_momentum(lepton).Pt());
         }
     }
     TLorentzVector lorentz_vector;
     GenParticle particle;
+    int charge;
 //     int tracks;
 };
 
@@ -464,7 +467,7 @@ auto has_secondary_vertex(Lepton const& lepton)
     auto d = transverse_distance(lepton.particle);
     return d > 10. && d < 100.
 //     && lepton.tracks > 4
-;
+           ;
 }
 
 auto is_hard(Lepton const& lepton)
@@ -528,17 +531,57 @@ auto count_signals(TTreeReader& reader)
     });
 }
 
-auto efficiency(boost::filesystem::path const& path)
+auto efficiency_1(boost::filesystem::path const& path)
 {
     TFile file(delphes_file(path).c_str(), "read");
     TTreeReader reader("Delphes", &file);
-    auto entries = reader.GetEntries(false);
-    if (entries == 0) {
-        print("No events");
-        return 0.;
-    }
-    auto n = count_signals(reader);
-    return (n < 10 ? 0 : n) / static_cast<double>(entries);
+    return count_signals(reader);
+}
+
+auto same_sign(Lepton const& one, Lepton const& two)
+{
+    return one.charge == two.charge;
+}
+
+
+auto is_signal_2(std::vector<Lepton>& leptons)
+{
+    auto hard = find_erase(leptons, [](auto const & lepton) {
+        return is_hard(lepton);
+    });
+    if (!hard) return false;
+    auto second = find_erase(leptons, [](auto const & lepton) {
+        return is_hard(lepton);
+    });
+    if (!second) return false;
+    return !back_to_back(*second, *hard) && same_sign(*second, *hard);
+}
+
+auto count_signals_2(TTreeReader& reader)
+{
+    TTreeReaderArray<Electron> electrons(reader, "Electron");
+    TTreeReaderArray<Muon> muons(reader, "Muon");
+    TTreeReaderArray<Jet> jets(reader, "Jet");
+    TTreeReaderArray<GenParticle> particles(reader, "Particle");
+    return count_if(reader, [&]() {
+        particles.IsEmpty();
+        auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) + get_leptons(filter_taus(jets), particles);
+        return is_signal_2(leptons);
+    });
+}
+
+auto efficiency_2(boost::filesystem::path const& path)
+{
+    TFile file(delphes_file(path).c_str(), "read");
+    TTreeReader reader("Delphes", &file);
+    return count_signals_2(reader);
+}
+
+auto total(boost::filesystem::path const& path)
+{
+    TFile file(delphes_file(path).c_str(), "read");
+    TTreeReader reader("Delphes", &file);
+    return reader.GetEntries(false);
 }
 
 template<typename Result>
@@ -556,7 +599,9 @@ auto get_result(boost::filesystem::path const& folder)
     result += " " + get_e_coupling(folder);
     result += " " + get_mu_coupling(folder);
     result += " " + get_tau_coupling(folder);
-    result += " " + std::to_string(efficiency(folder));
+    result += " " + std::to_string(total(folder));
+    result += " " + std::to_string(efficiency_1(folder));
+    result += " " + std::to_string(efficiency_2(folder));
     result += " " + get_xsec(folder);
     result += " " + get_width(folder);
     print(result);
@@ -569,7 +614,9 @@ auto get_header()
     header += " e_coupling";
     header += " mu_coupling";
     header += " tau_coupling";
-    header += " efficiency";
+    header += " total";
+    header += " signal1";
+    header += " signal2";
     header += " crosssection";
     header += " width";
     print(header);
