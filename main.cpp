@@ -465,14 +465,14 @@ struct Lepton {
 auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = transverse_distance(lepton.particle);
-    return d > 10. && d < 100.
+    return d > 5. && d < 100.
 //     && lepton.tracks > 4
            ;
 }
 
 auto is_hard(Lepton const& lepton)
 {
-    return lepton.lorentz_vector.Pt() > 25.;
+    return lepton.lorentz_vector.Pt() > 25. && transverse_distance(lepton.particle) < 5.;
 }
 
 auto back_to_back(Lepton const& one, Lepton const& two)
