@@ -524,7 +524,7 @@ template<typename Predicate>
 auto count_events_if(TTreeReader& reader, Predicate predicate)
 {
     TTreeReaderArray<Electron> electrons(reader, "Electron");
-    TTreeReaderArray<Muon> muons(reader, "Muon");
+    TTreeReaderArray<Muon> muons(reader, "MuonLoose");
     TTreeReaderArray<Jet> jets(reader, "Jet");
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
 //     TTreeReaderArray<Track> tracks(reader, "Track");
