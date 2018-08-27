@@ -158,6 +158,10 @@ auto has_ending(std::string const& string, std::string const& ending)
     return string.length() >= ending.length() ? 0 == string.compare(string.length() - ending.length(), ending.length(), ending) : false;
 }
 
+auto has_tag(std::string const& string){
+    return string.find("tag_2") != std::string::npos;
+}
+
 auto is_directory = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_directory);
 
 auto is_decayed_folder = [](boost::filesystem::path const& path)
@@ -190,7 +194,7 @@ auto is_regular_file = static_cast<bool (*)(boost::filesystem::path const&)>(&bo
 
 auto is_delphes = [](boost::filesystem::path const& path)
 {
-    return has_ending(path.filename().string(), "_delphes_events.root");
+    return has_ending(path.filename().string(), "_delphes_events.root") && has_tag(path.filename().string());
 };
 
 auto delphes_file(boost::filesystem::path const& path)
@@ -202,7 +206,7 @@ auto delphes_file(boost::filesystem::path const& path)
 
 auto is_banner = [](boost::filesystem::path const& path)
 {
-    return has_ending(path.filename().string(), "_banner.txt");
+    return has_ending(path.filename().string(), "_banner.txt") && has_tag(path.filename().string());
 };
 
 auto banner_file(boost::filesystem::path const& path)
