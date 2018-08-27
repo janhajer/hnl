@@ -480,7 +480,7 @@ auto back_to_back(Lepton const& one, Lepton const& two)
     return one.lorentz_vector.DeltaR(two.lorentz_vector) > 4.;
 }
 
-auto is_signal(std::vector<Lepton>& leptons)
+auto is_displaced_signal(std::vector<Lepton>& leptons)
 {
     auto displaced = find_erase(leptons, [](auto const & lepton) {
         return has_secondary_vertex(lepton);
@@ -516,7 +516,8 @@ auto count_if(TTreeReader& reader, Predicate predicate)
     return counter;
 }
 
-auto count_signals(TTreeReader& reader)
+template<typename Predicate>
+auto count_events_if(TTreeReader& reader, Predicate predicate)
 {
     TTreeReaderArray<Electron> electrons(reader, "Electron");
     TTreeReaderArray<Muon> muons(reader, "Muon");
@@ -527,15 +528,30 @@ auto count_signals(TTreeReader& reader)
         particles.IsEmpty();
 //         tracks.IsEmpty();
         auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) + get_leptons(filter_taus(jets), particles);
-        return is_signal(leptons);
+        return predicate(leptons);
     });
 }
 
-auto efficiency_1(boost::filesystem::path const& path)
+auto count_displaced_events(TTreeReader& reader)
+{
+    return count_events_if(reader, [](auto & leptons) {
+        return is_displaced_signal(leptons);
+    });
+}
+
+template<typename Predicate>
+auto events(boost::filesystem::path const& path, Predicate predicate)
 {
     TFile file(delphes_file(path).c_str(), "read");
     TTreeReader reader("Delphes", &file);
-    return count_signals(reader);
+    return predicate(reader);
+}
+
+auto displaced_events(boost::filesystem::path const& path)
+{
+    return events(path, [](auto & reader) {
+        return count_displaced_events(reader);
+    });
 }
 
 auto same_sign(Lepton const& one, Lepton const& two)
@@ -544,7 +560,7 @@ auto same_sign(Lepton const& one, Lepton const& two)
 }
 
 
-auto is_signal_2(std::vector<Lepton>& leptons)
+auto is_prompt_signal(std::vector<Lepton>& leptons)
 {
     auto hard = find_erase(leptons, [](auto const & lepton) {
         return is_hard(lepton);
@@ -557,31 +573,25 @@ auto is_signal_2(std::vector<Lepton>& leptons)
     return !back_to_back(*second, *hard) && same_sign(*second, *hard);
 }
 
-auto count_signals_2(TTreeReader& reader)
+auto count_prompt_events(TTreeReader& reader)
 {
-    TTreeReaderArray<Electron> electrons(reader, "Electron");
-    TTreeReaderArray<Muon> muons(reader, "Muon");
-    TTreeReaderArray<Jet> jets(reader, "Jet");
-    TTreeReaderArray<GenParticle> particles(reader, "Particle");
-    return count_if(reader, [&]() {
-        particles.IsEmpty();
-        auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) + get_leptons(filter_taus(jets), particles);
-        return is_signal_2(leptons);
+    return count_events_if(reader, [](auto & leptons) {
+        return is_prompt_signal(leptons);
     });
 }
 
-auto efficiency_2(boost::filesystem::path const& path)
+auto prompt_events(boost::filesystem::path const& path)
 {
-    TFile file(delphes_file(path).c_str(), "read");
-    TTreeReader reader("Delphes", &file);
-    return count_signals_2(reader);
+    return events(path, [](auto & reader) {
+        return count_prompt_events(reader);
+    });
 }
 
-auto total(boost::filesystem::path const& path)
+auto all_events(boost::filesystem::path const& path)
 {
-    TFile file(delphes_file(path).c_str(), "read");
-    TTreeReader reader("Delphes", &file);
-    return reader.GetEntries(false);
+    return events(path, [](auto & reader) {
+        return reader.GetEntries(false);
+    });
 }
 
 template<typename Result>
@@ -599,9 +609,9 @@ auto get_result(boost::filesystem::path const& folder)
     result += " " + get_e_coupling(folder);
     result += " " + get_mu_coupling(folder);
     result += " " + get_tau_coupling(folder);
-    result += " " + std::to_string(total(folder));
-    result += " " + std::to_string(efficiency_1(folder));
-    result += " " + std::to_string(efficiency_2(folder));
+    result += " " + std::to_string(all_events(folder));
+    result += " " + std::to_string(displaced_events(folder));
+    result += " " + std::to_string(prompt_events(folder));
     result += " " + get_xsec(folder);
     result += " " + get_width(folder);
     print(result);
@@ -615,8 +625,8 @@ auto get_header()
     header += " mu_coupling";
     header += " tau_coupling";
     header += " total";
-    header += " signal1";
-    header += " signal2";
+    header += " displaced";
+    header += " prompt";
     header += " crosssection";
     header += " width";
     print(header);
