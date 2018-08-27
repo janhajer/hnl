@@ -332,7 +332,7 @@ auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& gen_parti
     for (auto const& particle : get_particles(lepton))
     {
         if (std::abs(particle.PID) == check_id) return particle;
-        print(particle.M1);
+        print(particle.M1, gen_particles.GetSize());
         if (auto mother = origin(gen_particles, particle.M1, check_id)) return *mother;
     }
     return boost::none;
