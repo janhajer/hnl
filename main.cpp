@@ -318,7 +318,7 @@ auto get_particles(Jet const& jet) -> std::vector<GenParticle> {
 }
 
 auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int check_id) -> boost::optional<GenParticle> {
-    while (position != -1)
+    while (position != -1 && position < particles.GetSize())
     {
         auto& mother = particles.At(position);
         if (std::abs(mother.PID) == check_id) return mother;
@@ -328,12 +328,11 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int ch
 }
 
 template<typename Lepton>
-auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& gen_particles, int check_id) -> boost::optional<GenParticle> {
+auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, int check_id) -> boost::optional<GenParticle> {
     for (auto const& particle : get_particles(lepton))
     {
         if (std::abs(particle.PID) == check_id) return particle;
-        print(particle.M1, gen_particles.GetSize());
-        if (auto mother = origin(gen_particles, particle.M1, check_id)) return *mother;
+        if (auto mother = origin(particles, particle.M1, check_id)) return *mother;
     }
     return boost::none;
 }
