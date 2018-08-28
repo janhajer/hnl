@@ -158,8 +158,9 @@ auto has_ending(std::string const& string, std::string const& ending)
     return string.length() >= ending.length() ? 0 == string.compare(string.length() - ending.length(), ending.length(), ending) : false;
 }
 
-auto has_tag(std::string const& string){
-    return string.find("tag_2") != std::string::npos;
+auto has_tag(std::string const& string)
+{
+    return string.find("tag_3") != std::string::npos;
 }
 
 auto is_directory = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_directory);
@@ -311,18 +312,20 @@ auto get_particles(Lepton const& lepton) -> std::vector<GenParticle> {
 template<>
 auto get_particles(Jet const& jet) -> std::vector<GenParticle> {
     std::vector<GenParticle> particles;
-    auto* iterator = static_cast<TRefArrayIter*>(jet.Particles.MakeIterator());
-    if (!iterator) return particles;
-    while (auto* object = iterator->Next()) particles.emplace_back(*static_cast<GenParticle*>(object));
+    if (auto* iterator = static_cast<TRefArrayIter*>(jet.Particles.MakeIterator())) while (auto* object = iterator->Next()) particles.emplace_back(*static_cast<GenParticle*>(object));
+//     auto* iterator = static_cast<TRefArrayIter*>(jet.Particles.MakeIterator());
+//     if (!iterator) return particles;
+//     while (auto* object = iterator->Next()) particles.emplace_back(*static_cast<GenParticle*>(object));
     return particles;
 }
 
 auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int check_id) -> boost::optional<GenParticle> {
     while (position != -1 && position < particles.GetSize())
     {
-        auto& mother = particles.At(position);
-        if (std::abs(mother.PID) == check_id) return mother;
-        position = mother.M1;
+        auto& particle = particles.At(position);
+        if (std::abs(particle.PID) == check_id) return particle;
+        if (auto mother_2 = origin(particles, particle.M2, check_id)) return mother_2; // TODO new line not yet tested
+        position = particle.M1;
     };
     return boost::none;
 }
