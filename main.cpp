@@ -306,7 +306,8 @@ auto get_width(boost::filesystem::path const& path)
 
 template<typename Lepton>
 auto get_particles(Lepton const& lepton) -> std::vector<GenParticle> {
-    return {static_cast<GenParticle&>(*lepton.Particle.GetObject())};
+    if (auto * particle = static_cast<GenParticle*>(lepton.Particle.GetObject())) return {*particle};
+    return {};
 }
 
 template<>
