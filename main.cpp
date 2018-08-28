@@ -463,6 +463,13 @@ struct Lepton {
 //             print(tracks, track_momentum(lepton).Pt());
         }
     }
+    Lepton(Track const& lepton, TTreeReaderArray<GenParticle> const& gen_particles) : lorentz_vector(lepton.P4()) , charge(lepton.Charge)
+    {
+        if (auto mother = origin(lepton, gen_particles, tau_ID)) particle = *mother;
+        else if (auto mother = origin(lepton, gen_particles, muon_ID)) particle = *mother;
+        else if (auto mother = origin(lepton, gen_particles, electron_ID)) particle = *mother;
+        else particle = no_particle(lepton);
+    }
     TLorentzVector lorentz_vector;
     GenParticle particle;
     int charge;
