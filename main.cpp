@@ -160,7 +160,7 @@ auto has_ending(std::string const& string, std::string const& ending)
 
 auto has_tag(std::string const& string)
 {
-    return string.find("tag_3") != std::string::npos;
+    return string.find("tag_2") != std::string::npos;
 }
 
 auto is_directory = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_directory);
