@@ -526,15 +526,16 @@ auto count_if(TTreeReader& reader, Predicate predicate)
 template<typename Predicate>
 auto count_events_if(TTreeReader& reader, Predicate predicate)
 {
-    TTreeReaderArray<Electron> electrons(reader, "Electron");
-    TTreeReaderArray<Muon> muons(reader, "MuonLoose");
-    TTreeReaderArray<Jet> jets(reader, "Jet");
+//     TTreeReaderArray<Electron> electrons(reader, "Electron");
+//     TTreeReaderArray<Muon> muons(reader, "MuonLoose");
+//     TTreeReaderArray<Jet> jets(reader, "Jet");
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
-//     TTreeReaderArray<Track> tracks(reader, "Track");
+    TTreeReaderArray<Track> tracks(reader, "Track");
     return count_if(reader, [&]() {
         particles.IsEmpty();
 //         tracks.IsEmpty();
-        auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) + get_leptons(filter_taus(jets), particles);
+        auto leptons = get_leptons(tracks, particles);
+//         auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) + get_leptons(filter_taus(jets), particles);
         return predicate(leptons);
     });
 }
