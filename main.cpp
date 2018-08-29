@@ -502,6 +502,7 @@ auto back_to_back(Lepton const& one, Lepton const& two)
 
 auto is_displaced_signal(std::vector<Lepton>& leptons)
 {
+    print(leptons);
     auto displaced = find_erase(leptons, [](auto const & lepton) {
         return has_secondary_vertex(lepton);
     });
