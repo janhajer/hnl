@@ -391,6 +391,7 @@ template<typename Lepton>
 auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, std::vector<int> const& check_ids) -> boost::optional<GenParticle> {
     for (auto const& particle : get_particles(lepton))
     {
+        return particle;
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
         if (auto mother = origin(particles, particle.M1, check_ids)) return mother;
     }
