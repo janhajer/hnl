@@ -466,7 +466,7 @@ struct Lepton {
         particle(origin(lepton, particles, ids<Input>())),
         mother(origin(lepton, particles, {neutrino_ID})),
            charge(lepton.Charge)
-    {}
+    {print(*this);}
     TLorentzVector lorentz_vector;
     boost::optional<GenParticle> particle;
     boost::optional<GenParticle> mother;
