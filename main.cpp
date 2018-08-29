@@ -383,7 +383,7 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, std::v
     {
         auto& particle = particles.At(position);
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
-        if (particle.M2 >= 0) if(auto mother_2 = origin(particles, particle.M2, check_ids)) return mother_2;
+//         if (particle.M2 >= 0) if(auto mother_2 = origin(particles, particle.M2, check_ids)) return mother_2;
         position = particle.M1;
     };
     return boost::none;
