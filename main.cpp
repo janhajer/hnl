@@ -380,7 +380,7 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, std::v
     while (position >= 0 && position < particles.GetSize())
     {
         auto& particle = particles.At(position);
-        print(particle);
+//         print(particle);
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
 //         if (particle.M2 >= 0) if(auto mother_2 = origin(particles, particle.M2, check_ids)) return mother_2;
         position = particle.M1;
@@ -390,14 +390,36 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, std::v
 
 template<typename Lepton>
 auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, std::vector<int> const& check_ids) -> boost::optional<GenParticle> {
-    print("New origin");
+//     print("New origin");
     for (auto const& particle : get_particles(lepton))
     {
-        print(particle);
+//         print(particle);
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
         if (auto mother = origin(particles, particle.M1, check_ids)) return mother;
     }
     return boost::none;
+}
+
+auto tree(TTreeReaderArray<GenParticle> const& particles, int position) -> std::vector<GenParticle> {
+    std::vector<GenParticle> vector;
+    while (position >= 0 && position < particles.GetSize()) {
+        auto& particle = particles.At(position);
+        vector.emplace_back(particle);
+        position = particle.M1;
+    };
+    return vector;
+}
+
+template<typename Lepton>
+auto tree(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles) -> std::vector<GenParticle> {
+    print("New tree");
+    std::vector<GenParticle> vector;
+    for (auto const& particle : get_particles(lepton))
+    {
+        vector.emplace_back(particle);
+        vector += tree(particles, particle.M1);
+    }
+    return vector;
 }
 
 template<typename Function>
@@ -426,7 +448,8 @@ struct Lepton {
         lorentz_vector(lepton.P4()),
         particle(origin(lepton, particles, ids<Input>())),
         mother(origin(lepton, particles, {neutrino_ID})),
-           charge(lepton.Charge)
+           charge(lepton.Charge),
+        tree(::tree(lepton, particles))
     {
 //         print(*this);
     }
@@ -434,6 +457,7 @@ struct Lepton {
     boost::optional<GenParticle> particle;
     boost::optional<GenParticle> mother;
     int charge;
+    std::vector<GenParticle> tree;
 };
 
 std::ostream& operator<<(std::ostream& stream, TLorentzVector const& lepton)
