@@ -487,7 +487,8 @@ std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
 auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = transverse_distance(lepton.particle);
-    return d > 5. && d < 100. && lepton.particle.PID == std::abs(neutrino_ID);
+    return d > 5. && d < 100.;
+//     && lepton.particle.PID == std::abs(neutrino_ID);
 }
 
 auto is_hard(Lepton const& lepton)
