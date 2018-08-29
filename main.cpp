@@ -69,7 +69,7 @@ std::ostream& operator<<(std::ostream& stream, boost::filesystem::path const& pa
 
 std::ostream& operator<<(std::ostream& stream, GenParticle const& particle)
 {
-    return stream << "ID: " << particle.PID << ", D0: " << transverse_distance(particle) << " mm";
+    return stream << "ID: " << particle.PID << ", D0: " << transverse_distance(particle) << " mm" << " Status: " << particle.Status;
 }
 
 std::ostream& operator<<(std::ostream& stream, Muon const& muon)
