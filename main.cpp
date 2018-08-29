@@ -379,8 +379,8 @@ auto get_particles(Jet const& jet) -> std::vector<GenParticle> {
 auto origin(TTreeReaderArray<GenParticle> const& particles, int position, std::vector<int> const& check_ids) -> boost::optional<GenParticle> {
     while (position >= 0 && position < particles.GetSize())
     {
-        print(particle);
         auto& particle = particles.At(position);
+        print(particle);
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
 //         if (particle.M2 >= 0) if(auto mother_2 = origin(particles, particle.M2, check_ids)) return mother_2;
         position = particle.M1;
