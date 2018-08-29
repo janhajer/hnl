@@ -488,8 +488,7 @@ std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
 auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = lepton.particle ? transverse_distance(*lepton.particle) : 0;
-    return d > 5. && d < 100.;
-//     && lepton.mother && lepton.mother->PID == std::abs(neutrino_ID) && lepton.lorentz_vector.Pt() > 5.;
+    return d > 5. && d < 100. && lepton.mother && std::abs(lepton.mother->PID) == neutrino_ID && lepton.lorentz_vector.Pt() > 5.;
 }
 
 auto is_hard(Lepton const& lepton)
@@ -516,7 +515,7 @@ auto is_displaced_signal(std::vector<Lepton>& leptons)
     if (!hard) return false;
     auto good = !back_to_back(*displaced, *hard);
     if (!good) return false;
-    print("Displaced:", *displaced, "Hard:",*hard);
+    print("Displaced: (", *displaced, ")  Hard: (", *hard, ")");
     return true;
 }
 
