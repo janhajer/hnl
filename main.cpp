@@ -412,7 +412,7 @@ auto tree(TTreeReaderArray<GenParticle> const& particles, int position) -> std::
 
 template<typename Lepton>
 auto tree(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles) -> std::vector<GenParticle> {
-    print("New tree");
+//     print("New tree");
     std::vector<GenParticle> vector;
     for (auto const& particle : get_particles(lepton))
     {
