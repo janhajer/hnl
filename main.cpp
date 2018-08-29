@@ -68,7 +68,7 @@ std::ostream& operator<<(std::ostream& stream, boost::filesystem::path const& pa
 
 std::ostream& operator<<(std::ostream& stream, GenParticle const& particle)
 {
-    return stream << "ID: " << particle.PID << ", D0: " << transverse_distance(particle);
+    return stream << "ID: " << particle.PID << ", D0: " << transverse_distance(particle) << " mm";
 }
 
 std::ostream& operator<<(std::ostream& stream, Muon const& muon)
@@ -479,7 +479,7 @@ std::ostream& operator<<(std::ostream& stream, TLorentzVector const& lepton)
 
 std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
 {
-    return stream << lepton.particle << lepton.lorentz_vector << ", " << ", Charge: " << lepton.charge;
+    return stream << lepton.particle << ", " << lepton.lorentz_vector << ", " << ", Charge: " << lepton.charge;
 }
 
 auto has_secondary_vertex(Lepton const& lepton)
