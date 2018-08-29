@@ -379,6 +379,7 @@ auto get_particles(Jet const& jet) -> std::vector<GenParticle> {
 auto origin(TTreeReaderArray<GenParticle> const& particles, int position, std::vector<int> const& check_ids) -> boost::optional<GenParticle> {
     while (position >= 0 && position < particles.GetSize())
     {
+        print(particle);
         auto& particle = particles.At(position);
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
 //         if (particle.M2 >= 0) if(auto mother_2 = origin(particles, particle.M2, check_ids)) return mother_2;
@@ -389,23 +390,14 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, std::v
 
 template<typename Lepton>
 auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, std::vector<int> const& check_ids) -> boost::optional<GenParticle> {
+    print("New origin");
     for (auto const& particle : get_particles(lepton))
     {
-        return particle;
+        print(particle);
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
         if (auto mother = origin(particles, particle.M1, check_ids)) return mother;
     }
     return boost::none;
-}
-
-template<typename Lepton>
-auto no_particle(Lepton const&)
-{
-    GenParticle particle;
-    particle.X = 0;
-    particle.Y = 0;
-    particle.PID = 0;
-    return particle;
 }
 
 template<typename Function>
@@ -424,38 +416,6 @@ auto constituents(Jet const& jet)
     TLorentzVector momentum;
     for_each_constituent(jet.Constituents, [&momentum](auto & object) {
         momentum += object.P4();
-    });
-    return momentum;
-}
-
-template<typename Lepton>
-auto number_of_tracks(Lepton const&)
-{
-    return 100;
-}
-
-template<>
-auto number_of_tracks(Jet const& jet)
-{
-    auto number = 0;
-    for_each<Track>(jet.Particles, [&number](auto&) {
-        ++number;
-    });
-    return number;
-}
-
-template<typename Lepton>
-auto track_momentum(Lepton const&)
-{
-    return TLorentzVector {};
-}
-
-template<>
-auto track_momentum(Jet const& jet)
-{
-    TLorentzVector momentum;
-    for_each<Track>(jet.Particles, [&momentum](auto & track) {
-        momentum += track.P4();
     });
     return momentum;
 }
