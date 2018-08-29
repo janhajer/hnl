@@ -405,6 +405,7 @@ auto no_particle(Lepton const&)
     GenParticle particle;
     particle.X = 0;
     particle.Y = 0;
+    particle.PID = 0;
     return particle;
 }
 
