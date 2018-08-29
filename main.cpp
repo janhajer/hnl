@@ -623,7 +623,7 @@ auto all_events(Path const& paths)
 template<typename Result>
 void save_result(Result const& result, std::string const& process)
 {
-    print(result);
+//     print(result);
     std::ofstream file("./" + process + ".dat");
     std::ostream_iterator<std::string> iterator(file, "\n");
     boost::copy(result, iterator);
