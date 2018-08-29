@@ -466,7 +466,9 @@ struct Lepton {
         particle(origin(lepton, particles, ids<Input>())),
         mother(origin(lepton, particles, {neutrino_ID})),
            charge(lepton.Charge)
-    {print(*this);}
+    {
+//         print(*this);
+    }
     TLorentzVector lorentz_vector;
     boost::optional<GenParticle> particle;
     boost::optional<GenParticle> mother;
@@ -486,12 +488,14 @@ std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
 auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = lepton.particle ? transverse_distance(*lepton.particle) : 0;
-    return d > 5. && d < 100. && lepton.mother && lepton.mother->PID == std::abs(neutrino_ID) && lepton.lorentz_vector.Pt() > 5.;
+    return d > 5. && d < 100.;
+//     && lepton.mother && lepton.mother->PID == std::abs(neutrino_ID) && lepton.lorentz_vector.Pt() > 5.;
 }
 
 auto is_hard(Lepton const& lepton)
 {
-    return lepton.lorentz_vector.Pt() > 25. && (lepton.particle ? transverse_distance(*lepton.particle) : 0) < 5. && lepton.mother && lepton.mother->PID != std::abs(neutrino_ID);
+    return lepton.lorentz_vector.Pt() > 25.;
+//     && (lepton.particle ? transverse_distance(*lepton.particle) : 0) < 5. && lepton.mother && lepton.mother->PID != std::abs(neutrino_ID);
 }
 
 auto back_to_back(Lepton const& one, Lepton const& two)
