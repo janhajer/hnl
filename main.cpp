@@ -125,29 +125,30 @@ auto const tau_ID = 15;
 
 template<typename Lepton>
 auto ids() -> std::vector<int> {
+    return {neutrino_ID};
     print("never end up here");
     return {0};
 }
 
-template<>
-auto ids<Electron>() -> std::vector<int> {
-    return {electron_ID};
-}
-
-template<>
-auto ids<Muon>() -> std::vector<int> {
-    return {muon_ID};
-}
-
-template<>
-auto ids<Jet>() -> std::vector<int> {
-    return {tau_ID};
-}
-
-template<>
-auto ids<Track>() -> std::vector<int> {
-    return {tau_ID, muon_ID, electron_ID};
-}
+// template<>
+// auto ids<Electron>() -> std::vector<int> {
+//     return {electron_ID};
+// }
+//
+// template<>
+// auto ids<Muon>() -> std::vector<int> {
+//     return {muon_ID};
+// }
+//
+// template<>
+// auto ids<Jet>() -> std::vector<int> {
+//     return {tau_ID};
+// }
+//
+// template<>
+// auto ids<Track>() -> std::vector<int> {
+//     return {tau_ID, muon_ID, electron_ID};
+// }
 
 std::string join_folder(std::string const& string)
 {
@@ -463,9 +464,9 @@ auto track_momentum(Jet const& jet)
 
 struct Lepton {
     template<typename Input>
-    Lepton(Input const& lepton, TTreeReaderArray<GenParticle> const& gen_particles) : lorentz_vector(lepton.P4()), charge(lepton.Charge)
+    Lepton(Input const& lepton, TTreeReaderArray<GenParticle> const& particles) : lorentz_vector(lepton.P4()), charge(lepton.Charge)
     {
-        if (auto mother = origin(lepton, gen_particles, ids<Input>())) particle = *mother;
+        if (auto mother = origin(lepton, particles, ids<Input>())) particle = *mother;
         else particle = no_particle(lepton);
     }
     TLorentzVector lorentz_vector;
@@ -475,18 +476,18 @@ struct Lepton {
 
 std::ostream& operator<<(std::ostream& stream, TLorentzVector const& lepton)
 {
-    return stream << "Pt: " << lepton.Pt();
+    return stream << "Pt: " << lepton.Pt() << " GeV";
 }
 
 std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
 {
-    return stream << lepton.particle << ", " << lepton.lorentz_vector << ", " << ", Charge: " << lepton.charge;
+    return stream << lepton.particle << ", " << lepton.lorentz_vector << ", Charge: " << lepton.charge;
 }
 
 auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = transverse_distance(lepton.particle);
-    return d > 5. && d < 100.;
+    return d > 5. && d < 100. && lepton.particle.PID == std::abs(neutrino_ID);
 }
 
 auto is_hard(Lepton const& lepton)
@@ -580,7 +581,6 @@ auto same_sign(Lepton const& one, Lepton const& two)
 {
     return one.charge == two.charge && one.charge > 0;
 }
-
 
 auto is_prompt_signal(std::vector<Lepton>& leptons)
 {
