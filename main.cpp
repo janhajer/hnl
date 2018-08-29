@@ -482,7 +482,7 @@ std::ostream& operator<<(std::ostream& stream, TLorentzVector const& lepton)
 
 std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
 {
-    return stream << lepton.particle << ", " << lepton.lorentz_vector << ", Charge: " << lepton.charge << " mother: " << lepton.mother;
+    return stream << "particle: " << lepton.particle << " mother: " << lepton.mother << ", " << lepton.lorentz_vector << ", Charge: " << lepton.charge;
 }
 
 auto has_secondary_vertex(Lepton const& lepton)
@@ -516,7 +516,7 @@ auto is_displaced_signal(std::vector<Lepton>& leptons)
     if (!hard) return false;
     auto good = !back_to_back(*displaced, *hard);
     if (!good) return false;
-    print(*displaced, *hard);
+    print("Displaced:", *displaced, "Hard:",*hard);
     return true;
 }
 
