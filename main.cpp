@@ -626,7 +626,7 @@ void save_result(Result const& result, std::string const& process)
 
 auto get_result(Path const& paths)
 {
-    if(get_mu_coupling(paths) != "1.000000e-01" && get_mass(paths) != "5.000000e+01") return ""s;
+    if(get_mu_coupling(paths) != "1.000000e-01" || get_mass(paths) != "5.000000e+01") return ""s;
     auto result = get_mass(paths);
     result += " " + get_e_coupling(paths);
     result += " " + get_mu_coupling(paths);
