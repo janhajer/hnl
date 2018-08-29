@@ -125,30 +125,29 @@ auto const tau_ID = 15;
 
 template<typename Lepton>
 auto ids() -> std::vector<int> {
-    return {neutrino_ID};
     print("never end up here");
     return {0};
 }
 
-// template<>
-// auto ids<Electron>() -> std::vector<int> {
-//     return {electron_ID};
-// }
-//
-// template<>
-// auto ids<Muon>() -> std::vector<int> {
-//     return {muon_ID};
-// }
-//
-// template<>
-// auto ids<Jet>() -> std::vector<int> {
-//     return {tau_ID};
-// }
-//
-// template<>
-// auto ids<Track>() -> std::vector<int> {
-//     return {tau_ID, muon_ID, electron_ID};
-// }
+template<>
+auto ids<Electron>() -> std::vector<int> {
+    return {electron_ID};
+}
+
+template<>
+auto ids<Muon>() -> std::vector<int> {
+    return {muon_ID};
+}
+
+template<>
+auto ids<Jet>() -> std::vector<int> {
+    return {tau_ID};
+}
+
+template<>
+auto ids<Track>() -> std::vector<int> {
+    return {tau_ID, muon_ID, electron_ID};
+}
 
 std::string join_folder(std::string const& string)
 {
@@ -466,11 +465,14 @@ struct Lepton {
     template<typename Input>
     Lepton(Input const& lepton, TTreeReaderArray<GenParticle> const& particles) : lorentz_vector(lepton.P4()), charge(lepton.Charge)
     {
-        if (auto mother = origin(lepton, particles, ids<Input>())) particle = *mother;
+        if (auto p = origin(lepton, particles, ids<Input>())) particle = *p;
         else particle = no_particle(lepton);
+        if (auto p = origin(lepton, particles, {neutrino_ID})) mother = *p;
+        else mother = no_particle(lepton);
     }
     TLorentzVector lorentz_vector;
     GenParticle particle;
+    GenParticle mother;
     int charge;
 };
 
@@ -481,7 +483,7 @@ std::ostream& operator<<(std::ostream& stream, TLorentzVector const& lepton)
 
 std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
 {
-    return stream << lepton.particle << ", " << lepton.lorentz_vector << ", Charge: " << lepton.charge;
+    return stream << lepton.particle << ", " << lepton.lorentz_vector << ", Charge: " << lepton.charge << " mother: " << lepton.mother;
 }
 
 auto has_secondary_vertex(Lepton const& lepton)
