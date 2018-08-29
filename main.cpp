@@ -14,6 +14,7 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/algorithm/find_if.hpp>
+#include <boost/optional/optional_io.hpp>
 
 #include "TFile.h"
 #include "TTreeReader.h"
@@ -352,19 +353,16 @@ auto for_each(TRefArray const& ref_array, Function function)
     if (auto* iterator = static_cast<TRefArrayIter*>(ref_array.MakeIterator())) while (auto* object = iterator->Next()) function(*object);
 }
 
-template<typename Particle, typename Function>
-auto cast_and_apply(TObject const& object, Function function)
-{
-    if (object.IsA() != Particle::Class()) return false;
-    function(static_cast<Particle const&>(object));
-    return true;
+template<typename Particle>
+auto cast(TObject const& object) -> boost::optional<Particle> {
+return object.IsA() == Particle::Class() ? boost::optional<Particle>{static_cast<Particle const&>(object)} : boost::optional<Particle>{};
 }
 
 template<typename Particle, typename Function>
 auto for_each(TRefArray const& ref_array, Function function)
 {
     for_each(ref_array, [function](auto const & object) {
-        cast_and_apply<Particle>(object, function);
+        if (auto optional = cast<Particle>(object)) function(*optional);
     });
 }
 
@@ -413,9 +411,9 @@ template<typename Function>
 auto for_each_constituent(TRefArray const& ref_array, Function function)
 {
     for_each(ref_array, [function](auto & object) {
-        if (cast_and_apply<GenParticle>(object, function)) return;
-        if (cast_and_apply<Track>(object, function)) return;
-        if (cast_and_apply<Tower>(object, function)) return;
+        if (auto optional = cast<GenParticle>(object)) return function(*optional);
+        if (auto optional = cast<Track>(object)) return function(*optional);
+        if (auto optional = cast<Tower>(object)) return function(*optional);
         print("Unexpected Constituent");
     });
 }
@@ -463,16 +461,15 @@ auto track_momentum(Jet const& jet)
 
 struct Lepton {
     template<typename Input>
-    Lepton(Input const& lepton, TTreeReaderArray<GenParticle> const& particles) : lorentz_vector(lepton.P4()), charge(lepton.Charge)
-    {
-        if (auto p = origin(lepton, particles, ids<Input>())) particle = *p;
-        else particle = no_particle(lepton);
-        if (auto p = origin(lepton, particles, {neutrino_ID})) mother = *p;
-        else mother = no_particle(lepton);
-    }
+    Lepton(Input const& lepton, TTreeReaderArray<GenParticle> const& particles) :
+        lorentz_vector(lepton.P4()),
+        particle(origin(lepton, particles, ids<Input>())),
+        mother(origin(lepton, particles, {neutrino_ID})),
+           charge(lepton.Charge)
+    {}
     TLorentzVector lorentz_vector;
-    GenParticle particle;
-    GenParticle mother;
+    boost::optional<GenParticle> particle;
+    boost::optional<GenParticle> mother;
     int charge;
 };
 
@@ -488,13 +485,13 @@ std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
 
 auto has_secondary_vertex(Lepton const& lepton)
 {
-    auto d = transverse_distance(lepton.particle);
-    return d > 5. && d < 100. && lepton.mother.PID == std::abs(neutrino_ID) && lepton.lorentz_vector.Pt() > 5.;
+    auto d = lepton.particle ? transverse_distance(*lepton.particle) : 0;
+    return d > 5. && d < 100. && lepton.mother && lepton.mother->PID == std::abs(neutrino_ID) && lepton.lorentz_vector.Pt() > 5.;
 }
 
 auto is_hard(Lepton const& lepton)
 {
-    return lepton.lorentz_vector.Pt() > 25. && transverse_distance(lepton.particle) < 5. && lepton.mother.PID != std::abs(neutrino_ID);
+    return lepton.lorentz_vector.Pt() > 25. && (lepton.particle ? transverse_distance(*lepton.particle) : 0) < 5. && lepton.mother && lepton.mother->PID != std::abs(neutrino_ID);
 }
 
 auto back_to_back(Lepton const& one, Lepton const& two)
@@ -630,7 +627,7 @@ void save_result(Result const& result, std::string const& process)
 
 auto get_result(Path const& paths)
 {
-    if(get_mu_coupling(paths) != "1.000000e-01" || get_mass(paths) != "5.000000e+01") return ""s;
+    if (get_mu_coupling(paths) != "1.000000e-01" || get_mass(paths) != "5.000000e+01") return ""s;
     auto result = get_mass(paths);
     result += " " + get_e_coupling(paths);
     result += " " + get_mu_coupling(paths);
