@@ -501,6 +501,7 @@ auto is_displaced_signal(std::vector<Lepton>& leptons)
     auto good = !back_to_back(*displaced, *hard);
     if (!good) return false;
     print("Displaced: (", *displaced, ")  Hard: (", *hard, ")");
+    print(displaced->tree);
     return true;
 }
 
