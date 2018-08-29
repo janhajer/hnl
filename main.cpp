@@ -379,7 +379,7 @@ auto get_particles(Jet const& jet) -> std::vector<GenParticle> {
 }
 
 auto origin(TTreeReaderArray<GenParticle> const& particles, int position, std::vector<int> const& check_ids) -> boost::optional<GenParticle> {
-    while (position != -1 && position < particles.GetSize())
+    while (position >= 0 && position < particles.GetSize())
     {
         auto& particle = particles.At(position);
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
