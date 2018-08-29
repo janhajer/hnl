@@ -383,7 +383,7 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, std::v
     {
         auto& particle = particles.At(position);
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
-        if (auto mother_2 = origin(particles, particle.M2, check_ids)) return mother_2;
+        if (particle.M2 >= 0) if(auto mother_2 = origin(particles, particle.M2, check_ids)) return mother_2;
         position = particle.M1;
     };
     return boost::none;
@@ -394,7 +394,7 @@ auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles
     for (auto const& particle : get_particles(lepton))
     {
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
-        if (auto mother = origin(particles, particle.M1, check_ids)) return *mother;
+        if (auto mother = origin(particles, particle.M1, check_ids)) return mother;
     }
     return boost::none;
 }
@@ -489,8 +489,7 @@ std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
 auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = transverse_distance(lepton.particle);
-    return d > 5. && d < 100.;
-//     && lepton.particle.PID == std::abs(neutrino_ID);
+    return d > 5. && d < 100. && lepton.particle.PID == std::abs(neutrino_ID);
 }
 
 auto is_hard(Lepton const& lepton)
