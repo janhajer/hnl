@@ -3,6 +3,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/cxx11/any_of.hpp>
 #include <boost/range/irange.hpp>
 #include <boost/range/size.hpp>
 #include <boost/range/numeric.hpp>
@@ -23,11 +24,6 @@
 #include "alphanum.hpp"
 
 using namespace std::string_literals;
-
-auto const neutrino_ID = 9900012;
-auto const electron_ID = 11;
-auto const muon_ID = 13;
-auto const tau_ID = 15;
 
 template<typename Element>
 auto operator+(std::vector<Element> const& one, std::vector<Element> const& two)
@@ -122,6 +118,37 @@ void print_line(Container const& container)
     std::cout << std::endl;
 }
 
+auto const neutrino_ID = 9900012;
+auto const electron_ID = 11;
+auto const muon_ID = 13;
+auto const tau_ID = 15;
+
+template<typename Lepton>
+auto ids() -> std::vector<int> {
+    print("never end up here");
+    return {0};
+}
+
+template<>
+auto ids<Electron>() -> std::vector<int> {
+    return {electron_ID};
+}
+
+template<>
+auto ids<Muon>() -> std::vector<int> {
+    return {muon_ID};
+}
+
+template<>
+auto ids<Jet>() -> std::vector<int> {
+    return {tau_ID};
+}
+
+template<>
+auto ids<Track>() -> std::vector<int> {
+    return {tau_ID, muon_ID, electron_ID};
+}
+
 std::string join_folder(std::string const& string)
 {
     return string;
@@ -158,9 +185,9 @@ auto has_ending(std::string const& string, std::string const& ending)
     return string.length() >= ending.length() ? 0 == string.compare(string.length() - ending.length(), ending.length(), ending) : false;
 }
 
-auto has_tag(std::string const& string)
+auto has_tag(std::string const& string, std::string const& tag)
 {
-    return string.find("tag_2") != std::string::npos;
+    return string.find(tag) != std::string::npos;
 }
 
 auto is_directory = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_directory);
@@ -191,29 +218,38 @@ auto get_file(boost::filesystem::path const& path, Function function)
     return boost::filesystem::path();
 }
 
-auto is_regular_file = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_regular_file);
-
-auto is_delphes = [](boost::filesystem::path const& path)
-{
-    return has_ending(path.filename().string(), "_delphes_events.root") && has_tag(path.filename().string());
+struct Path {
+    boost::filesystem::path base;
+    std::string tag;
 };
 
-auto delphes_file(boost::filesystem::path const& path)
+auto is_regular_file = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_regular_file);
+
+auto is_delphes = [](Path const& paths)
 {
-    return get_file(path, [](auto const & files) {
-        return files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_delphes);
+    return has_ending(paths.base.filename().string(), "_delphes_events.root") && has_tag(paths.base.filename().string(), paths.tag);
+};
+
+auto delphes_file(Path const& paths)
+{
+    return get_file(paths.base, [&paths](auto const & files) {
+        return files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered([&paths](auto const & path) {
+            return is_delphes({path, paths.tag});
+        });
     });
 }
 
-auto is_banner = [](boost::filesystem::path const& path)
+auto is_banner = [](Path const& paths)
 {
-    return has_ending(path.filename().string(), "_banner.txt") && has_tag(path.filename().string());
+    return has_ending(paths.base.filename().string(), "_banner.txt") && has_tag(paths.base.filename().string(), paths.tag);
 };
 
-auto banner_file(boost::filesystem::path const& path)
+auto banner_file(Path const& paths)
 {
-    return get_file(path, [](auto const & files) {
-        return files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered(is_banner);
+    return get_file(paths.base, [&paths](auto const & files) {
+        return files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered([&paths](auto const & path) {
+            return is_banner({path, paths.tag});
+        });
     });
 }
 struct File {
@@ -261,156 +297,134 @@ auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos
     return found == lines.end() ? "value not found"s : split_line(*found).at(pos);
 }
 
-auto get_xsec(boost::filesystem::path const& path)
+auto get_xsec(Path const& paths)
 {
-    return read_file(banner_file(path), [](auto const & strings) {
+    return read_file(banner_file(paths), [](auto const & strings) {
         return strings.size() > 4 && strings.at(0) == "#" && strings.at(1) == "Integrated" && strings.at(2) == "weight" && strings.at(3) == "(pb)" && strings.at(4) == ":";
     }, 5);
 }
 
-auto get_mass(boost::filesystem::path const& path)
+auto get_mass(Path const& paths)
 {
-    return read_file(banner_file(path), [](auto const & strings) {
+    return read_file(banner_file(paths), [](auto const & strings) {
         return strings.size() > 2 && strings.at(0) == std::to_string(neutrino_ID) && strings.at(2) == "#" && strings.at(3) == "mn1";
     }, 1);
 }
 
-auto get_coupling(boost::filesystem::path const& path, int pos, std::string const& name)
+auto get_coupling(Path const& paths, int pos, std::string const& name)
 {
-    return read_file(banner_file(path), [&name, pos](auto const & strings) {
+    return read_file(banner_file(paths), [&name, pos](auto const & strings) {
         return strings.size() > 3 && strings.at(0) == std::to_string(pos) && strings.at(2) == "#" && strings.at(3) == name;
     }, 1);
 }
 
-auto get_e_coupling(boost::filesystem::path const& path)
+auto get_e_coupling(Path const& paths)
 {
-    return get_coupling(path, 1, "ven1");
+    return get_coupling(paths, 1, "ven1");
 }
 
-auto get_mu_coupling(boost::filesystem::path const& path)
+auto get_mu_coupling(Path const& paths)
 {
-    return get_coupling(path, 4, "vmun1");
+    return get_coupling(paths, 4, "vmun1");
 }
 
-auto get_tau_coupling(boost::filesystem::path const& path)
+auto get_tau_coupling(Path const& paths)
 {
-    return get_coupling(path, 7, "vtan1");
+    return get_coupling(paths, 7, "vtan1");
 }
 
-auto get_width(boost::filesystem::path const& path)
+auto get_width(Path const& paths)
 {
-    return read_file(banner_file(path), [](auto const & strings) {
+    return read_file(banner_file(paths), [](auto const & strings) {
         return strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(1) == std::to_string(neutrino_ID);
     }, 2);
 }
 
 template<typename Lepton>
 auto get_particles(Lepton const& lepton) -> std::vector<GenParticle> {
-    if (auto * particle = static_cast<GenParticle*>(lepton.Particle.GetObject())) return {*particle};
+    if (auto* particle = static_cast<GenParticle*>(lepton.Particle.GetObject())) return {*particle};
     return {};
+}
+
+template<typename Function>
+auto for_each(TRefArray const& ref_array, Function function)
+{
+    if (auto* iterator = static_cast<TRefArrayIter*>(ref_array.MakeIterator())) while (auto* object = iterator->Next()) function(*object);
+}
+
+template<typename Particle, typename Function>
+auto cast_and_apply(TObject const& object, Function function)
+{
+    if (object.IsA() != Particle::Class()) return false;
+    function(static_cast<Particle const&>(object));
+    return true;
+}
+
+template<typename Particle, typename Function>
+auto for_each(TRefArray const& ref_array, Function function)
+{
+    for_each(ref_array, [function](auto const & object) {
+        cast_and_apply<Particle>(object, function);
+    });
 }
 
 template<>
 auto get_particles(Jet const& jet) -> std::vector<GenParticle> {
     std::vector<GenParticle> particles;
-    if (auto* iterator = static_cast<TRefArrayIter*>(jet.Particles.MakeIterator())) while (auto* object = iterator->Next()) particles.emplace_back(*static_cast<GenParticle*>(object));
-//     auto* iterator = static_cast<TRefArrayIter*>(jet.Particles.MakeIterator());
-//     if (!iterator) return particles;
-//     while (auto* object = iterator->Next()) particles.emplace_back(*static_cast<GenParticle*>(object));
+    for_each<GenParticle>(jet.Particles, [&particles](auto & particle)
+    {
+        particles.emplace_back(particle);
+    });
     return particles;
 }
 
-auto origin(TTreeReaderArray<GenParticle> const& particles, int position, int check_id) -> boost::optional<GenParticle> {
+auto origin(TTreeReaderArray<GenParticle> const& particles, int position, std::vector<int> const& check_ids) -> boost::optional<GenParticle> {
     while (position != -1 && position < particles.GetSize())
     {
         auto& particle = particles.At(position);
-        if (std::abs(particle.PID) == check_id) return particle;
-        if (auto mother_2 = origin(particles, particle.M2, check_id)) return mother_2; // TODO new line not yet tested
+        if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
+        if (auto mother_2 = origin(particles, particle.M2, check_ids)) return mother_2;
         position = particle.M1;
     };
     return boost::none;
 }
 
 template<typename Lepton>
-auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, int check_id) -> boost::optional<GenParticle> {
+auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, std::vector<int> const& check_ids) -> boost::optional<GenParticle> {
     for (auto const& particle : get_particles(lepton))
     {
-        if (std::abs(particle.PID) == check_id) return particle;
-        if (auto mother = origin(particles, particle.M1, check_id)) return *mother;
+        if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
+        if (auto mother = origin(particles, particle.M1, check_ids)) return *mother;
     }
     return boost::none;
 }
 
 template<typename Lepton>
-auto id()
-{
-    print("never end up here");
-    return 0;
-}
-
-template<>
-auto id<Electron>()
-{
-    return electron_ID;
-}
-
-template<>
-auto id<Muon>()
-{
-    return muon_ID;
-}
-
-template<>
-auto id<Jet>()
-{
-    return tau_ID;
-}
-
-template<typename Lepton>
-auto name()
-{
-    print("never end up here");
-    return "never end up here";
-}
-
-template<>
-auto name<Electron>()
-{
-    return "electron";
-}
-
-template<>
-auto name<Muon>()
-{
-    return "muon";
-}
-
-template<>
-auto name<Jet>()
-{
-    return "tau";
-}
-
-template<typename Lepton>
 auto no_particle(Lepton const&)
 {
-//     print("no", name<Lepton>());
     GenParticle particle;
     particle.X = 0;
     particle.Y = 0;
     return particle;
 }
 
+template<typename Function>
+auto for_each_constituent(TRefArray const& ref_array, Function function)
+{
+    for_each(ref_array, [function](auto & object) {
+        if (cast_and_apply<GenParticle>(object, function)) return;
+        if (cast_and_apply<Track>(object, function)) return;
+        if (cast_and_apply<Tower>(object, function)) return;
+        print("Unexpected Constituent");
+    });
+}
+
 auto constituents(Jet const& jet)
 {
     TLorentzVector momentum;
-    for (auto pos = 0; pos < jet.Constituents.GetEntriesFast(); ++pos) {
-        auto* object = jet.Constituents.At(pos);
-        if (!object) continue;
-        if (object->IsA() == GenParticle::Class()) momentum += static_cast<GenParticle&>(*object).P4();
-        else if (object->IsA() == Track::Class()) momentum += static_cast<Track&>(*object).P4();
-        else if (object->IsA() == Tower::Class()) momentum += static_cast<Tower&>(*object).P4();
-    }
+    for_each_constituent(jet.Constituents, [&momentum](auto & object) {
+        momentum += object.P4();
+    });
     return momentum;
 }
 
@@ -424,11 +438,9 @@ template<>
 auto number_of_tracks(Jet const& jet)
 {
     auto number = 0;
-    for (auto pos = 0; pos < jet.Constituents.GetEntriesFast(); ++pos) {
-        auto* object = jet.Constituents.At(pos);
-        if (!object) continue;
-        if (object->IsA() == Track::Class()) ++number;
-    }
+    for_each<Track>(jet.Particles, [&number](auto&) {
+        ++number;
+    });
     return number;
 }
 
@@ -442,47 +454,38 @@ template<>
 auto track_momentum(Jet const& jet)
 {
     TLorentzVector momentum;
-    for (auto pos = 0; pos < jet.Constituents.GetEntriesFast(); ++pos) {
-        auto* object = jet.Constituents.At(pos);
-        if (!object) continue;
-        if (object->IsA() == Track::Class()) momentum += static_cast<Track&>(*object).P4();
-    }
+    for_each<Track>(jet.Particles, [&momentum](auto & track) {
+        momentum += track.P4();
+    });
     return momentum;
 }
 
 struct Lepton {
     template<typename Input>
-    Lepton(Input const& lepton, TTreeReaderArray<GenParticle> const& gen_particles) :
-        lorentz_vector(lepton.P4())
-        , charge(lepton.Charge)
-//         , tracks(number_of_tracks(lepton))
+    Lepton(Input const& lepton, TTreeReaderArray<GenParticle> const& gen_particles) : lorentz_vector(lepton.P4()), charge(lepton.Charge)
     {
-        if (auto mother = origin(lepton, gen_particles, id<Input>())) particle = *mother;
-        else {
-            particle = no_particle(lepton);
-//         if(tracks != 100)
-//             print(tracks, track_momentum(lepton).Pt());
-        }
-    }
-    Lepton(Track const& lepton, TTreeReaderArray<GenParticle> const& gen_particles) : lorentz_vector(lepton.P4()) , charge(lepton.Charge)
-    {
-        if (auto mother = origin(lepton, gen_particles, tau_ID)) particle = *mother;
-        else if (auto mother = origin(lepton, gen_particles, muon_ID)) particle = *mother;
-        else if (auto mother = origin(lepton, gen_particles, electron_ID)) particle = *mother;
+        if (auto mother = origin(lepton, gen_particles, ids<Input>())) particle = *mother;
         else particle = no_particle(lepton);
     }
     TLorentzVector lorentz_vector;
     GenParticle particle;
     int charge;
-//     int tracks;
 };
+
+std::ostream& operator<<(std::ostream& stream, TLorentzVector const& lepton)
+{
+    return stream << "Pt:" << lepton.Pt();
+}
+
+std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
+{
+    return stream << "(" << lepton.lorentz_vector << ", " << lepton.particle << ", " << lepton.charge << ")";
+}
 
 auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = transverse_distance(lepton.particle);
-    return d > 5. && d < 100.
-//     && lepton.tracks > 4
-           ;
+    return d > 5. && d < 100.;
 }
 
 auto is_hard(Lepton const& lepton)
@@ -505,7 +508,10 @@ auto is_displaced_signal(std::vector<Lepton>& leptons)
         return is_hard(lepton);
     });
     if (!hard) return false;
-    return !back_to_back(*displaced, *hard);
+    auto good = !back_to_back(*displaced, *hard);
+    if (!good) return false;
+    print(leptons);
+    return true;
 }
 
 template<typename Container>
@@ -541,7 +547,6 @@ auto count_events_if(TTreeReader& reader, Predicate predicate)
     TTreeReaderArray<Track> tracks(reader, "Track");
     return count_if(reader, [&]() {
         particles.IsEmpty();
-//         tracks.IsEmpty();
         auto leptons = get_leptons(tracks, particles);
 //         auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) + get_leptons(filter_taus(jets), particles);
         return predicate(leptons);
@@ -556,16 +561,16 @@ auto count_displaced_events(TTreeReader& reader)
 }
 
 template<typename Predicate>
-auto events(boost::filesystem::path const& path, Predicate predicate)
+auto events(Path const& paths, Predicate predicate)
 {
-    TFile file(delphes_file(path).c_str(), "read");
+    TFile file(delphes_file(paths).c_str(), "read");
     TTreeReader reader("Delphes", &file);
     return predicate(reader);
 }
 
-auto displaced_events(boost::filesystem::path const& path)
+auto displaced_events(Path const& paths)
 {
-    return events(path, [](auto & reader) {
+    return events(paths, [](auto & reader) {
         return count_displaced_events(reader);
     });
 }
@@ -596,16 +601,16 @@ auto count_prompt_events(TTreeReader& reader)
     });
 }
 
-auto prompt_events(boost::filesystem::path const& path)
+auto prompt_events(Path const& paths)
 {
-    return events(path, [](auto & reader) {
+    return events(paths, [](auto & reader) {
         return count_prompt_events(reader);
     });
 }
 
-auto all_events(boost::filesystem::path const& path)
+auto all_events(Path const& paths)
 {
-    return events(path, [](auto & reader) {
+    return events(paths, [](auto & reader) {
         return reader.GetEntries(false);
     });
 }
@@ -619,17 +624,18 @@ void save_result(Result const& result, std::string const& process)
     boost::copy(result, iterator);
 }
 
-auto get_result(boost::filesystem::path const& folder)
+auto get_result(Path const& paths)
 {
-    auto result = get_mass(folder);
-    result += " " + get_e_coupling(folder);
-    result += " " + get_mu_coupling(folder);
-    result += " " + get_tau_coupling(folder);
-    result += " " + std::to_string(all_events(folder));
-    result += " " + std::to_string(displaced_events(folder));
-    result += " " + std::to_string(prompt_events(folder));
-    result += " " + get_xsec(folder);
-    result += " " + get_width(folder);
+    if(get_mu_coupling(paths) != "1.000000e-01" && get_mass(paths) != "5.000000e+01") return ""s;
+    auto result = get_mass(paths);
+    result += " " + get_e_coupling(paths);
+    result += " " + get_mu_coupling(paths);
+    result += " " + get_tau_coupling(paths);
+    result += " " + std::to_string(all_events(paths));
+    result += " " + std::to_string(displaced_events(paths));
+    result += " " + std::to_string(prompt_events(paths));
+    result += " " + get_xsec(paths);
+    result += " " + get_width(paths);
     print(result);
     return result;
 }
@@ -657,7 +663,8 @@ int main(int argc, char** argv)
     }
     std::vector<std::string> arguments(argv, argv + argc);
     auto process = arguments.at(1);
+    auto tag = arguments.size() > 2 ? arguments.at(2) : "tag_1"s;
     std::vector<std::string> results {get_header()};
-    for (auto const& folder : decayed_folders(event_folder(process))) results.emplace_back(get_result(folder));
+    for (auto const& folder : decayed_folders(event_folder(process))) results.emplace_back(get_result({folder, tag}));
     save_result(results, process);
 }
