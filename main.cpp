@@ -383,8 +383,13 @@ auto is_lepton(int id) noexcept {
     return boost::algorithm::any_of_equal(lepton_ids(), std::abs(id));
 }
 
+auto at(TTreeReaderArray<GenParticle> const& particles, int position){
+    return position >= 0 && position < static_cast<int>(particles.GetSize()) ? boost::optional<GenParticle>(particles.At(position)) : boost::optional<GenParticle>();
+}
+
 auto is_neutrino_daughter(TTreeReaderArray<GenParticle> const& particles, GenParticle const& particle) noexcept {
-    return is_lepton(particle.PID) && std::abs(particles.At(particle.M1).PID) == neutrino_ID;
+    if(auto optional = at(particles, particle.M1)) return is_lepton(particle.PID) && std::abs(optional->PID) == neutrino_ID;
+    return false;
 }
 
 auto origin2(TTreeReaderArray<GenParticle> const& particles, int position) noexcept -> boost::optional<GenParticle> {
