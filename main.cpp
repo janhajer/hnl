@@ -353,18 +353,17 @@ auto get_particles(Jet const& jet) noexcept -> std::vector<GenParticle> {
     return particles;
 }
 
-auto at(TTreeReaderArray<GenParticle> const& particles, int position){
-    return position >= 0 && position < static_cast<int>(particles.GetSize()) ? boost::optional<GenParticle>(particles.At(position)) : boost::optional<GenParticle>();
+auto valid(TTreeReaderArray<GenParticle> const& particles, int position) noexcept {
+    return position >= 0 && position < static_cast<int>(particles.GetSize());
 }
 
+auto at(TTreeReaderArray<GenParticle> const& particles, int position) noexcept {
+    return valid(particles, position) ? boost::optional<GenParticle>(particles.At(position)) : boost::optional<GenParticle>();
+}
 
 auto origin(TTreeReaderArray<GenParticle> const& particles, int position, std::vector<int> const& check_ids) noexcept -> boost::optional<GenParticle> {
-    while (position >= 0 && position < static_cast<int>(particles.GetSize()))
-    {
-        auto optional = at(particles, position);
-        if(!optional) continue;
-        auto particle = *optional;
-//         print(particle);
+    while (valid(particles, position)) {
+        auto & particle = particles.At(position);
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
 //         if (particle.M2 >= 0) if(auto mother_2 = origin(particles, particle.M2, check_ids)) return mother_2;
         position = particle.M1;
@@ -395,11 +394,9 @@ auto is_neutrino_daughter(TTreeReaderArray<GenParticle> const& particles, GenPar
 }
 
 auto origin2(TTreeReaderArray<GenParticle> const& particles, int position) noexcept -> boost::optional<GenParticle> {
-    while (position >= 0 && position < static_cast<int>(particles.GetSize()))
+    while (valid(particles, position))
     {
-        auto optional = at(particles, position);
-        if(!optional) continue;
-        auto particle = *optional;
+        auto & particle = particles.At(position);
         if (transverse_distance(particle) == 0.) return boost::none;
         if (is_neutrino_daughter(particles, particle)) return particle;
 //         if (particle.M2 >= 0) if (auto optional = origin2(particles, particle.M2)) return optional;
@@ -422,7 +419,7 @@ auto origin2(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particle
 
 auto tree(TTreeReaderArray<GenParticle> const& particles, int position) noexcept -> std::vector<GenParticle> {
     std::vector<GenParticle> vector;
-    while (position >= 0 && position < static_cast<int>(particles.GetSize()))
+    while (valid(particles, position))
     {
         auto& particle = particles.At(position);
         vector.emplace_back(particle);
@@ -588,9 +585,9 @@ auto count_cms13_events_if(TTreeReader& reader, Predicate predicate) noexcept {
 
 template<typename Predicate>
 auto count_events_if(TTreeReader& reader, Predicate predicate) noexcept {
+    return count_lhcb_events_if(reader, predicate);
     return count_cms14_events_if(reader, predicate);
     return count_cms13_events_if(reader, predicate);
-    return count_lhcb_events_if(reader, predicate);
 }
 
 auto count_displaced_events(TTreeReader& reader) noexcept {
