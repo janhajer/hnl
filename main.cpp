@@ -505,7 +505,8 @@ std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
 auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = lepton.particle ? transverse_distance(*lepton.particle) : 0;
-    return d > min_displacement() && d < 100. && lepton.mother && std::abs(lepton.mother->PID) == neutrino_ID && lepton.lorentz_vector.Pt() > 5.;
+    return d > min_displacement() && d < 100.;
+//     return d > min_displacement() && d < 100. && lepton.mother && std::abs(lepton.mother->PID) == neutrino_ID && lepton.lorentz_vector.Pt() > 5.;
 }
 
 auto is_hard(Lepton const& lepton)
