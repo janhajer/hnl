@@ -522,7 +522,6 @@ auto back_to_back(Lepton const& one, Lepton const& two)
 
 auto is_displaced_signal(std::vector<Lepton>& leptons)
 {
-//     print(leptons);
     auto displaced = find_erase(leptons, [](auto const & lepton) {
         return has_secondary_vertex(lepton);
     });
@@ -533,8 +532,8 @@ auto is_displaced_signal(std::vector<Lepton>& leptons)
     if (!hard) return false;
     auto good = !back_to_back(*displaced, *hard);
     if (!good) return false;
-    print("Displaced: (", *displaced, ")  Hard: (", *hard, ")");
-    print(displaced->tree);
+//     print("Displaced: (", *displaced, ")  Hard: (", *hard, ")");
+//     print(displaced->tree);
     return true;
 }
 
@@ -649,8 +648,8 @@ void save_result(Result const& result, std::string const& process)
 
 auto get_result(Path const& paths)
 {
-    if (get_mass(paths) != "5.000000e+01" && get_mass(paths) != "1.000000e+00") return ""s;
-    if (get_mu_coupling(paths) != "1.000000e-01") return ""s;
+//     if (get_mass(paths) != "5.000000e+01" && get_mass(paths) != "1.000000e+00") return ""s;
+//     if (get_mu_coupling(paths) != "1.000000e-01") return ""s;
     auto result = get_mass(paths);
     result += " " + get_e_coupling(paths);
     result += " " + get_mu_coupling(paths);
