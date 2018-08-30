@@ -177,19 +177,18 @@ auto has_tag(std::string const& string, std::string const& tag) noexcept {
 
 auto is_directory = static_cast<bool (*)(boost::filesystem::path const&)>(&boost::filesystem::is_directory);
 
-auto is_decayed_folder = [](boost::filesystem::path const& path)
-{
+auto is_decayed_folder = [](boost::filesystem::path const& path) noexcept {
     return has_ending(path.filename().string(), "_decayed_1");
 };
 
 auto decayed_folders(std::string const& path_name) noexcept {
     boost::filesystem::path path(path_name);
     if (!boost::filesystem::is_directory(path)) print("Path:", path_name, "does not exist");
-    auto paths = get_paths(path, [](auto const & range)
+    auto paths = get_paths(path, [](auto const & range) noexcept
     {
         return range | boost::adaptors::filtered(is_directory) | boost::adaptors::filtered(is_decayed_folder);
     });
-    return boost::range::sort(paths, [](auto const & one, auto const & two)
+    return boost::range::sort(paths, [](auto const & one, auto const & two) noexcept
     {
         return doj::alphanum_comp(one.string(), two.string()) < 0;
     });
@@ -215,9 +214,9 @@ auto is_delphes = [](Path const& paths) noexcept {
 };
 
 auto delphes_file(Path const& paths) noexcept {
-    return get_file(paths.base, [&paths](auto const & files)
+    return get_file(paths.base, [&paths](auto const & files) noexcept
     {
-        return files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered([&paths](auto const & path) {
+        return files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered([&paths](auto const & path) noexcept {
             return is_delphes({path, paths.tag});
         });
     });
@@ -228,9 +227,9 @@ auto is_banner = [](Path const& paths) noexcept {
 };
 
 auto banner_file(Path const& paths) noexcept {
-    return get_file(paths.base, [&paths](auto const & files)
+    return get_file(paths.base, [&paths](auto const & files) noexcept
     {
-        return files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered([&paths](auto const & path) {
+        return files | boost::adaptors::filtered(is_regular_file) | boost::adaptors::filtered([&paths](auto const & path) noexcept {
             return is_banner({path, paths.tag});
         });
     });
@@ -259,7 +258,7 @@ private:
 
 auto split_line(std::string const& line) noexcept {
     std::vector<std::string> strings;
-    boost::split(strings, line, [](char c)
+    boost::split(strings, line, [](char c) noexcept
     {
         return c == ' ';
     }, boost::token_compress_on);
@@ -271,7 +270,7 @@ auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos
     File file(path);
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file.file), std::istream_iterator<Line>(), std::back_inserter(lines));
-    auto found = boost::range::find_if(lines, [&predicate](auto & line)
+    auto found = boost::range::find_if(lines, [&predicate](auto & line) noexcept
     {
         boost::trim_if(line, boost::is_any_of("\t "));
         return predicate(split_line(line));
@@ -280,21 +279,21 @@ auto read_file(boost::filesystem::path const& path, Predicate predicate, int pos
 }
 
 auto get_xsec(Path const& paths) noexcept {
-    return read_file(banner_file(paths), [](auto const & strings)
+    return read_file(banner_file(paths), [](auto const & strings) noexcept
     {
         return strings.size() > 4 && strings.at(0) == "#" && strings.at(1) == "Integrated" && strings.at(2) == "weight" && strings.at(3) == "(pb)" && strings.at(4) == ":";
     }, 5);
 }
 
 auto get_mass(Path const& paths) noexcept {
-    return read_file(banner_file(paths), [](auto const & strings)
+    return read_file(banner_file(paths), [](auto const & strings) noexcept
     {
         return strings.size() > 2 && strings.at(0) == std::to_string(neutrino_ID) && strings.at(2) == "#" && strings.at(3) == "mn1";
     }, 1);
 }
 
 auto get_coupling(Path const& paths, int pos, std::string const& name) noexcept {
-    return read_file(banner_file(paths), [&name, pos](auto const & strings)
+    return read_file(banner_file(paths), [&name, pos](auto const & strings) noexcept
     {
         return strings.size() > 3 && strings.at(0) == std::to_string(pos) && strings.at(2) == "#" && strings.at(3) == name;
     }, 1);
@@ -313,7 +312,7 @@ auto get_tau_coupling(Path const& paths) noexcept {
 }
 
 auto get_width(Path const& paths) noexcept {
-    return read_file(banner_file(paths), [](auto const & strings)
+    return read_file(banner_file(paths), [](auto const & strings) noexcept
     {
         return strings.size() > 2 && strings.at(0) == "DECAY" && strings.at(1) == std::to_string(neutrino_ID);
     }, 2);
@@ -338,7 +337,7 @@ return object.IsA() == Particle::Class() ? boost::optional<Particle>{static_cast
 
 template<typename Particle, typename Function>
 auto for_each(TRefArray const& ref_array, Function function) noexcept {
-    for_each(ref_array, [function](auto const & object)
+    for_each(ref_array, [function](auto const & object) noexcept
     {
         if (auto optional = cast<Particle>(object)) function(*optional);
     });
@@ -347,7 +346,7 @@ auto for_each(TRefArray const& ref_array, Function function) noexcept {
 template<>
 auto get_particles(Jet const& jet) noexcept -> std::vector<GenParticle> {
     std::vector<GenParticle> particles;
-    for_each<GenParticle>(jet.Particles, [&particles](auto & particle)
+    for_each<GenParticle>(jet.Particles, [&particles](auto & particle) noexcept
     {
         particles.emplace_back(particle);
     });
@@ -437,7 +436,7 @@ auto tree(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles) 
 
 template<typename Function>
 auto for_each_constituent(TRefArray const& ref_array, Function function) noexcept {
-    for_each(ref_array, [function](auto & object)
+    for_each(ref_array, [function](auto & object) noexcept
     {
         if (auto optional = cast<GenParticle>(object)) return function(*optional);
         if (auto optional = cast<Track>(object)) return function(*optional);
@@ -448,7 +447,7 @@ auto for_each_constituent(TRefArray const& ref_array, Function function) noexcep
 
 auto constituents(Jet const& jet) noexcept {
     TLorentzVector momentum;
-    for_each_constituent(jet.Constituents, [&momentum](auto & object)
+    for_each_constituent(jet.Constituents, [&momentum](auto & object) noexcept
     {
         momentum += object.P4();
     });
@@ -500,12 +499,12 @@ auto back_to_back(Lepton const& one, Lepton const& two) noexcept {
 }
 
 auto is_displaced_signal(std::vector<Lepton>& leptons) noexcept {
-    auto displaced = find_erase(leptons, [](auto const & lepton)
+    auto displaced = find_erase(leptons, [](auto const & lepton) noexcept
     {
         return has_secondary_vertex(lepton);
     });
     if (!displaced) return false;
-    auto hard = find_erase(leptons, [](auto const & lepton)
+    auto hard = find_erase(leptons, [](auto const & lepton) noexcept
     {
         return is_hard(lepton);
     });
@@ -525,7 +524,7 @@ auto get_leptons(Container const& container, TTreeReaderArray<GenParticle> const
 }
 
 auto filter_taus(TTreeReaderArray<Jet> const& jets) noexcept {
-    return boost::adaptors::filter(jets, [](auto const & jet)
+    return boost::adaptors::filter(jets, [](auto const & jet) noexcept
     {
         return jet.TauTag;
     });
@@ -542,7 +541,7 @@ template<typename Predicate>
 auto count_lhcb_events_if(TTreeReader& reader, Predicate predicate) noexcept {
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
     TTreeReaderArray<Track> tracks(reader, "Track");
-    return count_if(reader, [&]()
+    return count_if(reader, [&]() noexcept
     {
         particles.IsEmpty();
         auto leptons = get_leptons(tracks, particles);
@@ -556,7 +555,7 @@ auto count_cms14_events_if(TTreeReader& reader, Predicate predicate) noexcept {
     TTreeReaderArray<Electron> electrons(reader, "Electron");
     TTreeReaderArray<Muon> muons(reader, "MuonLoose");
     TTreeReaderArray<Jet> jets(reader, "Jet");
-    return count_if(reader, [&]()
+    return count_if(reader, [&]() noexcept
     {
         particles.IsEmpty();
         auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) + get_leptons(filter_taus(jets), particles);
@@ -570,7 +569,7 @@ auto count_cms13_events_if(TTreeReader& reader, Predicate predicate) noexcept {
     TTreeReaderArray<Electron> electrons(reader, "Electron");
     TTreeReaderArray<Muon> muons(reader, "Muon");
     TTreeReaderArray<Jet> jets(reader, "Jet");
-    return count_if(reader, [&]()
+    return count_if(reader, [&]() noexcept
     {
         particles.IsEmpty();
         auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) + get_leptons(filter_taus(jets), particles);
@@ -580,13 +579,13 @@ auto count_cms13_events_if(TTreeReader& reader, Predicate predicate) noexcept {
 
 template<typename Predicate>
 auto count_events_if(TTreeReader& reader, Predicate predicate) noexcept {
-    return count_cms13_events_if(reader, predicate);
     return count_cms14_events_if(reader, predicate);
+    return count_cms13_events_if(reader, predicate);
     return count_lhcb_events_if(reader, predicate);
 }
 
 auto count_displaced_events(TTreeReader& reader) noexcept {
-    return count_events_if(reader, [](auto & leptons)
+    return count_events_if(reader, [](auto & leptons) noexcept
     {
         return is_displaced_signal(leptons);
     });
@@ -600,7 +599,7 @@ auto events(Path const& paths, Predicate predicate) noexcept {
 }
 
 auto displaced_events(Path const& paths) noexcept {
-    return events(paths, [](auto & reader)
+    return events(paths, [](auto & reader) noexcept
     {
         return count_displaced_events(reader);
     });
@@ -611,12 +610,12 @@ auto same_sign(Lepton const& one, Lepton const& two) noexcept {
 }
 
 auto is_prompt_signal(std::vector<Lepton>& leptons) noexcept {
-    auto hard = find_erase(leptons, [](auto const & lepton)
+    auto hard = find_erase(leptons, [](auto const & lepton) noexcept
     {
         return is_hard(lepton);
     });
     if (!hard) return false;
-    auto second = find_erase(leptons, [](auto const & lepton)
+    auto second = find_erase(leptons, [](auto const & lepton) noexcept
     {
         return is_hard(lepton);
     });
@@ -625,21 +624,21 @@ auto is_prompt_signal(std::vector<Lepton>& leptons) noexcept {
 }
 
 auto count_prompt_events(TTreeReader& reader) noexcept {
-    return count_events_if(reader, [](auto & leptons)
+    return count_events_if(reader, [](auto & leptons) noexcept
     {
         return is_prompt_signal(leptons);
     });
 }
 
 auto prompt_events(Path const& paths) noexcept {
-    return events(paths, [](auto & reader)
+    return events(paths, [](auto & reader) noexcept
     {
         return count_prompt_events(reader);
     });
 }
 
 auto all_events(Path const& paths) noexcept {
-    return events(paths, [](auto & reader)
+    return events(paths, [](auto & reader) noexcept
     {
         return reader.GetEntries(false);
     });
