@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 2.8)
 
 project(Neutrino)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors")
+
 find_package(ROOT)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
