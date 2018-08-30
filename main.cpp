@@ -343,8 +343,9 @@ auto get_width(Path const& paths)
 
 template<typename Lepton>
 auto get_particles(Lepton const& lepton) -> std::vector<GenParticle> {
-    if (auto* particle = static_cast<GenParticle*>(lepton.Particle.GetObject())) return {*particle};
-    return {};
+    std::vector<GenParticle> particles;
+    if (auto* particle = static_cast<GenParticle*>(lepton.Particle.GetObject())) particles.emplace_back(*particle);
+    return particles;
 }
 
 template<typename Function>
@@ -390,19 +391,50 @@ auto origin(TTreeReaderArray<GenParticle> const& particles, int position, std::v
 
 template<typename Lepton>
 auto origin(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, std::vector<int> const& check_ids) -> boost::optional<GenParticle> {
-//     print("New origin");
     for (auto const& particle : get_particles(lepton))
     {
-//         print(particle);
         if (boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID))) return particle;
         if (auto mother = origin(particles, particle.M1, check_ids)) return mother;
     }
     return boost::none;
 }
 
+auto min_displacement()
+{
+    return 5.;
+}
+
+auto is_particle(TTreeReaderArray<GenParticle> const& particles, GenParticle const& particle, std::vector<int> const& check_ids)
+{
+    return boost::algorithm::any_of_equal(check_ids, std::abs(particle.PID)) && std::abs(particles.At(particle.M1).PID) == neutrino_ID;
+}
+
+auto origin2(TTreeReaderArray<GenParticle> const& particles, int position, std::vector<int> const& check_ids) -> boost::optional<GenParticle> {
+    while (position >= 0 && position < particles.GetSize())
+    {
+        auto& particle = particles.At(position);
+        if (is_particle(particles, particle, check_ids)) return particle;
+//         if (particle.M2 >= 0) if(auto mother_2 = origin2(particles, particle.M2, check_ids)) return mother_2;
+        position = particle.M1;
+    };
+    return boost::none;
+}
+
+template<typename Lepton>
+auto origin2(Lepton const& lepton, TTreeReaderArray<GenParticle> const& particles, std::vector<int> const& check_ids) -> boost::optional<GenParticle> {
+    for (auto const& particle : get_particles(lepton))
+    {
+        auto& M1 = particles.At(particle.M1);
+        if (is_particle(particles, particle, check_ids)) return particle;
+        if (auto mother = origin2(particles, particle.M1, check_ids)) return mother;
+    }
+    return boost::none;
+}
+
 auto tree(TTreeReaderArray<GenParticle> const& particles, int position) -> std::vector<GenParticle> {
     std::vector<GenParticle> vector;
-    while (position >= 0 && position < particles.GetSize()) {
+    while (position >= 0 && position < particles.GetSize())
+    {
         auto& particle = particles.At(position);
         vector.emplace_back(particle);
         position = particle.M1;
@@ -446,10 +478,10 @@ struct Lepton {
     template<typename Input>
     Lepton(Input const& lepton, TTreeReaderArray<GenParticle> const& particles) :
         lorentz_vector(lepton.P4()),
-        particle(origin(lepton, particles, ids<Input>())),
+        particle(origin2(lepton, particles, ids<Input>())),
         mother(origin(lepton, particles, {neutrino_ID})),
            charge(lepton.Charge),
-        tree(::tree(lepton, particles))
+           tree(::tree(lepton, particles))
     {
 //         print(*this);
     }
@@ -473,7 +505,7 @@ std::ostream& operator<<(std::ostream& stream, Lepton const& lepton)
 auto has_secondary_vertex(Lepton const& lepton)
 {
     auto d = lepton.particle ? transverse_distance(*lepton.particle) : 0;
-    return d > 5. && d < 100. && lepton.mother && std::abs(lepton.mother->PID) == neutrino_ID && lepton.lorentz_vector.Pt() > 5.;
+    return d > min_displacement() && d < 100. && lepton.mother && std::abs(lepton.mother->PID) == neutrino_ID && lepton.lorentz_vector.Pt() > 5.;
 }
 
 auto is_hard(Lepton const& lepton)
