@@ -551,7 +551,7 @@ auto count_lhcb_events_if(TTreeReader& reader, Predicate predicate) noexcept {
 }
 
 template<typename Predicate>
-auto count_cms_events_if(TTreeReader& reader, Predicate predicate) noexcept {
+auto count_cms14_events_if(TTreeReader& reader, Predicate predicate) noexcept {
     TTreeReaderArray<GenParticle> particles(reader, "Particle");
     TTreeReaderArray<Electron> electrons(reader, "Electron");
     TTreeReaderArray<Muon> muons(reader, "MuonLoose");
@@ -565,8 +565,23 @@ auto count_cms_events_if(TTreeReader& reader, Predicate predicate) noexcept {
 }
 
 template<typename Predicate>
+auto count_cms13_events_if(TTreeReader& reader, Predicate predicate) noexcept {
+    TTreeReaderArray<GenParticle> particles(reader, "Particle");
+    TTreeReaderArray<Electron> electrons(reader, "Electron");
+    TTreeReaderArray<Muon> muons(reader, "Muon");
+    TTreeReaderArray<Jet> jets(reader, "Jet");
+    return count_if(reader, [&]()
+    {
+        particles.IsEmpty();
+        auto leptons = get_leptons(electrons, particles) + get_leptons(muons, particles) + get_leptons(filter_taus(jets), particles);
+        return predicate(leptons);
+    });
+}
+
+template<typename Predicate>
 auto count_events_if(TTreeReader& reader, Predicate predicate) noexcept {
-    return count_cms_events_if(reader, predicate);
+    return count_cms13_events_if(reader, predicate);
+    return count_cms14_events_if(reader, predicate);
     return count_lhcb_events_if(reader, predicate);
 }
 
