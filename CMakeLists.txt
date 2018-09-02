@@ -2,6 +2,7 @@ cmake_minimum_required (VERSION 2.8)
 
 project(Neutrino)
 
+set (CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors")
 
 find_package(ROOT)
@@ -13,6 +14,14 @@ include_directories("${Boost_INCLUDE_DIR}")
 link_directories(~/local/lib/)
 add_library(libDelphes SHARED IMPORTED)
 
-add_executable (neutrino main.cpp)
-target_link_libraries(neutrino Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
-set_property(TARGET neutrino PROPERTY CXX_STANDARD 14)
+add_executable (CMS13 main-cms-13.cpp)
+target_link_libraries(CMS13 Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable (CMS14 main-cms-14.cpp)
+target_link_libraries(CMS14 Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable (LHCb main-lhcb.cpp)
+target_link_libraries(LHCb Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable (test test.cpp)
+target_link_libraries(test Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
