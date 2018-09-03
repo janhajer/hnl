@@ -1,32 +1,11 @@
 #pragma once
 
 #include <iostream>
-#include <fstream>
-#include <random>
+#include <vector>
 
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/cxx11/any_of.hpp>
-#include <boost/range/irange.hpp>
-#include <boost/range/size.hpp>
-#include <boost/range/numeric.hpp>
-#include <boost/range/adaptor/indexed.hpp>
-#include <boost/range/adaptor/filtered.hpp>
-#include <boost/range/adaptor/transformed.hpp>
-#include <boost/range/algorithm/sort.hpp>
-#include <boost/range/algorithm/copy.hpp>
-#include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/algorithm/find_if.hpp>
+#include <boost/range/adaptor/indexed.hpp>
 #include <boost/optional/optional_io.hpp>
-
-#include "TFile.h"
-#include "TTreeReader.h"
-#include "TTreeReaderArray.h"
-
-#include "classes/DelphesClasses.h"
-
-#include "alphanum.hpp"
-#include "detector.hh"
 
 using namespace std::string_literals;
 
@@ -56,31 +35,6 @@ auto find_erase(std::vector<Element>& container, Predicate predicate) noexcept -
 template<typename Object>
 auto sqr(Object const& object) noexcept {
     return object * object;
-}
-
-template<typename Particle>
-auto transverse_distance(Particle const& particle) noexcept {
-    return std::sqrt(sqr(particle.X) + sqr(particle.Y));
-}
-
-std::ostream& operator<<(std::ostream& stream, boost::filesystem::path const& path) noexcept {
-    return stream << path.string();
-}
-
-std::ostream& operator<<(std::ostream& stream, GenParticle const& particle) noexcept {
-    return stream << "ID: " << particle.PID << ", D0: " << transverse_distance(particle) << " mm" << " Status: " << particle.Status;
-}
-
-std::ostream& operator<<(std::ostream& stream, Muon const& muon) noexcept {
-    return stream << "(" << muon.PT << ", " << muon.Eta << ")";
-}
-
-std::ostream& operator<<(std::ostream& stream, Electron const& muon) noexcept {
-    return stream << "(" << muon.PT << ", " << muon.Eta << ")";
-}
-
-std::ostream& operator<<(std::ostream& stream, Jet const& muon) noexcept {
-    return stream << "(" << muon.PT << ", " << muon.Eta << ")";
 }
 
 template<typename Key_, typename Value_>
