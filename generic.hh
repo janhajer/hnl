@@ -34,8 +34,7 @@ auto find_erase(std::vector<Element>& container, Predicate predicate) noexcept -
 }
 
 template<typename Element, typename Function>
-auto copy_if(std::vector<Element> const& container, Function function)
-{
+auto copy_if(std::vector<Element> const& container, Function function) noexcept {
     std::vector<Element> result(container.size());
     auto iterator = boost::algorithm::copy_if(container, std::begin(result), function);
     result.erase(iterator, result.end());
@@ -45,8 +44,7 @@ auto copy_if(std::vector<Element> const& container, Function function)
 template<typename> class TTreeReaderArray;
 
 template<typename Element, typename Function>
-auto copy_if(TTreeReaderArray<Element> const& container, Function function)
-{
+auto copy_if(TTreeReaderArray<Element> const& container, Function function) noexcept {
     std::vector<Element> result(container.GetSize());
     auto iterator = boost::algorithm::copy_if(container, std::begin(result), function);
     result.erase(iterator, result.end());
