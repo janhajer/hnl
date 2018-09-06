@@ -5,6 +5,7 @@
 
 #include <boost/range/algorithm/find_if.hpp>
 #include <boost/range/adaptor/indexed.hpp>
+#include <boost/algorithm/cxx11/copy_if.hpp>
 #include <boost/optional/optional_io.hpp>
 
 using namespace std::string_literals;
@@ -30,6 +31,26 @@ auto find_erase(std::vector<Element>& container, Predicate predicate) noexcept -
     auto element = *found;
     container.erase(found);
     return element;
+}
+
+template<typename Element, typename Function>
+auto copy_if(std::vector<Element> const& container, Function function)
+{
+    std::vector<Element> result(container.size());
+    auto iterator = boost::algorithm::copy_if(container, std::begin(result), function);
+    result.erase(iterator, result.end());
+    return result;
+}
+
+template<typename> class TTreeReaderArray;
+
+template<typename Element, typename Function>
+auto copy_if(TTreeReaderArray<Element> const& container, Function function)
+{
+    std::vector<Element> result(container.GetSize());
+    auto iterator = boost::algorithm::copy_if(container, std::begin(result), function);
+    result.erase(iterator, result.end());
+    return result;
 }
 
 template<typename Object>
