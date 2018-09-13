@@ -56,6 +56,11 @@ auto sqr(Object const& object) noexcept {
     return object * object;
 }
 
+template<typename Object>
+auto length(Object const& one, Object const& two) noexcept {
+    return sqrt(sqr(one) + sqr(two));
+}
+
 template<typename Key_, typename Value_>
 auto& operator<<(std::ostream& stream, std::pair<Key_, Value_> const& pair) noexcept {
     return stream << '(' << pair.first << ", " << pair.second << ')';
