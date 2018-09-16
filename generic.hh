@@ -3,12 +3,19 @@
 #include <iostream>
 #include <vector>
 
+#include <boost/range/irange.hpp>
+#include <boost/range/algorithm/max_element.hpp>
 #include <boost/range/algorithm/find_if.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
 #include <boost/optional/optional_io.hpp>
 
 using namespace std::string_literals;
+
+template<typename Integer>
+auto irange(Integer integer) noexcept {
+    return boost::irange(0, integer);
+}
 
 template<typename Element>
 auto operator+(std::vector<Element> const& one, std::vector<Element> const& two) noexcept
