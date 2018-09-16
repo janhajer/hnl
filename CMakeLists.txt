@@ -23,7 +23,7 @@ target_link_libraries(CMS14 Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
 add_executable (LHCb main-lhcb.cpp)
 target_link_libraries(LHCb Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
 
-add_executable (Distance main-test.cpp)
+add_executable (Distance main-distance.cpp)
 target_link_libraries(Distance Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable (Test main-test.cpp)
