@@ -32,6 +32,14 @@ auto& operator+=(std::vector<Element>& one, std::vector<Element> const& two) noe
     return one;
 }
 
+template <template<class> class Container, typename Element, typename Function, typename Result = std::decay_t<std::result_of_t<Function&(Element const&)>>>
+std::vector<Result> transform(Container<Element> const& container, Function && function) noexcept {
+    std::vector<Result> result;
+    result.reserve(container.size());
+    boost::range::transform(container, std::back_inserter(result), function);
+    return result;
+}
+
 template<typename Element, typename Predicate>
 auto find_erase(std::vector<Element>& container, Predicate predicate) noexcept -> boost::optional<Element> {
     auto found = boost::range::find_if(container, predicate);
@@ -94,15 +102,4 @@ template<typename Container>
 void print_line(Container const& container) noexcept {
     for (auto const& element : container) std::cout << element << ", ";
     std::cout << std::endl;
-}
-
-template <template<class> class Container, typename Element, typename Function, typename Result = std::decay_t<std::result_of_t<Function&(Element const&)>>>
-std::vector<Result> transform(Container<Element> const& container, Function && function) noexcept {
-    std::vector<Result> result;
-    print(container);
-    print(container.size());
-    result.reserve(container.size());
-    boost::range::transform(container, std::back_inserter(result), function);
-    print(result);
-    return result;
 }
