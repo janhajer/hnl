@@ -7,6 +7,7 @@
 #include <boost/range/algorithm/max_element.hpp>
 #include <boost/range/algorithm/find_if.hpp>
 #include <boost/range/adaptor/indexed.hpp>
+#include <boost/range/algorithm/transform.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
 #include <boost/optional/optional_io.hpp>
 
@@ -29,6 +30,14 @@ template<typename Element>
 auto& operator+=(std::vector<Element>& one, std::vector<Element> const& two) noexcept {
     one.insert(one.end(), two.begin(), two.end());
     return one;
+}
+
+template <template<class> class Container, typename Element, typename Function, typename Result = std::decay_t<std::result_of_t<Function&(Element const&)>>>
+std::vector<Result> transform(Container<Element> const& vector, Function && function) noexcept {
+    std::vector<Result> result;
+    result.reserve(vector.size());
+    boost::range::transform(vector, result.begin(), function);
+    return result;
 }
 
 template<typename Element, typename Predicate>
