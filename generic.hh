@@ -102,7 +102,7 @@ std::vector<Result> transform(Container<Element> const& container, Function && f
     print(container);
     print(container.size());
     result.reserve(container.size());
-    boost::range::transform(container, result.begin(), function);
+    boost::range::transform(container, std::back_inserter(result), function);
     print(result);
     return result;
 }
