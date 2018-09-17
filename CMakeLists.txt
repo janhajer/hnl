@@ -28,3 +28,6 @@ target_link_libraries(Distance Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable (Test main-test.cpp)
 target_link_libraries(Test Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable (Test2 main-ray.cpp)
+target_link_libraries(Test2 Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})

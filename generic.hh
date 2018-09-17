@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 
+#include <boost/units/cmath.hpp>
 #include <boost/range/irange.hpp>
 #include <boost/range/algorithm/max_element.hpp>
 #include <boost/range/algorithm/find_if.hpp>
@@ -70,6 +71,11 @@ auto copy_if(TTreeReaderArray<Element> const& container, Function function) noex
 template<typename Object>
 auto sqr(Object const& object) noexcept {
     return object * object;
+}
+
+template<typename Object>
+auto length(Object const& one) noexcept {
+    return sqrt(sqr(one));
 }
 
 template<typename Object>
