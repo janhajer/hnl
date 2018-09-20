@@ -77,7 +77,7 @@ auto sqr(Object const& object) noexcept {
 }
 
 template<typename Object>
-auto length(Object const& one) noexcept {
+auto norm(Object const& one) noexcept {
     return sqrt(sqr(one));
 }
 
