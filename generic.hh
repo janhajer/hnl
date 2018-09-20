@@ -107,3 +107,7 @@ void print_line(Container const& container) noexcept {
     for (auto const& element : container) std::cout << element << ", ";
     std::cout << std::endl;
 }
+
+auto identity = [](auto const& value) noexcept {
+        return value;
+    };
