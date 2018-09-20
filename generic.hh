@@ -11,6 +11,7 @@
 #include <boost/range/algorithm/transform.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
 #include <boost/optional/optional_io.hpp>
+#include <boost/range/size.hpp>
 
 using namespace std::string_literals;
 
@@ -33,11 +34,31 @@ auto& operator+=(std::vector<Element>& one, std::vector<Element> const& two) noe
     return one;
 }
 
-template <template<class> class Container, typename Element, typename Function, typename Result = std::decay_t<std::result_of_t<Function&(Element const&)>>>
+template<typename Element>
+auto size(std::vector<Element> const& vector){
+    return vector.size();
+}
+
+template<typename> class TTreeReaderArray;
+
+template<typename Element>
+auto size(TTreeReaderArray<Element> const& vector){
+    return vector.GetSize();
+}
+
+template <template<class...> class Container, typename Element, typename Function, typename Result = std::decay_t<std::result_of_t<Function&(Element const&)>>>
 std::vector<Result> transform(Container<Element> const& container, Function && function) noexcept {
     std::vector<Result> result;
-    result.reserve(container.size());
+    result.reserve(size(container));
     boost::range::transform(container, std::back_inserter(result), function);
+    return result;
+}
+
+template<template<class...> class Container, typename Element, typename Function>
+auto copy_if(Container<Element> const& container, Function function) noexcept {
+    std::vector<Element> result(size(container));
+    auto iterator = boost::algorithm::copy_if(container, std::begin(result), function);
+    result.erase(iterator, result.end());
     return result;
 }
 
@@ -50,24 +71,6 @@ auto find_erase(std::vector<Element>& container, Predicate predicate) noexcept -
     return element;
 }
 
-template<typename Element, typename Function>
-auto copy_if(std::vector<Element> const& container, Function function) noexcept {
-    std::vector<Element> result(container.size());
-    auto iterator = boost::algorithm::copy_if(container, std::begin(result), function);
-    result.erase(iterator, result.end());
-    return result;
-}
-
-template<typename> class TTreeReaderArray;
-
-template<typename Element, typename Function>
-auto copy_if(TTreeReaderArray<Element> const& container, Function function) noexcept {
-    std::vector<Element> result(container.GetSize());
-    auto iterator = boost::algorithm::copy_if(container, std::begin(result), function);
-    result.erase(iterator, result.end());
-    return result;
-}
-
 template<typename Object>
 auto sqr(Object const& object) noexcept {
     return object * object;
@@ -76,11 +79,6 @@ auto sqr(Object const& object) noexcept {
 template<typename Object>
 auto length(Object const& one) noexcept {
     return sqrt(sqr(one));
-}
-
-template<typename Object>
-auto length(Object const& one, Object const& two) noexcept {
-    return sqrt(sqr(one) + sqr(two));
 }
 
 template<typename Key_, typename Value_>

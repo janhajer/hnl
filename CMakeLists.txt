@@ -31,3 +31,9 @@ target_link_libraries(Test Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable (Test2 main-ray.cpp)
 target_link_libraries(Test2 Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable (Wboson main-W.cpp)
+target_link_libraries(Wboson Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable (Leading main-W.cpp)
+target_link_libraries(Leading Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
