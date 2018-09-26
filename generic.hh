@@ -21,8 +21,12 @@ auto irange(Integer integer) noexcept {
 }
 
 template<typename Element>
-auto operator+(std::vector<Element> const& one, std::vector<Element> const& two) noexcept
-{
+auto make_vector(Element const& element) -> std::vector<Element> {
+    return {element};
+}
+
+template<typename Element>
+auto operator+(std::vector<Element> const& one, std::vector<Element> const& two) noexcept {
     auto copy = one;
     copy.insert(copy.end(), two.begin(), two.end());
     return copy;
@@ -31,6 +35,12 @@ auto operator+(std::vector<Element> const& one, std::vector<Element> const& two)
 template<typename Element>
 auto& operator+=(std::vector<Element>& one, std::vector<Element> const& two) noexcept {
     one.insert(one.end(), two.begin(), two.end());
+    return one;
+}
+
+template<typename Element>
+auto& operator+=(std::vector<Element>& one, Element const& two) noexcept {
+    one.emplace_back(two);
     return one;
 }
 
