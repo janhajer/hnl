@@ -121,3 +121,13 @@ void print_line(Container const& container) noexcept {
 auto identity = [](auto const& value) noexcept {
         return value;
     };
+
+template <typename Enumeration>
+constexpr typename std::underlying_type_t<Enumeration> to_underlying(Enumeration enumeration) noexcept {
+    return static_cast<typename std::underlying_type_t<Enumeration>>(enumeration);
+}
+
+template <typename Enumeration>
+std::string to_string(Enumeration enumeration) noexcept {
+    return std::to_string(to_underlying(enumeration));
+}
