@@ -20,6 +20,9 @@ target_link_libraries(CMS13 Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
 add_executable (CMS14 main-cms-14.cpp)
 target_link_libraries(CMS14 Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
 
+add_executable (ATLAS main-atlas.cpp)
+target_link_libraries(ATLAS Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
+
 add_executable (LHCb main-lhcb.cpp)
 target_link_libraries(LHCb Delphes ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
 
