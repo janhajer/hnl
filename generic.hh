@@ -26,7 +26,8 @@ auto make_vector(Element const& element) -> std::vector<Element> {
 }
 
 template<typename Element>
-auto operator+(std::vector<Element> const& one, std::vector<Element> const& two) noexcept {
+auto operator+(std::vector<Element> const& one, std::vector<Element> const& two) noexcept
+{
     auto copy = one;
     copy.insert(copy.end(), two.begin(), two.end());
     return copy;
@@ -45,14 +46,16 @@ auto& operator+=(std::vector<Element>& one, Element const& two) noexcept {
 }
 
 template<typename Element>
-auto size(std::vector<Element> const& vector){
+auto size(std::vector<Element> const& vector)
+{
     return vector.size();
 }
 
 template<typename> class TTreeReaderArray;
 
 template<typename Element>
-auto size(TTreeReaderArray<Element> const& vector){
+auto size(TTreeReaderArray<Element> const& vector)
+{
     return vector.GetSize();
 }
 
@@ -118,9 +121,40 @@ void print_line(Container const& container) noexcept {
     std::cout << std::endl;
 }
 
+template<typename Get, typename Condition, typename Second>
+auto get_while_do(Get get_check, Condition condition, Second do_work)
+{
+    auto check = get_check();
+    while (condition(check)) {
+        do_work(check);
+        check = get_check();
+    }
+}
+
+auto wfilter(std::string string, std::string const& pattern) noexcept {
+    get_while_do([&]() noexcept {
+        return string.find(pattern);
+    }, [](auto position) noexcept {
+        return position != std::string::npos;
+    }, [&](auto position) noexcept {
+        return string.erase(position, pattern.length());
+    });
+    return string;
+}
+
+auto filter(std::string string, std::string const& pattern) noexcept {
+    auto position = string.find(pattern);
+    while (position != std::string::npos)
+    {
+        string.erase(position, pattern.length());
+        position = string.find(pattern);
+    }
+    return string;
+}
+
 auto identity = [](auto const& value) noexcept {
-        return value;
-    };
+    return value;
+};
 
 template <typename Enumeration>
 constexpr typename std::underlying_type_t<Enumeration> to_underlying(Enumeration enumeration) noexcept {
