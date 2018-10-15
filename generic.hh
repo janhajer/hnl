@@ -13,6 +13,18 @@
 #include <boost/optional/optional_io.hpp>
 #include <boost/range/size.hpp>
 
+template<typename Element>
+class TTreeReaderArray;
+
+namespace root{
+
+template<typename Element>
+using TreeReaderArray = ::TTreeReaderArray<Element>;
+
+}
+
+namespace neutrino{
+
 using namespace std::string_literals;
 
 template<typename Integer>
@@ -51,10 +63,8 @@ auto size(std::vector<Element> const& vector)
     return vector.size();
 }
 
-template<typename> class TTreeReaderArray;
-
 template<typename Element>
-auto size(TTreeReaderArray<Element> const& vector)
+auto size(root::TreeReaderArray<Element> const& vector)
 {
     return vector.GetSize();
 }
@@ -164,4 +174,6 @@ constexpr typename std::underlying_type_t<Enumeration> to_underlying(Enumeration
 template <typename Enumeration>
 std::string to_string(Enumeration enumeration) noexcept {
     return std::to_string(to_underlying(enumeration));
+}
+
 }
