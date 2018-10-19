@@ -3,35 +3,13 @@
 #include <iostream>
 #include <vector>
 
-// #include <thread>
-// #include <cmath>
-// #include <mutex>
-// #include <iostream>
-// #include <vector>
-// #include <algorithm>
-// #include <numeric>
-// #include <future>
-
-#include <boost/units/cmath.hpp>
+#include <boost/optional/optional_io.hpp>
+#include <boost/algorithm/cxx11/copy_if.hpp>
 #include <boost/range/irange.hpp>
-#include <boost/range/algorithm/max_element.hpp>
 #include <boost/range/algorithm/find_if.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/algorithm/transform.hpp>
-#include <boost/algorithm/cxx11/copy_if.hpp>
-#include <boost/optional/optional_io.hpp>
 #include <boost/range/size.hpp>
-
-template<typename Element>
-class TTreeReaderArray;
-
-namespace root
-{
-
-template<typename Element>
-using TreeReaderArray = ::TTreeReaderArray<Element>;
-
-}
 
 namespace neutrino
 {
@@ -71,12 +49,6 @@ template<typename Element>
 auto size(std::vector<Element> const& vector)
 {
     return vector.size();
-}
-
-template<typename Element>
-auto size(root::TreeReaderArray<Element> const& vector)
-{
-    return vector.GetSize();
 }
 
 template <template<class...> class Container, typename Element, typename Function, typename Result = std::decay_t<std::result_of_t<Function&(Element const&)>>>
@@ -171,10 +143,6 @@ auto filter(std::string string, std::string const& pattern) noexcept {
     }
     return string;
 }
-
-auto identity = [](auto const& value) noexcept {
-    return value;
-};
 
 template <typename Enumeration>
 constexpr typename std::underlying_type_t<Enumeration> to_underlying(Enumeration enumeration) noexcept {
