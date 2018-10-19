@@ -2,8 +2,8 @@ cmake_minimum_required (VERSION 2.8)
 
 project(Neutrino)
 
-set (CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token")
+set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token -pthread")
 
 find_package(ROOT)
 
@@ -53,4 +53,5 @@ target_link_libraries(HNL ${LIBRARIES})
 add_executable (CMS13-Pythia main-cms-13-pythia.cpp)
 target_link_libraries(CMS13-Pythia ${LIBRARIES})
 
-
+add_executable (LHCb-Pythia main-lhcb-pythia.cpp)
+target_link_libraries(LHCb-Pythia ${LIBRARIES})
