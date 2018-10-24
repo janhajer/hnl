@@ -113,6 +113,26 @@ void print_line(Container const& container) noexcept {
     std::cout << std::endl;
 }
 
+auto filter(std::string string, std::string const& pattern) noexcept {
+    auto position = string.find(pattern);
+    while (position != std::string::npos)
+    {
+        string.erase(position, pattern.length());
+        position = string.find(pattern);
+    }
+    return string;
+}
+
+template <typename Enumeration>
+constexpr typename std::underlying_type_t<Enumeration> to_underlying(Enumeration enumeration) noexcept {
+    return static_cast<typename std::underlying_type_t<Enumeration>>(enumeration);
+}
+
+template <typename Enumeration>
+std::string to_string(Enumeration enumeration) noexcept {
+    return std::to_string(to_underlying(enumeration));
+}
+
 template<typename Get, typename Condition, typename Second>
 auto get_while_do(Get get_check, Condition condition, Second do_work)
 {
@@ -132,26 +152,6 @@ auto wfilter(std::string string, std::string const& pattern) noexcept {
         return string.erase(position, pattern.length());
     });
     return string;
-}
-
-auto filter(std::string string, std::string const& pattern) noexcept {
-    auto position = string.find(pattern);
-    while (position != std::string::npos)
-    {
-        string.erase(position, pattern.length());
-        position = string.find(pattern);
-    }
-    return string;
-}
-
-template <typename Enumeration>
-constexpr typename std::underlying_type_t<Enumeration> to_underlying(Enumeration enumeration) noexcept {
-    return static_cast<typename std::underlying_type_t<Enumeration>>(enumeration);
-}
-
-template <typename Enumeration>
-std::string to_string(Enumeration enumeration) noexcept {
-    return std::to_string(to_underlying(enumeration));
 }
 
 // class ThreadPool
