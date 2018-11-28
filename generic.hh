@@ -46,9 +46,13 @@ auto& operator+=(std::vector<Element>& one, Element const& two) noexcept {
 }
 
 template<typename Element>
-auto size(std::vector<Element> const& vector)
-{
+auto size(std::vector<Element> const& vector) noexcept {
     return vector.size();
+}
+
+template<typename Element>
+auto operator!(std::vector<Element> const& container) noexcept {
+    return container.empty();
 }
 
 template <template<class...> class Container, typename Element, typename Function, typename Result = std::decay_t<std::result_of_t<Function&(Element const&)>>>
