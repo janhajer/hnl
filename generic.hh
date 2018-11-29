@@ -14,6 +14,10 @@
 namespace neutrino
 {
 
+auto arguments(int argc, char** argv) noexcept -> std::vector<std::string> {
+    return {argv, argv + argc};
+}
+
 using namespace std::string_literals;
 
 template<typename Integer>
