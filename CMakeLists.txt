@@ -46,6 +46,9 @@ target_link_libraries(Test2 ${LIBRARIES})
 add_executable(Wboson main-W.cpp)
 target_link_libraries(Wboson ${LIBRARIES})
 
+add_executable(Tau main-tau.cpp)
+target_link_libraries(Tau ${LIBRARIES})
+
 add_executable(Leading main-lead.cpp)
 target_link_libraries(Leading ${LIBRARIES})
 
