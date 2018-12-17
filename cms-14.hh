@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scan.hh"
+#include "detector.hh"
 
 namespace neutrino
 {
@@ -25,47 +25,47 @@ auto cms_14_trigger() noexcept -> std::map<Id, Energy> {
     return {{Id::electron, 24_GeV}, {Id::muon, 24_GeV}, {Id::tau, 75_GeV}};
 }
 
-auto electron_efficiency_cms_14(Eff const& vector) noexcept {
+auto electron_efficiency_cms_14(Property const& vector) noexcept {
     auto pt = neutrino::pt(vector);
     if (pt <= 0.2_GeV) return 0.;
     auto eta = abs(neutrino::eta(vector));
-    if (eta <= 1.2_rad) return pt <= 1_GeV ? static_cast<double>(pt / GeV) * 0.96 : 0.97;
+    if (eta <= 1.2_rad) return pt <= 1_GeV ? value(pt) * 0.96 : 0.97;
     if (eta <= 2.5_rad)
     {
-        if (pt <= 1.0_GeV) return static_cast<double>(pt / GeV) * 0.85;
-        if (pt <= 10_GeV) return 0.82 + static_cast<double>(pt / GeV) * 0.01;
+        if (pt <= 1.0_GeV) return value(pt) * 0.85;
+        if (pt <= 10_GeV) return 0.82 + value(pt) * 0.01;
         return 0.90;
     }
     if (eta <= 4_rad)
     {
-        if (pt <= 1.0_GeV) return static_cast<double>(pt / GeV) * 0.8;
-        if (pt <= 10_GeV) return 0.8 + static_cast<double>(pt / GeV) * 0.01;
+        if (pt <= 1.0_GeV) return value(pt) * 0.8;
+        if (pt <= 10_GeV) return 0.8 + value(pt) * 0.01;
         return 0.85;
     }
     return 0.;
 }
 
-auto muon_efficiency_cms_14(Eff const& vector) noexcept {
+auto muon_efficiency_cms_14(Property const& vector) noexcept {
     auto pt = neutrino::pt(vector);
     if (pt <= 0.2_GeV) return 0.;
     auto eta = abs(neutrino::eta(vector));
-//     if (eta <= 1.2_rad) return pt <= 1_GeV ? static_cast<double>(pt / GeV) : 1.;
-    if (eta <= 2.8_rad) return pt <= 1_GeV ? static_cast<double>(pt / GeV) : 1.;
-    if (eta <= 4.0_rad) return pt <= 1_GeV ? static_cast<double>(pt / GeV) * 0.95 : 0.95;
+//     if (eta <= 1.2_rad) return pt <= 1_GeV ? value(pt) : 1.;
+    if (eta <= 2.8_rad) return pt <= 1_GeV ? value(pt) : 1.;
+    if (eta <= 4.0_rad) return pt <= 1_GeV ? value(pt) * 0.95 : 0.95;
     return 0.;
 }
 
-auto jet_efficiency_cms_14(Eff const& vector) noexcept {
+auto jet_efficiency_cms_14(Property const& vector) noexcept {
     auto pt = neutrino::pt(vector);
     if (pt <= 0.2_GeV) return 0.;
     auto eta = abs(neutrino::eta(vector));
-    if (eta <= 1.2_rad) return pt <= 1_GeV ? static_cast<double>(pt / GeV) * 0.96 : 0.97;
-    if (eta <= 2.5_rad) return pt <= 1_GeV ? static_cast<double>(pt / GeV) * 0.85 : 0.87;
-    if (eta <= 4_rad) return pt <= 1_GeV ? static_cast<double>(pt / GeV) * 0.8 : 0.82;
+    if (eta <= 1.2_rad) return pt <= 1_GeV ? value(pt) * 0.96 : 0.97;
+    if (eta <= 2.5_rad) return pt <= 1_GeV ? value(pt) * 0.85 : 0.87;
+    if (eta <= 4_rad) return pt <= 1_GeV ? value(pt) * 0.8 : 0.82;
     return 0.;
 }
 
-auto efficiency_cms_14(Eff const& vector) noexcept {
+auto efficiency_cms_14(Property const& vector) noexcept {
     switch (vector.id)
     {
     case Id::electron : return electron_efficiency_cms_14(vector);
