@@ -25,7 +25,11 @@ auto cms_14_trigger() noexcept -> std::map<Id, Energy> {
     return {{Id::electron, 24_GeV}, {Id::muon, 24_GeV}, {Id::tau, 75_GeV}};
 }
 
-auto electron_efficiency_cms_14(Property const& vector) noexcept {
+auto cms_14_track() noexcept -> std::map<Id, Energy> {
+    return {{Id::electron, 5_GeV}, {Id::muon, 5_GeV}, {Id::tau, 5_GeV}};
+}
+
+auto electron_efficiency_cms_14(Particle const& vector) noexcept {
     auto pt = neutrino::pt(vector);
     if (pt <= 0.2_GeV) return 0.;
     auto eta = abs(neutrino::eta(vector));
@@ -45,7 +49,7 @@ auto electron_efficiency_cms_14(Property const& vector) noexcept {
     return 0.;
 }
 
-auto muon_efficiency_cms_14(Property const& vector) noexcept {
+auto muon_efficiency_cms_14(Particle const& vector) noexcept {
     auto pt = neutrino::pt(vector);
     if (pt <= 0.2_GeV) return 0.;
     auto eta = abs(neutrino::eta(vector));
@@ -55,7 +59,7 @@ auto muon_efficiency_cms_14(Property const& vector) noexcept {
     return 0.;
 }
 
-auto jet_efficiency_cms_14(Property const& vector) noexcept {
+auto jet_efficiency_cms_14(Particle const& vector) noexcept {
     auto pt = neutrino::pt(vector);
     if (pt <= 0.2_GeV) return 0.;
     auto eta = abs(neutrino::eta(vector));
@@ -65,7 +69,7 @@ auto jet_efficiency_cms_14(Property const& vector) noexcept {
     return 0.;
 }
 
-auto efficiency_cms_14(Property const& vector) noexcept {
+auto efficiency_cms_14(Particle const& vector) noexcept {
     switch (vector.id)
     {
     case Id::electron : return electron_efficiency_cms_14(vector);
@@ -76,9 +80,9 @@ auto efficiency_cms_14(Property const& vector) noexcept {
 }
 
 auto analysis_cms_14() noexcept -> Analysis {
-    auto second_pt = 15_GeV;
-    auto vertex_pt = 5_GeV;
-    return {"CMS", cms_14_tracker(), cms_14_chamber(), cms_14_trigger(), efficiency_cms_14, second_pt, vertex_pt};
+//     auto second_pt = 15_GeV;
+//     auto vertex_pt = 5_GeV;
+    return {"CMS", cms_14_tracker(), cms_14_chamber(), cms_14_trigger(), cms_14_track(), efficiency_cms_14};
 }
 
 }
