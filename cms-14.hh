@@ -80,8 +80,6 @@ auto efficiency_cms_14(Particle const& vector) noexcept {
 }
 
 auto analysis_cms_14() noexcept -> Analysis {
-//     auto second_pt = 15_GeV;
-//     auto vertex_pt = 5_GeV;
     return {"CMS", cms_14_tracker(), cms_14_chamber(), cms_14_trigger(), cms_14_track(), efficiency_cms_14};
 }
 
