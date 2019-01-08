@@ -20,49 +20,55 @@ include_directories("${Boost_INCLUDE_DIR}")
 link_directories(~/local/lib/)
 add_library(libDelphes SHARED IMPORTED)
 
-set(LIBRARIES ${Boost_LIBRARIES} ${ROOT_LIBRARIES} ${HepMC3_LIBRARIES} Delphes)
+set(libs ${Boost_LIBRARIES} ${ROOT_LIBRARIES})
+
+set(delphes-libs ${libs} Delphes)
+
+set(hepmc-libs ${Boost_LIBRARIES} ${HepMC3_LIBRARIES})
+
+set(hepmc-libs-plot ${libs} ${HepMC3_LIBRARIES})
 
 add_executable(CMS13 main-cms-13.cpp)
-target_link_libraries(CMS13 ${LIBRARIES})
+target_link_libraries(CMS13 ${delphes-libs})
 
 add_executable(CMS14 main-cms-14.cpp)
-target_link_libraries(CMS14 ${LIBRARIES})
+target_link_libraries(CMS14 ${delphes-libs})
 
 add_executable(ATLAS main-atlas.cpp)
-target_link_libraries(ATLAS ${LIBRARIES})
+target_link_libraries(ATLAS ${delphes-libs})
 
 add_executable(LHCb main-lhcb.cpp)
-target_link_libraries(LHCb ${LIBRARIES})
+target_link_libraries(LHCb ${delphes-libs})
 
 add_executable(Distance main-distance.cpp)
-target_link_libraries(Distance ${LIBRARIES})
+target_link_libraries(Distance ${delphes-libs})
 
 add_executable(Test main-test.cpp)
-target_link_libraries(Test ${LIBRARIES})
+target_link_libraries(Test ${delphes-libs})
 
 add_executable(Test2 main-ray.cpp)
-target_link_libraries(Test2 ${LIBRARIES})
+target_link_libraries(Test2 ${delphes-libs})
 
 add_executable(Wboson main-W.cpp)
-target_link_libraries(Wboson ${LIBRARIES})
-
-add_executable(Tau main-tau.cpp)
-target_link_libraries(Tau ${LIBRARIES})
+target_link_libraries(Wboson ${delphes-libs})
 
 add_executable(Leading main-lead.cpp)
-target_link_libraries(Leading ${LIBRARIES})
+target_link_libraries(Leading ${delphes-libs})
 
 add_executable(HNL main-HNL.cpp)
-target_link_libraries(HNL ${LIBRARIES})
+target_link_libraries(HNL ${delphes-libs})
+
+add_executable(Tau main-tau.cpp)
+target_link_libraries(Tau ${hepmc-libs-plot})
 
 add_executable(CMS13-Pythia main-cms-13-pythia.cpp)
-target_link_libraries(CMS13-Pythia ${LIBRARIES})
+target_link_libraries(CMS13-Pythia ${hepmc-libs})
 
 add_executable(CMS14-Pythia main-cms-14-pythia.cpp)
-target_link_libraries(CMS14-Pythia ${LIBRARIES})
+target_link_libraries(CMS14-Pythia ${hepmc-libs})
 
 add_executable(ATLAS-Pythia main-atlas-pythia.cpp)
-target_link_libraries(ATLAS-Pythia ${LIBRARIES})
+target_link_libraries(ATLAS-Pythia ${hepmc-libs})
 
 add_executable(LHCb-Pythia main-lhcb-pythia.cpp)
-target_link_libraries(LHCb-Pythia ${LIBRARIES})
+target_link_libraries(LHCb-Pythia ${hepmc-libs})
