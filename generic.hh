@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <sstream>
 
 #include <boost/optional/optional_io.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
@@ -15,7 +16,7 @@ namespace neutrino
 {
 
 auto arguments(int argc, char** argv) noexcept -> std::vector<std::string> {
-    return {argv, argv + argc};
+    return {argv + 1, argv + argc};
 }
 
 using namespace std::string_literals;
@@ -26,9 +27,24 @@ auto irange(Integer integer) noexcept {
 }
 
 template<typename Element>
-auto make_vector(Element const& element) -> std::vector<Element> {
+auto make_vector(Element && element) -> std::vector<Element> {
     return {element};
 }
+
+template<typename Value>
+auto to_string(std::vector<Value> const& vector) noexcept {
+    std::stringstream result;
+    std::copy(vector.begin(), vector.end(), std::ostream_iterator<Value>(result, " "));
+    return result.str();
+}
+
+// template <template<class...> class Container, typename Element, typename Function, typename Result = std::decay_t<std::result_of_t<Function&(Element const&)>>>
+// std::vector<Result> transform(Container<Element> const& container, Function && function) noexcept {
+//     std::vector<Result> result;
+//     result.reserve(container.size());
+//     boost::range::transform(container, std::back_inserter(result), function);
+//     return result;
+// }
 
 template<typename Element>
 auto operator+(std::vector<Element> const& one, std::vector<Element> const& two) noexcept {

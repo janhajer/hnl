@@ -25,6 +25,17 @@ auto cms_14_trigger() noexcept -> std::map<Id, Energy> {
     return {{Id::electron, 24_GeV}, {Id::muon, 24_GeV}, {Id::tau, 75_GeV}};
 }
 
+auto cms_14_trigger_2() noexcept -> PairTrigger { // FIXME ATLAS values
+    return {
+        {{Id::electron, Id::electron}, {{18_GeV, 18_GeV}, boost::none}},
+        {{Id::electron, Id::muon}, {{8_GeV, 25_GeV}, std::make_pair(18_GeV, 15_GeV)}},
+        {{Id::electron, Id::tau}, {{18_GeV, 30_GeV}, boost::none}},
+        {{Id::muon, Id::muon}, {{15_GeV, 15_GeV}, std::make_pair(23_GeV, 9_GeV)}},
+        {{Id::muon, Id::tau}, {{15_GeV, 30_GeV}, boost::none}},
+        {{Id::tau, Id::tau}, {{40_GeV, 30_GeV}, boost::none}}
+    };
+}
+
 auto cms_14_track() noexcept -> std::map<Id, Energy> {
     return {{Id::electron, 5_GeV}, {Id::muon, 5_GeV}, {Id::tau, 5_GeV}};
 }
@@ -80,7 +91,7 @@ auto efficiency_cms_14(Particle const& vector) noexcept {
 }
 
 auto analysis_cms_14() noexcept -> Analysis {
-    return {"CMS", cms_14_tracker(), cms_14_chamber(), cms_14_trigger(), cms_14_track(), efficiency_cms_14};
+    return {"CMS", cms_14_tracker(), cms_14_chamber(), cms_14_trigger(), cms_14_trigger_2(), cms_14_track(), efficiency_cms_14};
 }
 
 }
