@@ -10,6 +10,7 @@
 #include <boost/range/algorithm/find_if.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/algorithm/transform.hpp>
+#include <boost/algorithm/cxx11/any_of.hpp>
 #include <boost/range/size.hpp>
 
 namespace neutrino
@@ -73,6 +74,14 @@ auto size(std::vector<Element> const& vector) noexcept {
 template<typename Element>
 auto operator!(std::vector<Element> const& container) noexcept {
     return container.empty();
+}
+
+template<class Range, class Predicate>
+auto has_at_least(Range const& range, int max, Predicate predicate) noexcept {
+    auto counter = 0;
+    return boost::algorithm::any_of(range, [&](auto const & element) noexcept {
+        return predicate(element) && ++counter >= max;
+    });
 }
 
 template <template<class...> class Container, typename Element, typename Function, typename Result = std::decay_t<std::result_of_t<Function&(Element const&)>>>
