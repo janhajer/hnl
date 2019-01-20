@@ -3,7 +3,8 @@ cmake_minimum_required (VERSION 2.8)
 project(Neutrino)
 
 set (CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb")
+# -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token -pthread
 
 # message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
