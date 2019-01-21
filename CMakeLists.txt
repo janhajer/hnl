@@ -73,3 +73,6 @@ target_link_libraries(ATLAS-Pythia ${hepmc-libs})
 
 add_executable(LHCb-Pythia main-lhcb-pythia.cpp)
 target_link_libraries(LHCb-Pythia ${hepmc-libs})
+
+add_executable(SimpleTest maintest.cpp)
+target_link_libraries(SimpleTest ${libs})
