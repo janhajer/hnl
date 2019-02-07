@@ -79,7 +79,7 @@ target_link_libraries(SimpleTest ${libs})
 
 macro(test name file)
 add_executable(${name} ${file})
-target_link_libraries(${name} ${libs})
+target_link_libraries(${name} ${hepmc-libs})
 add_test(NAME ${name} COMMAND ${name})
 endmacro()
 
