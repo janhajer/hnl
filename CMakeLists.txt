@@ -76,3 +76,11 @@ target_link_libraries(LHCb-Pythia ${hepmc-libs})
 
 add_executable(SimpleTest maintest.cpp)
 target_link_libraries(SimpleTest ${libs})
+
+macro(test name file)
+add_executable(${name} ${file})
+target_link_libraries(${name} ${libs})
+add_test(NAME ${name} COMMAND ${name})
+endmacro()
+
+test(detector test.cpp)
