@@ -166,6 +166,13 @@ std::string to_string(Enumeration enumeration) noexcept {
     return std::to_string(to_underlying(enumeration));
 }
 
+template <typename Element>
+auto distinct_pairs(std::vector<Element> const& vector) noexcept {
+    std::vector<std::pair<Element, Element>> pairs;
+    for (auto i = 0u; i < vector.size(); ++i) for (auto j = i + 1u; j < vector.size(); ++j) pairs.emplace_back(vector.at(i), vector.at(j));
+    return pairs;
+}
+
 template<typename Get, typename Condition, typename Second>
 auto get_while_do(Get get_check, Condition condition, Second do_work)
 {
