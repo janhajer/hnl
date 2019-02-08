@@ -77,6 +77,9 @@ target_link_libraries(LHCb-Pythia ${hepmc-libs})
 add_executable(SimpleTest maintest.cpp)
 target_link_libraries(SimpleTest ${libs})
 
+add_executable(Vertices main-vertices.cpp)
+target_link_libraries(Vertices ${hepmc-libs-plot})
+
 macro(test name file)
 add_executable(${name} ${file})
 target_link_libraries(${name} ${hepmc-libs})
