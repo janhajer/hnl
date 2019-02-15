@@ -48,16 +48,17 @@ auto to_string(std::vector<Value> const& vector) noexcept {
 // }
 
 template<typename Element>
-auto operator+(std::vector<Element> const& one, std::vector<Element> const& two) noexcept {
-    auto copy = one;
-    copy.insert(copy.end(), two.begin(), two.end());
-    return copy;
-}
-
-template<typename Element>
 auto& operator+=(std::vector<Element>& one, std::vector<Element> const& two) noexcept {
     one.insert(one.end(), two.begin(), two.end());
     return one;
+}
+
+template<typename Element>
+auto operator+(std::vector<Element> one, std::vector<Element> const& two) noexcept {
+//     auto copy = one;
+    return one += two;
+//     copy.insert(copy.end(), two.begin(), two.end());
+//     return copy;
 }
 
 template<typename Element>
