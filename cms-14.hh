@@ -40,10 +40,11 @@ auto cms_14_track() noexcept -> std::map<Id, Energy> {
     return {{Id::electron, 5_GeV}, {Id::muon, 5_GeV}, {Id::tau, 5_GeV}};
 }
 
-auto electron_efficiency_cms_14(Particle const& vector) noexcept {
-    auto pt = neutrino::pt(vector);
+template<typename Particle>
+auto electron_efficiency_cms_14(Particle const& particle) noexcept {
+    auto pt = neutrino::pt(particle);
     if (pt <= 0.2_GeV) return 0.;
-    auto eta = abs(neutrino::eta(vector));
+    auto eta = abs(neutrino::eta(particle));
     if (eta <= 1.2_rad) return pt <= 1_GeV ? value(pt) * 0.96 : 0.97;
     if (eta <= 2.5_rad)
     {
@@ -60,32 +61,34 @@ auto electron_efficiency_cms_14(Particle const& vector) noexcept {
     return 0.;
 }
 
-auto muon_efficiency_cms_14(Particle const& vector) noexcept {
-    auto pt = neutrino::pt(vector);
+template<typename Particle>
+auto muon_efficiency_cms_14(Particle const& particle) noexcept {
+    auto pt = neutrino::pt(particle);
     if (pt <= 0.2_GeV) return 0.;
-    auto eta = abs(neutrino::eta(vector));
+    auto eta = abs(neutrino::eta(particle));
 //     if (eta <= 1.2_rad) return pt <= 1_GeV ? value(pt) : 1.;
     if (eta <= 2.8_rad) return pt <= 1_GeV ? value(pt) : 1.;
     if (eta <= 4.0_rad) return pt <= 1_GeV ? value(pt) * 0.95 : 0.95;
     return 0.;
 }
 
-auto jet_efficiency_cms_14(Particle const& vector) noexcept {
-    auto pt = neutrino::pt(vector);
+template<typename Particle>
+auto jet_efficiency_cms_14(Particle const& particle) noexcept {
+    auto pt = neutrino::pt(particle);
     if (pt <= 0.2_GeV) return 0.;
-    auto eta = abs(neutrino::eta(vector));
+    auto eta = abs(neutrino::eta(particle));
     if (eta <= 1.2_rad) return pt <= 1_GeV ? value(pt) * 0.96 : 0.97;
     if (eta <= 2.5_rad) return pt <= 1_GeV ? value(pt) * 0.85 : 0.87;
     if (eta <= 4_rad) return pt <= 1_GeV ? value(pt) * 0.8 : 0.82;
     return 0.;
 }
 
-auto efficiency_cms_14(Particle const& vector) noexcept {
-    switch (vector.id)
+auto efficiency_cms_14(Particle const& particle) noexcept {
+    switch (id(particle))
     {
-    case Id::electron : return electron_efficiency_cms_14(vector);
-    case Id::muon : return muon_efficiency_cms_14(vector);
-    case Id::tau : return jet_efficiency_cms_14(vector);
+    case Id::electron : return electron_efficiency_cms_14(particle);
+    case Id::muon : return muon_efficiency_cms_14(particle);
+    case Id::tau : return jet_efficiency_cms_14(particle);
     default : return 0.;
     }
 }
