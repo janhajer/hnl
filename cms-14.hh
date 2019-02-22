@@ -88,7 +88,7 @@ auto efficiency_cms_14(Particle const& particle) noexcept {
     {
     case Id::electron : return electron_efficiency_cms_14(particle);
     case Id::muon : return muon_efficiency_cms_14(particle);
-    case Id::tau : return jet_efficiency_cms_14(particle);
+    case Id::tau : return jet_efficiency_cms_14(particle) * .6;
     default : return 0.;
     }
 }
