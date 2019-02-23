@@ -86,6 +86,9 @@ target_link_libraries(VerticesCMS ${hepmc-libs-plot})
 add_executable(VerticesLHCb main-vertices-lhcb.cpp)
 target_link_libraries(VerticesLHCb ${hepmc-libs-plot})
 
+add_executable(Conservation main-conservation.cpp)
+target_link_libraries(Conservation ${hepmc-libs})
+
 macro(test name file)
 add_executable(${name} ${file})
 target_link_libraries(${name} ${hepmc-libs})
