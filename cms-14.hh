@@ -84,12 +84,11 @@ auto jet_efficiency_cms_14(Particle const& particle) noexcept {
 }
 
 auto efficiency_cms_14(Particle const& particle) noexcept {
-    switch (id(particle))
+    switch (abs_id(particle))
     {
-    case Id::electron : return electron_efficiency_cms_14(particle);
-    case Id::muon : return muon_efficiency_cms_14(particle);
-    case Id::tau : return jet_efficiency_cms_14(particle) * .6;
-    default : return 0.;
+    case to_underlying(Id::electron) : return electron_efficiency_cms_14(particle);
+    case to_underlying(Id::muon) : return muon_efficiency_cms_14(particle);
+    default : return jet_efficiency_cms_14(particle);
     }
 }
 
