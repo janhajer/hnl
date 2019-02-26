@@ -11,6 +11,7 @@
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/algorithm/transform.hpp>
 #include <boost/algorithm/cxx11/any_of.hpp>
+#include <boost/range/algorithm_ext/erase.hpp>
 #include <boost/range/size.hpp>
 
 namespace neutrino

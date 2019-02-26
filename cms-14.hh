@@ -92,8 +92,15 @@ auto efficiency_cms_14(Particle const& particle) noexcept {
     }
 }
 
+auto displaced_efficiency(Detector const& detector, hep::Particle const& particle) noexcept {
+    auto vertex = particle->production_vertex();
+    if (before(detector, vertex)) return 1.;
+    auto dist = remaining(box(detector), ray(vertex, particle));
+    return dist > 0_m ? drop_off(dist, detector) : 0.;
+}
+
 auto analysis_cms_14() noexcept -> Analysis {
-    return {"CMS", cms_14_tracker(), cms_14_chamber(), cms_14_trigger(), cms_14_trigger_2(), cms_14_track(), efficiency_cms_14};
+    return {"CMS", cms_14_tracker(), cms_14_chamber(), cms_14_trigger(), cms_14_trigger_2(), cms_14_track(), efficiency_cms_14,displaced_efficiency};
 }
 
 }
