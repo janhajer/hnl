@@ -93,9 +93,8 @@ auto efficiency_cms_14(Particle const& particle) noexcept {
 }
 
 auto displaced_efficiency(Detector const& detector, hep::Particle const& particle) noexcept {
-    auto vertex = particle->production_vertex();
-    if (before(detector, vertex)) return 1.;
-    auto dist = remaining(box(detector), ray(vertex, particle));
+    if (before(particle, detector)) return 1.;
+    auto dist = remaining(box(detector), ray(particle));
     return dist > 0_m ? drop_off(dist, detector) : 0.;
 }
 
