@@ -196,6 +196,15 @@ auto wfilter(std::string string, std::string const& pattern) noexcept {
     return string;
 }
 
+
+
+template<typename Container, typename Predicate>
+auto& keep_if(Container& container, Predicate&&  predicate) noexcept {
+    return boost::range::remove_erase_if(container, [predicate](auto const & element) noexcept {
+        return !predicate(element);
+    });
+}
+
 // class ThreadPool
 // {
 //     public:
