@@ -43,10 +43,10 @@ set(hepmc-libs-plot ${libs} ${HepMC3_LIBRARIES})
 #
 # add_executable(Distance main-distance.cpp)
 # target_link_libraries(Distance ${delphes-libs})
-#
-# add_executable(Test main-test.cpp)
-# target_link_libraries(Test ${delphes-libs})
-#
+
+add_executable(Test main-test.cpp)
+target_link_libraries(Test ${libs})
+
 # add_executable(Test2 main-ray.cpp)
 # target_link_libraries(Test2 ${delphes-libs})
 #
