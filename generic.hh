@@ -17,6 +17,11 @@
 namespace neutrino
 {
 
+template <typename T>
+int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
 auto arguments(int argc, char** argv) noexcept -> std::vector<std::string> {
     return {argv + 1, argv + argc};
 }
