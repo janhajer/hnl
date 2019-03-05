@@ -5,27 +5,30 @@
 namespace neutrino
 {
 
-auto cms_14_tracker() noexcept {
-    auto detector = tracker();
+namespace cms14
+{
+
+auto tracker() noexcept {
+    auto detector = neutrino::tracker();
     detector.transversal = {5_mm, 1100_mm};
     detector.longitudinal = {10_cm, 2800_mm};
-    detector.eta = { -4_rad, 4_rad};
+    detector.eta = Range<Angle>{ -4._rad, 4._rad};
     return detector;
 }
 
-auto cms_14_chamber() noexcept {
-    auto detector = chamber();
+auto chamber() noexcept {
+    auto detector = neutrino::chamber();
     detector.transversal = {4_m, 7_m};
     detector.longitudinal = {7_m, 11_m};
-    detector.eta = { -4_rad, 4_rad};
+    detector.eta = { -4._rad, 4._rad};
     return detector;
 }
 
-auto cms_14_trigger() noexcept -> std::map<Id, Energy> {
+auto trigger() noexcept -> std::map<Id, Energy> {
     return {{Id::electron, 24_GeV}, {Id::muon, 24_GeV}, {Id::tau, 75_GeV}};
 }
 
-auto cms_14_trigger_2() noexcept -> PairTrigger { // FIXME ATLAS values
+auto trigger_2() noexcept -> PairTrigger { // FIXME ATLAS values
     return {
         {{Id::electron, Id::electron}, {{18_GeV, 18_GeV}, boost::none}},
         {{Id::electron, Id::muon}, {{8_GeV, 25_GeV}, std::make_pair(18_GeV, 15_GeV)}},
@@ -36,12 +39,12 @@ auto cms_14_trigger_2() noexcept -> PairTrigger { // FIXME ATLAS values
     };
 }
 
-auto cms_14_track() noexcept -> std::map<Id, Energy> {
+auto track() noexcept -> std::map<Id, Energy> {
     return {{Id::electron, 5_GeV}, {Id::muon, 5_GeV}, {Id::tau, 5_GeV}};
 }
 
 template<typename Particle>
-auto electron_efficiency_cms_14(Particle const& particle) noexcept {
+auto electron_efficiency(Particle const& particle) noexcept {
     auto pt = neutrino::pt(particle);
     if (pt <= 0.2_GeV) return 0.;
     auto eta = abs(neutrino::eta(particle));
@@ -62,7 +65,7 @@ auto electron_efficiency_cms_14(Particle const& particle) noexcept {
 }
 
 template<typename Particle>
-auto muon_efficiency_cms_14(Particle const& particle) noexcept {
+auto muon_efficiency(Particle const& particle) noexcept {
     auto pt = neutrino::pt(particle);
     if (pt <= 0.2_GeV) return 0.;
     auto eta = abs(neutrino::eta(particle));
@@ -73,7 +76,7 @@ auto muon_efficiency_cms_14(Particle const& particle) noexcept {
 }
 
 template<typename Particle>
-auto jet_efficiency_cms_14(Particle const& particle) noexcept {
+auto jet_efficiency(Particle const& particle) noexcept {
     auto pt = neutrino::pt(particle);
     if (pt <= 0.2_GeV) return 0.;
     auto eta = abs(neutrino::eta(particle));
@@ -83,23 +86,25 @@ auto jet_efficiency_cms_14(Particle const& particle) noexcept {
     return 0.;
 }
 
-auto efficiency_cms_14(Particle const& particle) noexcept {
+auto efficiency(Particle const& particle) noexcept {
     switch (abs_id(particle))
     {
-    case to_underlying(Id::electron) : return electron_efficiency_cms_14(particle);
-    case to_underlying(Id::muon) : return muon_efficiency_cms_14(particle);
-    default : return jet_efficiency_cms_14(particle);
+    case to_underlying(Id::electron) : return electron_efficiency(particle);
+    case to_underlying(Id::muon) : return muon_efficiency(particle);
+    default : return jet_efficiency(particle);
     }
 }
 
-auto displaced_efficiency(Detector const& detector, hep::Particle const& particle) noexcept {
-    if (before(particle, detector)) return 1.;
-    auto dist = remaining(box(detector), ray(particle));
-    return dist > 0_m ? drop_off(dist, detector) : 0.;
+// auto displaced_efficiency(Detector const& detector, hep::Particle const& particle) noexcept {
+//     if (before(particle, detector)) return 1.;
+//     auto dist = remaining(box(detector), ray(particle));
+//     return dist > 0_m ? drop_off(dist, detector) : 0.;
+// }
+
+auto analysis() noexcept -> Analysis {
+    return {"CMS", tracker(), chamber(), trigger(), trigger_2(), track(), efficiency};
 }
 
-auto analysis_cms_14() noexcept -> Analysis {
-    return {"CMS", cms_14_tracker(), cms_14_chamber(), cms_14_trigger(), cms_14_trigger_2(), cms_14_track(), efficiency_cms_14,displaced_efficiency};
 }
 
 }
