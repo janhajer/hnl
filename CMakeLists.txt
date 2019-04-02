@@ -53,8 +53,8 @@ target_link_libraries(Test-Eff ${hepmc-libs-plot})
 # add_executable(Test2 main-ray.cpp)
 # target_link_libraries(Test2 ${delphes-libs})
 #
-# add_executable(Wboson main-W.cpp)
-# target_link_libraries(Wboson ${delphes-libs})
+add_executable(Wboson main-W.cpp)
+target_link_libraries(Wboson ${hepmc-libs-plot})
 #
 # add_executable(Leading main-lead.cpp)
 # target_link_libraries(Leading ${delphes-libs})
