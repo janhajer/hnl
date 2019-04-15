@@ -47,8 +47,8 @@ set(hepmc-libs-plot ${libs} ${HepMC3_LIBRARIES})
 add_executable(Test main-test.cpp)
 target_link_libraries(Test ${libs})
 
-add_executable(Test-Eff main-eff.cpp)
-target_link_libraries(Test-Eff ${hepmc-libs-plot})
+# add_executable(Test-Eff main-eff.cpp)
+# target_link_libraries(Test-Eff ${hepmc-libs-plot})
 
 # add_executable(Test2 main-ray.cpp)
 # target_link_libraries(Test2 ${delphes-libs})
