@@ -24,20 +24,37 @@ auto chamber() noexcept {
     return detector;
 }
 
+// HI values
 auto trigger() noexcept -> std::map<Id, Energy> {
-    return {{Id::electron, 24_GeV}, {Id::muon, 24_GeV}, {Id::tau, 75_GeV}};
+    return {{Id::electron, 3_GeV}, {Id::muon, 3_GeV}, {Id::tau, 10_GeV}};
 }
 
+// HI values
 auto trigger_2() noexcept -> PairTrigger { // FIXME ATLAS values
     return {
-        {{Id::electron, Id::electron}, {{18_GeV, 18_GeV}, boost::none}},
-        {{Id::electron, Id::muon}, {{8_GeV, 25_GeV}, std::make_pair(18_GeV, 15_GeV)}},
-        {{Id::electron, Id::tau}, {{18_GeV, 30_GeV}, boost::none}},
-        {{Id::muon, Id::muon}, {{15_GeV, 15_GeV}, std::make_pair(23_GeV, 9_GeV)}},
-        {{Id::muon, Id::tau}, {{15_GeV, 30_GeV}, boost::none}},
-        {{Id::tau, Id::tau}, {{40_GeV, 30_GeV}, boost::none}}
+        {{Id::electron, Id::electron}, {{3_GeV, 3_GeV}, boost::none}},
+        {{Id::electron, Id::muon}, {{3_GeV, 3_GeV}, boost::none}},
+        {{Id::electron, Id::tau}, {{3_GeV, 10_GeV}, boost::none}},
+        {{Id::muon, Id::muon}, {{3_GeV, 3_GeV}, boost::none}},
+        {{Id::muon, Id::tau}, {{3_GeV, 10_GeV}, boost::none}},
+        {{Id::tau, Id::tau}, {{10_GeV, 10_GeV}, boost::none}}
     };
 }
+
+// auto trigger() noexcept -> std::map<Id, Energy> {
+//     return {{Id::electron, 24_GeV}, {Id::muon, 24_GeV}, {Id::tau, 75_GeV}};
+// }
+//
+// auto trigger_2() noexcept -> PairTrigger { // FIXME ATLAS values
+//     return {
+//         {{Id::electron, Id::electron}, {{18_GeV, 18_GeV}, boost::none}},
+//         {{Id::electron, Id::muon}, {{8_GeV, 25_GeV}, std::make_pair(18_GeV, 15_GeV)}},
+//         {{Id::electron, Id::tau}, {{18_GeV, 30_GeV}, boost::none}},
+//         {{Id::muon, Id::muon}, {{15_GeV, 15_GeV}, std::make_pair(23_GeV, 9_GeV)}},
+//         {{Id::muon, Id::tau}, {{15_GeV, 30_GeV}, boost::none}},
+//         {{Id::tau, Id::tau}, {{40_GeV, 30_GeV}, boost::none}}
+//     };
+// }
 
 auto track() noexcept -> std::map<Id, Energy> {
     return {{Id::electron, 5_GeV}, {Id::muon, 5_GeV}, {Id::tau, 5_GeV}};
