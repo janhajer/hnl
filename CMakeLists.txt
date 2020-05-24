@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.4)
 
 project(Neutrino)
 
 set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token -pthread -fPIC")
 
 # -g -ggdb
@@ -14,17 +15,17 @@ include_directories(${Boost_INCLUDE_DIR})
 set(boost-libs ${Boost_LIBRARIES})
 
 # cgal
-find_package(CGAL REQUIRED COMPONENTS Core Qt5)
-set(cgal-libs ${CGAL_LIBRARIES})
+#find_package(CGAL REQUIRED COMPONENTS Core Qt5)
+#set(cgal-libs ${CGAL_LIBRARIES})
 
 # qt
-find_package(Qt5 COMPONENTS Widgets Gui Core OpenGL Xml REQUIRED)
-include_directories(${Qt5Widgets_INCLUDE_DIRS})
-include_directories(${Qt5Xml_INCLUDE_DIRS})
-include_directories(${Qt5OpenGL_INCLUDE_DIRS})
+#find_package(Qt5 COMPONENTS Widgets Gui Core OpenGL Xml REQUIRED)
+#include_directories(${Qt5Widgets_INCLUDE_DIRS})
+#include_directories(${Qt5Xml_INCLUDE_DIRS})
+#include_directories(${Qt5OpenGL_INCLUDE_DIRS})
 # set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOUIC_SEARCH_PATHS /usr/include/CGAL/Qt/resources)
-set(qt-libs ${Qt5Widgets_LIBRARIES})
+#set(CMAKE_AUTOUIC_SEARCH_PATHS /usr/include/CGAL/Qt/resources)
+#set(qt-libs ${Qt5Widgets_LIBRARIES})
 
 # hepmc
 set(HepMC3_DIR ${PROJECT_SOURCE_DIR})
