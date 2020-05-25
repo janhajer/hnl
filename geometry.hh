@@ -7,9 +7,11 @@
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/Side_of_triangle_mesh.h>
 
-namespace neutrino{
+#include "generic.hh"
 
-namespace gcal{
+namespace neutrino {
+
+namespace gcal {
 
 using Kernel = CGAL::Simple_cartesian<double>;
 using Point = Kernel::Point_3;
@@ -20,7 +22,7 @@ using Traits = CGAL::AABB_traits<Kernel, Primitive>;
 using Tree = CGAL::AABB_tree<Traits>;
 using TriangleMeshSide = CGAL::Side_of_triangle_mesh<Polyhedron, Kernel>;
 
-auto triangle_mesh_side(Polyhedron const& polyhedron){
+auto triangle_mesh_side(Polyhedron const& polyhedron) {
     Tree tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
     tree.accelerate_distance_queries();
     return TriangleMeshSide(tree);
@@ -28,7 +30,8 @@ auto triangle_mesh_side(Polyhedron const& polyhedron){
 
 bool is_inside(Point const& point, TriangleMeshSide const& triangle_mesh_side)
 {
-    print("check inside");
+    print("check inside", point);
+    print("go");
     auto t = triangle_mesh_side(point) == CGAL::ON_BOUNDED_SIDE;
     print("is inside", t);
     return t;
@@ -84,14 +87,26 @@ namespace mapp {
 using namespace gcal;
 
 struct Analysis {
+    Analysis(Polyhedron const& polyhedron_) :
+        name("MAPP"),
+        polyhedron(polyhedron_),
+        tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron),
+        detector(tree) {
+        tree.accelerate_distance_queries();
+        detector = gcal::TriangleMeshSide(tree);
+    };
     std::string name;
+    gcal::Polyhedron polyhedron;
+    gcal::Tree tree;
     gcal::TriangleMeshSide detector;
 };
 
-auto analysis() -> Analysis{
-    return {"MAPP", triangle_mesh_side(get_polyhedron())};
+auto analysis() -> Analysis {
+    return {get_polyhedron()};
 }
 
 }
+
+
 
 }

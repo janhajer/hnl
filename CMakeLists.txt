@@ -61,8 +61,8 @@ set(hepmc-libs ${boost-libs} ${HepMC3_LIBRARIES} ${cgal-libs})
 add_executable(Mapp main-mapp-pythia.cpp)
 target_link_libraries(Mapp ${hepmc-libs})
 
-# add_executable(Geometry geometry.cpp)
-# target_link_libraries(Geometry ${hepmc-libs})
+add_executable(Geometry geometry.cpp)
+target_link_libraries(Geometry ${hepmc-libs})
 
 # add_executable(CMS13 main-cms-13.cpp)
 # target_link_libraries(CMS13 ${delphes-libs})
