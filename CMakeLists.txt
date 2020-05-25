@@ -7,7 +7,7 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token -pthread -fPIC")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb")
 
 # boost
 find_package(Boost COMPONENTS system filesystem iostreams REQUIRED)
