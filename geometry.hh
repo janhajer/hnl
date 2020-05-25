@@ -30,10 +30,10 @@ auto triangle_mesh_side(Polyhedron const& polyhedron) {
 
 bool is_inside(Point const& point, TriangleMeshSide const& triangle_mesh_side)
 {
-    print("check inside", point);
-    print("go");
+//     print("check inside", point);
+//     print("go");
     auto t = triangle_mesh_side(point) == CGAL::ON_BOUNDED_SIDE;
-    print("is inside", t);
+//     print("is inside", t);
     return t;
 }
 
