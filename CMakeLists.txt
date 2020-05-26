@@ -32,8 +32,9 @@ set(HepMC3_DIR ${PROJECT_SOURCE_DIR})
 find_package(HepMC3)
 
 # root
-# find_package(ROOT)
-# include_directories("${ROOT_INCLUDE_DIRS}")
+find_package(ROOT)
+include_directories("${ROOT_INCLUDE_DIRS}")
+set(root-libs ${ROOT_LIBRARIES})
 
 # delphes
 # link_directories(~/local/lib/)
@@ -54,12 +55,15 @@ set(hepmc-libs ${boost-libs} ${HepMC3_LIBRARIES} ${cgal-libs})
 
 # message(${hepmc-libs})
 #
-# set(hepmc-libs-plot ${libs} ${HepMC3_LIBRARIES})
+set(plot-libs ${hepmc-libs} ${root-libs})
 
 
 
 add_executable(Mapp main-mapp-pythia.cpp)
 target_link_libraries(Mapp ${hepmc-libs})
+
+add_executable(MappPlot main-mapp-plot.cpp)
+target_link_libraries(MappPlot ${plot-libs})
 
 add_executable(Geometry geometry.cpp)
 target_link_libraries(Geometry ${hepmc-libs})
@@ -83,16 +87,16 @@ target_link_libraries(Geometry ${hepmc-libs})
 # target_link_libraries(Test ${libs})
 
 # add_executable(Test-Eff main-eff.cpp)
-# target_link_libraries(Test-Eff ${hepmc-libs-plot})
+# target_link_libraries(Test-Eff ${plot-libs})
 
 # add_executable(Test2 main-ray.cpp)
 # target_link_libraries(Test2 ${delphes-libs})
 #
 # add_executable(Wboson main-W.cpp)
-# target_link_libraries(Wboson ${hepmc-libs-plot})
+# target_link_libraries(Wboson ${plot-libs})
 #
 # add_executable(PhaseSpace main-PS.cpp)
-# target_link_libraries(PhaseSpace ${hepmc-libs-plot})
+# target_link_libraries(PhaseSpace ${plot-libs})
 #
 # add_executable(Leading main-lead.cpp)
 # target_link_libraries(Leading ${delphes-libs})
@@ -101,7 +105,7 @@ target_link_libraries(Geometry ${hepmc-libs})
 # target_link_libraries(HNL ${delphes-libs})
 
 # add_executable(Tau main-tau.cpp)
-# target_link_libraries(Tau ${hepmc-libs-plot})
+# target_link_libraries(Tau ${plot-libs})
 
 # add_executable(CMS13-Pythia main-cms-13-pythia.cpp)
 # target_link_libraries(CMS13-Pythia ${hepmc-libs})
@@ -122,13 +126,13 @@ target_link_libraries(Geometry ${hepmc-libs})
 # target_link_libraries(SimpleTest ${libs})
 #
 # add_executable(VerticesATLAS main-vertices-atlas.cpp)
-# target_link_libraries(VerticesATLAS ${hepmc-libs-plot})
+# target_link_libraries(VerticesATLAS ${plot-libs})
 #
 # add_executable(VerticesCMS main-vertices-cms.cpp)
-# target_link_libraries(VerticesCMS ${hepmc-libs-plot})
+# target_link_libraries(VerticesCMS ${plot-libs})
 #
 # add_executable(VerticesLHCb main-vertices-lhcb.cpp)
-# target_link_libraries(VerticesLHCb ${hepmc-libs-plot})
+# target_link_libraries(VerticesLHCb ${plot-libs})
 #
 # add_executable(Conservation main-conservation.cpp)
 # target_link_libraries(Conservation ${hepmc-libs})
