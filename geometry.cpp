@@ -40,53 +40,53 @@ namespace gcal{
 //     application.exec();
 // }
 //
-// hep::FourVector four_vector(Point const& point){
-//     return {point.x(), point.y(), point.z(), 0};
-// }
+hep::FourVector four_vector(Point const& point){
+    return {point.x(), point.y(), point.z(), 0};
+}
 
-// void print_max_eta_phi(){
-//     auto poly_points = get_points();
-//         auto min_eta = four_vector(poly_points.front()).eta();
-//     auto max_eta = four_vector(poly_points.front()).eta();
-//     auto min_phi = four_vector(poly_points.front()).phi();
-//     auto max_phi = four_vector(poly_points.front()).phi();
-//
-//     for (auto const& point : poly_points) {
-//         auto fv = four_vector(point);
-//         auto eta = fv.eta();
-//         min_eta = std::min(eta, min_eta);
-//         max_eta = std::max(eta, max_eta);
-//         auto phi = fv.phi();
-//         min_phi = std::min(phi, min_phi);
-//         max_phi = std::max(phi, max_phi);
-//         print("eta", eta, "phi", phi);
-//     }
-//
-//     print("eta", min_eta, max_eta);
-//     print("phi", min_phi, max_phi);
-//
-//     auto res1 = boost::range::max_element(poly_points, [](auto const& one, auto const& two){
-//         return four_vector(one).eta() < four_vector(two).eta();
-//     });
-//
-//     auto res2 = boost::range::min_element(poly_points, [](auto const& one, auto const& two){
-//         return four_vector(one).eta() < four_vector(two).eta();
-//     });
-//
-//     print(four_vector(*res1), four_vector(*res2));
-//     print(four_vector(*res1).eta(), four_vector(*res2).eta());
-//
-//     auto res3 = boost::range::min_element(poly_points, [](auto const& one, auto const& two){
-//         return four_vector(one).phi() < four_vector(two).phi();
-//     });
-//
-//     auto res4 = boost::range::max_element(poly_points, [](auto const& one, auto const& two){
-//         return four_vector(one).phi() < four_vector(two).phi();
-//     });
-//
-//     print(four_vector(*res3), four_vector(*res4));
-//     print(four_vector(*res3).phi(), four_vector(*res4).phi());
-// }
+void print_max_eta_phi(){
+    auto poly_points = get_points();
+        auto min_eta = four_vector(poly_points.front()).eta();
+    auto max_eta = four_vector(poly_points.front()).eta();
+    auto min_phi = four_vector(poly_points.front()).phi();
+    auto max_phi = four_vector(poly_points.front()).phi();
+
+    for (auto const& point : poly_points) {
+        auto fv = four_vector(point);
+        auto eta = fv.eta();
+        min_eta = std::min(eta, min_eta);
+        max_eta = std::max(eta, max_eta);
+        auto phi = fv.phi();
+        min_phi = std::min(phi, min_phi);
+        max_phi = std::max(phi, max_phi);
+        print("eta", eta, "phi", phi);
+    }
+
+    print("eta", min_eta, max_eta);
+    print("phi", min_phi, max_phi);
+
+    auto res1 = boost::range::max_element(poly_points, [](auto const& one, auto const& two){
+        return four_vector(one).eta() < four_vector(two).eta();
+    });
+
+    auto res2 = boost::range::min_element(poly_points, [](auto const& one, auto const& two){
+        return four_vector(one).eta() < four_vector(two).eta();
+    });
+
+    print(four_vector(*res1), four_vector(*res2));
+    print(four_vector(*res1).eta(), four_vector(*res2).eta());
+
+    auto res3 = boost::range::min_element(poly_points, [](auto const& one, auto const& two){
+        return four_vector(one).phi() < four_vector(two).phi();
+    });
+
+    auto res4 = boost::range::max_element(poly_points, [](auto const& one, auto const& two){
+        return four_vector(one).phi() < four_vector(two).phi();
+    });
+
+    print(four_vector(*res3), four_vector(*res4));
+    print(four_vector(*res3).phi(), four_vector(*res4).phi());
+}
 
 
 }
@@ -103,12 +103,13 @@ auto get_point(hep::Particle const& particle){
 using namespace neutrino;
 
 int main(){
-    auto t = mapp::analysis();
+    auto analysis = mapp::analysis();
 //     hep::FourVector vector(0,0,0,0);
 //     hep::Particle particle(vector);
     gcal::Point point(0,0,0);
-    auto r = gcal::is_inside(point, t.detector);
+    auto r = gcal::is_inside(point, analysis.detector);
     print("inside", r);
+    gcal::print_max_eta_phi();
 }
 
 // int maint(int argc, char** argv)
@@ -117,7 +118,6 @@ int main(){
 //     using namespace neutrino;
 //     using namespace gcal;
 //
-//     print_max_eta_phi();
 //     auto polyhedron = get_polyhedron();
 //     std::vector<Point> test_points;
 //     test_points.emplace_back(15, -1, -40);

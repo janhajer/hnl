@@ -45,14 +45,14 @@ bool is_inside(Point const& point, Polyhedron const& polyhedron)
 auto get_points()
 {
     std::vector<Point> points;
-    points.emplace_back(3.27, -2, -52.83); //0
-    points.emplace_back(4, -2, -61.39); //1
-    points.emplace_back(4, 1, -61.39); //2
-    points.emplace_back(3.27, 1, -52.83); //3
-    points.emplace_back(12.24, -2, -33.63); //4
-    points.emplace_back(16.53, -2, -35.45); //5
-    points.emplace_back(16.53, 1, -35.45); //6
-    points.emplace_back(12.24, 1, -33.63); //7
+    points.emplace_back(3.27, -2, 52.83); //0
+    points.emplace_back(4, -2, 61.39); //1
+    points.emplace_back(4, 1, 61.39); //2
+    points.emplace_back(3.27, 1, 52.83); //3
+    points.emplace_back(12.24, -2, 33.63); //4
+    points.emplace_back(16.53, -2, 35.45); //5
+    points.emplace_back(16.53, 1, 35.45); //6
+    points.emplace_back(12.24, 1, 33.63); //7
     return points;
 }
 
