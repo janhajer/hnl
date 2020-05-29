@@ -151,6 +151,7 @@ struct Analysis {
     bool is_inside(Point const& point) const
     {
         for (auto const& detector : detectors) if (mapp::is_inside(point, detector)) return true;
+        return false;
     }
     std::string name;
     std::vector<cgal::Polyhedron> polyhedrons;
