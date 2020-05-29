@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.4)
 
 project(Neutrino)
 
+set(graphic OFF)
+
 set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
@@ -15,17 +17,25 @@ include_directories(${Boost_INCLUDE_DIR})
 set(boost-libs ${Boost_LIBRARIES})
 
 # cgal
-#find_package(CGAL REQUIRED COMPONENTS Core Qt5)
-#set(cgal-libs ${CGAL_LIBRARIES})
+if(graphic)
+  find_package(CGAL REQUIRED COMPONENTS Core Qt5)
+  set(cgal-libs ${CGAL_LIBRARIES})
+elseif(graphic)
+  set(cgal-libs )
+endif(graphic)
 
 # qt
-#find_package(Qt5 COMPONENTS Widgets Gui Core OpenGL Xml REQUIRED)
-#include_directories(${Qt5Widgets_INCLUDE_DIRS})
-#include_directories(${Qt5Xml_INCLUDE_DIRS})
-#include_directories(${Qt5OpenGL_INCLUDE_DIRS})
-# set(CMAKE_AUTOUIC ON)
-#set(CMAKE_AUTOUIC_SEARCH_PATHS /usr/include/CGAL/Qt/resources)
-#set(qt-libs ${Qt5Widgets_LIBRARIES})
+if(graphic)
+  find_package(Qt5 COMPONENTS Widgets Gui Core OpenGL Xml REQUIRED)
+  include_directories(${Qt5Widgets_INCLUDE_DIRS})
+  include_directories(${Qt5Xml_INCLUDE_DIRS})
+  include_directories(${Qt5OpenGL_INCLUDE_DIRS})
+  set(CMAKE_AUTOUIC ON)
+  set(CMAKE_AUTOUIC_SEARCH_PATHS /usr/include/CGAL/Qt/resources)
+  set(qt-libs ${Qt5Widgets_LIBRARIES})
+elseif(graphic)
+  set(qt-libs )
+endif(graphic)
 
 # hepmc
 set(HepMC3_DIR ${PROJECT_SOURCE_DIR})
@@ -57,16 +67,16 @@ set(hepmc-libs ${boost-libs} ${HepMC3_LIBRARIES} ${cgal-libs})
 #
 set(plot-libs ${hepmc-libs} ${root-libs})
 
-
-
 add_executable(Mapp main-mapp-pythia.cpp)
 target_link_libraries(Mapp ${hepmc-libs})
 
 add_executable(MappPlot main-mapp-plot.cpp)
 target_link_libraries(MappPlot ${plot-libs})
 
-add_executable(Geometry geometry.cpp)
-target_link_libraries(Geometry ${hepmc-libs})
+if(graphic)
+  add_executable(Geometry geometry.cpp)
+  target_link_libraries(Geometry ${hepmc-libs} ${qt-libs})
+endif(graphic)
 
 # add_executable(CMS13 main-cms-13.cpp)
 # target_link_libraries(CMS13 ${delphes-libs})

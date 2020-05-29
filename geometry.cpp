@@ -1,52 +1,51 @@
 #include <boost/range/algorithm/max_element.hpp>
 #include <boost/range/algorithm/min_element.hpp>
+
 #include <iostream>
 
-// #define CGAL_USE_BASIC_VIEWER
+#define CGAL_USE_BASIC_VIEWER
 #include "geometry.hh"
 
-// #include "draw_polyhedron.h"
-// #include "ui_ImageInterface.h"
+#include "ui_ImageInterface.h"
+#include "draw_polyhedron.h"
 
 #include "hepmc.hh"
-
 #include "generic.hh"
 
+namespace neutrino {
 
-namespace neutrino{
+namespace cgal {
 
-namespace gcal{
+using Viewer = CGAL::SimplePolyhedronViewerQt<Polyhedron, CGAL::DefaultColorFunctorPolyhedron>;
 
-// using Viewer = CGAL::SimplePolyhedronViewerQt<Polyhedron, CGAL::DefaultColorFunctorPolyhedron>;
+Viewer& add_pipe(Viewer& viewer)
+{
+    Point pipe_one(0, 0, -65);
+    Point pipe_two(0, 0, 65);
+    viewer.add_segment(pipe_one, pipe_two);
+    return viewer;
+}
 
-// Viewer& add_pipe(Viewer& viewer)
-// {
-//     Point pipe_one(0, 0, 10);
-//     Point pipe_two(0, 0, -65);
-//     viewer.add_segment(pipe_one, pipe_two);
-//     return viewer;
-// }
-//
-// Viewer& draw(Viewer& viewer, std::vector<Point> const& points)
-// {
-//     Point origin(0, 0, 0);
-//     for (auto const& point : points) viewer.add_segment(origin, point, CGAL::red());
-//     return viewer;
-// }
+Viewer& draw(Viewer& viewer, std::vector<Point> const& points)
+{
+    Point origin(0, 0, 0);
+    for (auto const& point : points) viewer.add_segment(origin, point, CGAL::red());
+    return viewer;
+}
 
-// void execute(QApplication& application, Viewer& viewer)
-// {
-//     viewer.show();
-//     application.exec();
-// }
-//
-hep::FourVector four_vector(Point const& point){
+void execute(QApplication& application, Viewer& viewer)
+{
+    viewer.show();
+    application.exec();
+}
+
+hep::FourVector four_vector(Point const& point) {
     return {point.x(), point.y(), point.z(), 0};
 }
 
-void print_max_eta_phi(){
+void print_max_eta_phi() {
     auto poly_points = get_points();
-        auto min_eta = four_vector(poly_points.front()).eta();
+    auto min_eta = four_vector(poly_points.front()).eta();
     auto max_eta = four_vector(poly_points.front()).eta();
     auto min_phi = four_vector(poly_points.front()).phi();
     auto max_phi = four_vector(poly_points.front()).phi();
@@ -65,22 +64,22 @@ void print_max_eta_phi(){
     print("eta", min_eta, max_eta);
     print("phi", min_phi, max_phi);
 
-    auto res1 = boost::range::max_element(poly_points, [](auto const& one, auto const& two){
+    auto res1 = boost::range::max_element(poly_points, [](auto const& one, auto const& two) {
         return four_vector(one).eta() < four_vector(two).eta();
     });
 
-    auto res2 = boost::range::min_element(poly_points, [](auto const& one, auto const& two){
+    auto res2 = boost::range::min_element(poly_points, [](auto const& one, auto const& two) {
         return four_vector(one).eta() < four_vector(two).eta();
     });
 
     print(four_vector(*res1), four_vector(*res2));
     print(four_vector(*res1).eta(), four_vector(*res2).eta());
 
-    auto res3 = boost::range::min_element(poly_points, [](auto const& one, auto const& two){
+    auto res3 = boost::range::min_element(poly_points, [](auto const& one, auto const& two) {
         return four_vector(one).phi() < four_vector(two).phi();
     });
 
-    auto res4 = boost::range::max_element(poly_points, [](auto const& one, auto const& two){
+    auto res4 = boost::range::max_element(poly_points, [](auto const& one, auto const& two) {
         return four_vector(one).phi() < four_vector(two).phi();
     });
 
@@ -89,11 +88,13 @@ void print_max_eta_phi(){
 }
 
 
+
+
 }
 
-auto get_point(hep::Particle const& particle){
+auto get_point(hep::Particle const& particle) {
     print("get point", particle);
-    auto t = gcal::Point(x(particle)/1_m, y(particle)/1_m, z(particle)/1_m);
+    auto t = cgal::Point(x(particle)/1_m, y(particle)/1_m, z(particle)/1_m);
     print("got point", t);
     return t;
 }
@@ -101,34 +102,33 @@ auto get_point(hep::Particle const& particle){
 }
 
 using namespace neutrino;
+using namespace cgal;
 
-int main(){
-    auto analysis = mapp::analysis();
-//     hep::FourVector vector(0,0,0,0);
-//     hep::Particle particle(vector);
-    gcal::Point point(0,0,0);
-    auto r = gcal::is_inside(point, analysis.detector);
-    print("inside", r);
-    gcal::print_max_eta_phi();
-}
-
-// int maint(int argc, char** argv)
-// {
-//
-//     using namespace neutrino;
-//     using namespace gcal;
-//
-//     auto polyhedron = get_polyhedron();
-//     std::vector<Point> test_points;
-//     test_points.emplace_back(15, -1, -40);
-//     test_points.emplace_back(10, -1, -40);
-//
-//     for (auto const& test_point : test_points) print("Is inside:", is_inside(test_point, polyhedron));
-//
-//     QApplication application(argc, argv);
-//     Viewer viewer(application.activeWindow(), polyhedron);
-//     add_pipe(viewer);
-//     draw(viewer, test_points);
-//     execute(application, viewer);
-//     return 0;
+// int main(){
+// auto analysis = mapp::analysis();
+// // hep::FourVector vector(0,0,0,0);
+// // hep::Particle particle(vector);
+// cgal::Point point(0,0,0);
+// auto r = cgal::is_inside(point, analysis.detector);
+// print("inside", r);
+// cgal::print_max_eta_phi();
 // }
+
+
+
+int main(int argc, char** argv)
+{
+    auto polyhedron = get_polyhedron();
+// std::vector<Point> test_points;
+// test_points.emplace_back(15, -1, -40);
+// test_points.emplace_back(10, -1, -40);
+// for (auto const& test_point : test_points) print("Is inside:", is_inside(test_point, polyhedron));
+
+    QApplication application(argc, argv);
+    Viewer viewer(application.activeWindow());
+    for(auto const& polyhedron : get_polyhedrons()) viewer.add(polyhedron);
+    add_pipe(viewer);
+// draw(viewer, test_points);
+    execute(application, viewer);
+    return 0;
+}

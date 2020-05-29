@@ -6,12 +6,15 @@
 #include <CGAL/AABB_traits.h>
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/Side_of_triangle_mesh.h>
+#include <CGAL/Aff_transformation_3.h>
 
 #include "generic.hh"
 
-namespace neutrino {
+namespace neutrino
+{
 
-namespace gcal {
+namespace cgal
+{
 
 using Kernel = CGAL::Simple_cartesian<double>;
 using Point = Kernel::Point_3;
@@ -21,8 +24,10 @@ using Primitive = CGAL::AABB_face_graph_triangle_primitive<Polyhedron>;
 using Traits = CGAL::AABB_traits<Kernel, Primitive>;
 using Tree = CGAL::AABB_tree<Traits>;
 using TriangleMeshSide = CGAL::Side_of_triangle_mesh<Polyhedron, Kernel>;
+using Transformation = CGAL::Aff_transformation_3<Kernel>;
 
-auto triangle_mesh_side(Polyhedron const& polyhedron) {
+auto triangle_mesh_side(Polyhedron const& polyhedron)
+{
     Tree tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
     tree.accelerate_distance_queries();
     return TriangleMeshSide(tree);
@@ -80,29 +85,82 @@ auto get_polyhedron()
     return get_polyhedron(poly_points);
 }
 
+
+Transformation rotation_z(double angle)
+{
+    auto cosa = std::cos(angle);
+    auto sina = std::sin(angle);
+    return {cosa, -sina, 0, sina, cosa, 0, 0, 0, 1};
 }
 
-namespace mapp {
+Transformation reflection_z()
+{
+    auto cosa = std::cos(M_PI);
+    auto sina = std::sin(M_PI);
+    return {1, 0, 0, 0, cosa, -sina, 0, sina, cosa};
+}
 
-using namespace gcal;
+auto rotated_poly(double angle, bool reflect)
+{
+    auto rotation = rotation_z(angle);
+    auto reflection = reflect ? reflection_z() : Transformation(CGAL::Identity_transformation());
+    std::vector<Point> transformed = transform(get_points(), [rotation, reflection](Point const & point) -> Point {
+        return reflection(rotation(point));
+    });
+    return get_polyhedron(transformed);
+}
+
+auto get_polyhedrons()
+{
+    std::vector<Polyhedron> polyhedrons;
+    for (int i = 0; i < 8; ++i) {
+        polyhedrons.emplace_back(rotated_poly(M_PI_4 * i, false));
+        polyhedrons.emplace_back(rotated_poly(M_PI_4 * i, true));
+    }
+    return polyhedrons;
+}
+
+}
+
+namespace mapp
+{
+
+using namespace cgal;
 
 struct Analysis {
-    Analysis(Polyhedron const& polyhedron_) :
+    Analysis(std::vector<cgal::Polyhedron> const& polyhedrons_) :
         name("MAPP"),
-        polyhedron(polyhedron_),
-        tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron),
-        detector(tree) {
-        tree.accelerate_distance_queries();
-        detector = gcal::TriangleMeshSide(tree);
-    };
+        polyhedrons(polyhedrons_),
+        trees(get_trees(polyhedrons))
+    {
+        for (auto& tree : trees) tree.accelerate_distance_queries();
+        detectors = get_detectors(trees);
+    }
+    std::deque<cgal::Tree> get_trees(std::vector<cgal::Polyhedron> const& polyhedrons_) const
+    {
+        std::deque<cgal::Tree> trees_;
+        for (auto const& polyhedron : polyhedrons_) trees_.emplace_back(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
+        return trees_;
+    }
+    std::vector<cgal::TriangleMeshSide> get_detectors(std::deque<cgal::Tree> const& trees_) const
+    {
+        return transform(trees_, [](cgal::Tree const & tree) -> cgal::TriangleMeshSide {
+            return cgal::TriangleMeshSide{tree};
+        });
+    }
+    bool is_inside(Point const& point) const
+    {
+        for (auto const& detector : detectors) if (mapp::is_inside(point, detector)) return true;
+    }
     std::string name;
-    gcal::Polyhedron polyhedron;
-    gcal::Tree tree;
-    gcal::TriangleMeshSide detector;
+    std::vector<cgal::Polyhedron> polyhedrons;
+    std::deque<cgal::Tree> trees;
+    std::vector<cgal::TriangleMeshSide> detectors;
 };
 
-auto analysis() -> Analysis {
-    return {get_polyhedron()};
+auto analysis() -> Analysis
+{
+    return {get_polyhedrons()};
 }
 
 }
