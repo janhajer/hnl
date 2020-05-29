@@ -104,31 +104,31 @@ auto get_point(hep::Particle const& particle) {
 using namespace neutrino;
 using namespace cgal;
 
-// int main(){
-// auto analysis = mapp::analysis();
-// // hep::FourVector vector(0,0,0,0);
-// // hep::Particle particle(vector);
-// cgal::Point point(0,0,0);
-// auto r = cgal::is_inside(point, analysis.detector);
-// print("inside", r);
-// cgal::print_max_eta_phi();
-// }
-
-
-
-int main(int argc, char** argv)
-{
-    auto polyhedron = get_polyhedron();
-// std::vector<Point> test_points;
-// test_points.emplace_back(15, -1, -40);
-// test_points.emplace_back(10, -1, -40);
-// for (auto const& test_point : test_points) print("Is inside:", is_inside(test_point, polyhedron));
-
-    QApplication application(argc, argv);
-    Viewer viewer(application.activeWindow());
-    for(auto const& polyhedron : get_polyhedrons()) viewer.add(polyhedron);
-    add_pipe(viewer);
-// draw(viewer, test_points);
-    execute(application, viewer);
-    return 0;
+int main(){
+auto analysis = mapp::analysis();
+// hep::FourVector vector(0,0,0,0);
+// hep::Particle particle(vector);
+cgal::Point point(0,0,0);
+auto r = cgal::is_inside(point, analysis.detector);
+print("inside", r);
+cgal::print_max_eta_phi();
 }
+
+
+
+// int main(int argc, char** argv)
+// {
+//     auto polyhedron = get_polyhedron();
+// // std::vector<Point> test_points;
+// // test_points.emplace_back(15, -1, -40);
+// // test_points.emplace_back(10, -1, -40);
+// // for (auto const& test_point : test_points) print("Is inside:", is_inside(test_point, polyhedron));
+//
+//     QApplication application(argc, argv);
+//     Viewer viewer(application.activeWindow());
+//     for(auto const& polyhedron : get_polyhedrons()) viewer.add(polyhedron);
+//     add_pipe(viewer);
+// // draw(viewer, test_points);
+//     execute(application, viewer);
+//     return 0;
+// }
