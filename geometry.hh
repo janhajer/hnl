@@ -104,7 +104,7 @@ auto rotated_poly(double angle, bool reflect)
 {
     auto rotation = rotation_z(angle);
     auto reflection = reflect ? reflection_z() : Transformation(CGAL::Identity_transformation());
-    std::vector<Point> transformed = transform(get_points(), [rotation, reflection](Point const & point) -> Point {
+    std::vector<Point> transformed = transform(get_points(), [&rotation, &reflection](Point const & point) -> Point {
         return reflection(rotation(point));
     });
     return get_polyhedron(transformed);
