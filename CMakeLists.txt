@@ -70,7 +70,9 @@ set(hepmc-libs ${boost-libs} ${HepMC3_LIBRARIES} ${cgal-libs})
 #
 set(plot-libs ${hepmc-libs} ${root-libs})
 
-add_executable(MAPP main-pythia.cpp)
+# add_library(pythia-test ResonanceWidths.cpp ThreeBodyWidth.cpp)
+
+add_executable(MAPP main-pythia.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp)
 target_link_libraries(MAPP pythia8)
 
 add_executable(Mapp main-mapp-pythia.cpp)

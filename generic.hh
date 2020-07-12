@@ -154,14 +154,14 @@ auto& operator<<(std::ostream& stream, std::pair<Key_, Value_> const& pair) noex
     return stream << '(' << pair.first << ", " << pair.second << ')';
 }
 
-                                    template<typename Element, template <typename, typename = std::allocator<Element>> class Container>
-                                    auto & operator<<(std::ostream& stream, Container<Element> const& container) noexcept
+template<typename Element, template <typename, typename = std::allocator<Element>> class Container>
+auto & operator<<(std::ostream& stream, Container<Element> const& container) noexcept
 {
     for (auto const& element : boost::adaptors::index(container)) stream << '\n' << element.index() << ": " << element.value();
-            return stream;
+    return stream;
 }
 
-        void print() noexcept
+void print() noexcept
 {
     std::cout << std::endl;
 }
@@ -170,17 +170,17 @@ template<typename Object, typename ... Arguments>
 void print(Object const& object, Arguments ... arguments) noexcept
 {
     std::cout << std::boolalpha << object << ' ';
-                                 print(arguments ...);
+    print(arguments ...);
 }
 
-                             template<typename Container>
-                             void print_line(Container const& container) noexcept
+template<typename Container>
+void print_line(Container const& container) noexcept
 {
     for (auto const& element : container) std::cout << element << ", ";
-            std::cout << std::endl;
+    std::cout << std::endl;
 }
 
-        auto filter(std::string string, std::string const& pattern) noexcept
+auto filter(std::string string, std::string const& pattern) noexcept
 {
     auto position = string.find(pattern);
     while (position != std::string::npos) {
@@ -232,8 +232,6 @@ auto wfilter(std::string string, std::string const& pattern) noexcept
     return string;
 }
 
-
-
 template<typename Container, typename Predicate>
 auto& keep_if(Container& container, Predicate&&  predicate) noexcept
 {
@@ -245,7 +243,7 @@ auto& keep_if(Container& container, Predicate&&  predicate) noexcept
 template<typename Base>
 Base pow(Base base, int exp)
 {
-    assert(exp>=0);
+    assert(exp >= 0);
     Base result = 1;
     for (;;) {
         if (exp & 1) result *= base;

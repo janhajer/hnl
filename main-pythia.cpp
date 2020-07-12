@@ -1,10 +1,13 @@
 #include "Pythia8/Pythia.h"
 #include "units.hh"
-#include "generic.hh"
 #include "id.hh"
 #include "Decayer.hh"
+#include "ResonanceWidths.hh"
 #include "ResonanceWidth.hh"
 // #include <boost/units/pow.hpp>
+#include <iostream>
+#include <map>
+#include <tuple>
 
 namespace neutrino
 {
@@ -54,7 +57,82 @@ private:
 
 }
 
+auto get_hundredth2(int id)
+{
+    return id > 999 ? 100 * ((id / 100) % 10) + 10 * ((id / 10) % 10) + id % 10 : id;
+}
+
+struct BRatio {
+    int onMode;
+    double bRatio;
+    int meMode;
+};
+
 int main(int argc, char* argv[])
+{
+    using namespace neutrino;
+
+    Pythia8::Pythia pythia;
+    pythia.readString("Beams:idA = 2212");
+    pythia.readString("Beams:idB = 2212");
+    pythia.readString("Beams:eCM = 14000.");
+
+    pythia.readString("Bottomonium:all = on");
+// pythia.readString("Charmonium:all = on");
+
+    std::map<std::tuple<int, int, int,int , int>, BRatio> tmp;
+    auto const* part = pythia.particleData.findParticle(521);
+    for (auto n = 0; n < part->sizeChannels(); ++n) {
+        auto channel = part->channel(n);
+        print(channel.product(0), channel.product(1), channel.product(2), channel.onMode(), channel.bRatio(), channel.meMode());
+        tmp[ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}] = {channel.onMode(), channel.bRatio(), channel.meMode()};
+    }
+
+
+    std::map<std::tuple<int, int, int, int, int>, std::map<int, double>> result;
+//     std::vector<std::vector<double>> table;
+    int iterations = 10;
+    int min = 0;
+    double max = 5;
+    double offset = 0.;
+    for (auto i = min; i <= iterations; ++i) {
+        double mass = max * i / iterations + offset;
+        pythia.particleData.m0(9900014, mass);
+        auto* ptr = new MesonResonance(pythia.settings, &pythia.rndm, 1, 521);
+        ptr->init(&pythia.info, &pythia.settings, &pythia.particleData, &pythia.couplings);
+        pythia.particleData.initWidths({ptr});
+        pythia.init();
+//         std::map<double> row{mass};
+        std::map<double, double> row;
+        auto * part = pythia.particleData.findParticle(521);
+        for(auto const& row : tmp) part->addChannel(row.second.onMode, row.second.bRatio, row.second.meMode, std::get<0>(row.first), std::get<1>(row.first), std::get<2>(row.first), std::get<3>(row.first), std::get<4>(row.first));
+        for (auto n = 0; n < part->sizeChannels(); ++n) {
+            auto channel = part->channel(n);
+            auto ratio = channel.bRatio();
+            print(channel.product(0), channel.product(1), channel.product(2), ratio);
+            if (ratio > 0.) result[ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}][i] = ratio;
+        }
+//         table.emplace_back(row);
+    }
+//     print("res", table);
+    std::ofstream output_file("test.dat");
+    output_file << 0 << '\t' << 1 << '\t' << 2 << '\t' << 3 << '\t' << 4;
+    for (auto i = 0; i <= iterations; ++i) output_file << std::scientific << '\t' << max* i / iterations + offset;
+    output_file << '\n';
+
+    for (auto& row : result) {
+        output_file << std::scientific << std::get<0>(row.first) << '\t' << std::get<1>(row.first) << '\t' << std::get<2>(row.first) << '\t' << std::get<3>(row.first) << '\t' << std::get<4>(row.first) << '\t';
+        for (auto i = 0; i < iterations; ++i) {
+            output_file << std::scientific << row.second[i] << '\t';
+//         std::copy(row.cbegin(), row.cend(), std::ostream_iterator<double>(output_file << std::scientific, '\t'));
+        }
+        output_file << '\n';
+
+    }
+
+}
+
+int main_test(int argc, char* argv[])
 {
     using namespace neutrino;
 
@@ -106,4 +184,6 @@ int main(int argc, char* argv[])
     }
 
     pythia.stat();
+
+    return 0;
 }
