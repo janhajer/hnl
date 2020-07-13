@@ -1,6 +1,4 @@
 #include "ThreeBodyWidth.hh"
-// #include "generic.hh"
-
 
 namespace neutrino
 {
@@ -32,12 +30,13 @@ void print(Object const& object, Arguments ... arguments) noexcept
     print(arguments ...);
 }
 
+const bool debug = false;
+
 }
 
-// Function definitions (not found in the header) for the SUSY Resonance three-body decay width classes.
 void ThreeBodyWidth::setPointers(Pythia8::ParticleData* particle_data_, Pythia8::CoupSM* standard_model_, Pythia8::Info* info_)
 {
-    print("set pointers");
+    if(debug) print("set pointers");
     particle_data = particle_data_;
     standard_model = standard_model_;
     info = info_;
@@ -45,18 +44,21 @@ void ThreeBodyWidth::setPointers(Pythia8::ParticleData* particle_data_, Pythia8:
 
 double ThreeBodyWidth::getWidth(int from_id_, int to_id_, int lepton_id_)
 {
-    print("get_width");
+    if(debug) print("get_width");
     setChannel(from_id_, to_id_, lepton_id_);
     double width;
-    return integrateGauss(width, sqr(y_l + y_N), sqr(1 - y_h), 1e-3 * y_N) ? width : 0.;
+    return integrate(width, sqr(y_l + y_N), sqr(1 - y_h), 1e-3 * y_N) ? width : 0.;
 }
 
 void ThreeBodyWidth::setChannel(int from_id_, int to_id_, int lepton_id_)
 {
-    print("set channel from ", from_id_, "to", to_id_, "with", lepton_id_);
+    if(debug) print("set channel from ", from_id_, "to", to_id_, "with", lepton_id_);
     id_from = std::abs(from_id_);
     id_to = std::abs(to_id_);
     id_lepton = std::abs(lepton_id_);
+
+    if (id_to > id_from) print("decaying", id_from, "to", id_to);
+    if (id_lepton > 20 || id_lepton < 10) print("lepton?", id_lepton);
 
     m_from = particle_data->m0(id_from);
     m_to = particle_data->m0(id_to);
@@ -74,14 +76,16 @@ void ThreeBodyWidth::setChannel(int from_id_, int to_id_, int lepton_id_)
     channel = id_to == 113 || id_to == 213 || id_to == 313 || id_to == 323 || id_to == 413 || id_to == 423 || id_to == 433 ? MesonChannel::Vector : MesonChannel::Scalar;
 }
 
-double ThreeBodyWidth::lambda(double a, double b, double c)
+double ThreeBodyWidth::f(std::vector<double> integrands)
 {
-    return sqr(a) + sqr(b) + sqr(c) - 2 * a * b - 2 * a * c - 2 * b * c;
+    return function(integrands[0]);
 }
 
-double ThreeBodyWidth::Lambda(double xi)
+
+bool ThreeBodyWidth::integrate(double& result, double from, double to, double tolerance)
 {
-    return std::sqrt(lambda(1, mr_h, xi)) * std::sqrt(lambda(xi, mr_N, mr_l));
+    std::vector<double> args(1);
+    return FunctionEncapsulator::integrateGauss(result, 0, from, to, args, tolerance);
 }
 
 double lambda(int id, bool charged)
@@ -460,7 +464,17 @@ double ThreeBodyWidth::ap(double q2)
     return - A2(q2, id_from, id_to) / (m_from + m_to);
 }
 
-double ThreeBodyWidth::f(double xi)
+double ThreeBodyWidth::lambda(double a, double b, double c)
+{
+    return sqr(a) + sqr(b) + sqr(c) - 2 * a * b - 2 * a * c - 2 * b * c;
+}
+
+double ThreeBodyWidth::Lambda(double xi)
+{
+    return std::sqrt(lambda(1, mr_h, xi)) * std::sqrt(lambda(xi, mr_N, mr_l));
+}
+
+double ThreeBodyWidth::function(double xi)
 {
     double m_from_2 = sqr(m_from);
     double q2 = xi * m_from_2;
@@ -491,8 +505,8 @@ double ThreeBodyWidth::f(double xi)
         return term1 + term2 + term3 + term4 + term5 + term6 + term7;
     }
     default : std::stringstream mess;
-//         mess << " unknown decay channel fnSwitch = " << counter;
-        info->errorMsg("Warning in StauWidths::function:", mess.str());
+        mess<< "unknown Meson Channel";
+        info->errorMsg("Warning in ThreeBodyWidth::function:", mess.str());
         return 0.;
     }
 }

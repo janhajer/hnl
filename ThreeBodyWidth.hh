@@ -15,15 +15,8 @@ public:
     double getWidth(int from_id_, int to_id_, int lepton_id_);
     MesonChannel meson_channel;
 protected:
-    double f(std::vector<double> integrands) override
-    {
-        return f(integrands[0]);
-    }
-    bool integrateGauss(double& result, double xLo, double xHi, double tol)
-    {
-        std::vector<double> tmp(1);
-        return FunctionEncapsulator::integrateGauss(result, 0, xLo, xHi, tmp, tol);
-    }
+    virtual double f(std::vector<double> integrands) override;
+    bool integrate(double& result, double from, double to, double tolerance);
     Pythia8::ParticleData* particle_data;
     Pythia8::CoupSM* standard_model;
     Pythia8::Info* info;
@@ -36,7 +29,7 @@ protected:
     double m_to;
 
     void setChannel(int from_id, int to_id, int lepton_id) ;
-    double f(double integrand);
+    double function(double integrand);
     double lambda(double a, double b, double c);
     double Lambda(double xi);
     double ffp(double sqr_q);

@@ -55,6 +55,22 @@ private:
     double eta_max;
 };
 
+
+auto log_scale(double min, double max, int bin, int bin_number) noexcept
+{
+    auto log_min = std::log10(min);
+    auto log_max = std::log10(max);
+    auto bin_width = (log_max - log_min) / bin_number;
+//     return transform(irange(bin_number), [&](auto bin) noexcept {
+    return std::pow(10, log_min + bin * bin_width);
+//     });
+}
+
+
+auto lin_scale(double min, double max, int bin, int bin_number) noexcept
+{
+    auto bin_width = (max - min) / bin_number;
+    return min + bin * bin_width;
 }
 
 auto get_hundredth2(int id)
@@ -62,11 +78,50 @@ auto get_hundredth2(int id)
     return id > 999 ? 100 * ((id / 100) % 10) + 10 * ((id / 10) % 10) + id % 10 : id;
 }
 
-struct BRatio {
-    int onMode;
-    double bRatio;
-    int meMode;
-};
+}
+
+void check_line()
+{
+    static int line = 0;
+    using namespace neutrino;
+    print("line", line);
+    ++line;
+}
+
+int main_single(int argc, char* argv[])
+{
+    using namespace neutrino;
+
+    Pythia8::Pythia pythia;
+    pythia.readString("Beams:idA = 2212");
+    pythia.readString("Beams:idB = 2212");
+    pythia.readString("Beams:eCM = 14000.");
+    pythia.readString("Bottomonium:all = on");
+    pythia.readString("Main:numberOfEvents = 50");
+
+    auto* ptr = new MesonResonance(pythia, 1, 521);
+    pythia.particleData.m0(9900014, 2);
+    pythia.particleData.initWidths({ptr});
+    ptr->AddMissingChannels(pythia.particleData);
+    pythia.init();
+
+    int total = 0;
+    int successfull = 0;
+    while (successfull < pythia.mode("Main:numberOfEvents")) {
+        ++total;
+        if (!pythia.next()) continue;
+        for (auto line = 0; line < pythia.event.size(); ++line) {
+            auto particle = pythia.event[line];
+            auto absid = std::abs(particle.id());
+            if (absid == to_underlying(Id::neutrino2)) {
+                print("Success event", successfull, "of", total, "in line", line, "from mother", pythia.event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs());
+                ++successfull;
+            }
+        }
+    }
+    pythia.stat();
+
+}
 
 int main(int argc, char* argv[])
 {
@@ -76,60 +131,47 @@ int main(int argc, char* argv[])
     pythia.readString("Beams:idA = 2212");
     pythia.readString("Beams:idB = 2212");
     pythia.readString("Beams:eCM = 14000.");
-
     pythia.readString("Bottomonium:all = on");
-// pythia.readString("Charmonium:all = on");
 
-    std::map<std::tuple<int, int, int,int , int>, BRatio> tmp;
-    auto const* part = pythia.particleData.findParticle(521);
-    for (auto n = 0; n < part->sizeChannels(); ++n) {
-        auto channel = part->channel(n);
-        print(channel.product(0), channel.product(1), channel.product(2), channel.onMode(), channel.bRatio(), channel.meMode());
-        tmp[ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}] = {channel.onMode(), channel.bRatio(), channel.meMode()};
-    }
-
+    pythia.readString("Init:showChangedParticleData = off");
+    pythia.readString("Init:showProcesses  = off");
+    pythia.readString("Init:showChangedSettings = off");
+    pythia.readString("Init:showMultipartonInteractions = off");
 
     std::map<std::tuple<int, int, int, int, int>, std::map<int, double>> result;
-//     std::vector<std::vector<double>> table;
-    int iterations = 10;
-    int min = 0;
-    double max = 5;
-    double offset = 0.;
-    for (auto i = min; i <= iterations; ++i) {
-        double mass = max * i / iterations + offset;
+    int steps = 20;
+    double m_min = .1;
+    double m_max = 6.;
+    for (auto step = 0; step <= steps; ++step) {
+        print(step, "of", steps);
+        double mass = lin_scale(m_min, m_max, step, steps);
         pythia.particleData.m0(9900014, mass);
-        auto* ptr = new MesonResonance(pythia.settings, &pythia.rndm, 1, 521);
-        ptr->init(&pythia.info, &pythia.settings, &pythia.particleData, &pythia.couplings);
+        auto* ptr = new MesonResonance(pythia, 1, 521);
         pythia.particleData.initWidths({ptr});
+        ptr->AddMissingChannels(pythia.particleData);
         pythia.init();
-//         std::map<double> row{mass};
-        std::map<double, double> row;
-        auto * part = pythia.particleData.findParticle(521);
-        for(auto const& row : tmp) part->addChannel(row.second.onMode, row.second.bRatio, row.second.meMode, std::get<0>(row.first), std::get<1>(row.first), std::get<2>(row.first), std::get<3>(row.first), std::get<4>(row.first));
-        for (auto n = 0; n < part->sizeChannels(); ++n) {
-            auto channel = part->channel(n);
+        auto* particle_2 = pythia.particleData.findParticle(521);
+        for (auto pos = 0; pos < particle_2->sizeChannels(); ++pos) {
+            auto channel = particle_2->channel(pos);
             auto ratio = channel.bRatio();
-            print(channel.product(0), channel.product(1), channel.product(2), ratio);
-            if (ratio > 0.) result[ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}][i] = ratio;
+            auto has_neutrino = [](auto const & channel) {
+                return channel.product(0) == 9900014 || channel.product(1) == 9900014 || channel.product(2) == 9900014 || channel.product(3) == 9900014 || channel.product(4) == 9900014;
+            };
+            if (ratio > 0. && has_neutrino(channel)) result[ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}][step] = ratio;
         }
-//         table.emplace_back(row);
     }
-//     print("res", table);
     std::ofstream output_file("test.dat");
     output_file << 0 << '\t' << 1 << '\t' << 2 << '\t' << 3 << '\t' << 4;
-    for (auto i = 0; i <= iterations; ++i) output_file << std::scientific << '\t' << max* i / iterations + offset;
+    for (auto step = 0; step <= steps; ++step) {
+        double mass = lin_scale(m_min, m_max, step, steps);
+        output_file << std::scientific << '\t' << mass;
+    }
     output_file << '\n';
-
     for (auto& row : result) {
         output_file << std::scientific << std::get<0>(row.first) << '\t' << std::get<1>(row.first) << '\t' << std::get<2>(row.first) << '\t' << std::get<3>(row.first) << '\t' << std::get<4>(row.first) << '\t';
-        for (auto i = 0; i < iterations; ++i) {
-            output_file << std::scientific << row.second[i] << '\t';
-//         std::copy(row.cbegin(), row.cend(), std::ostream_iterator<double>(output_file << std::scientific, '\t'));
-        }
+        for (auto step = 0; step < steps; ++step) output_file << std::scientific << row.second[step] << '\t';
         output_file << '\n';
-
     }
-
 }
 
 int main_test(int argc, char* argv[])
