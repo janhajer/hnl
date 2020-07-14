@@ -34,12 +34,10 @@ const bool debug = false;
 
 }
 
-void ThreeBodyWidth::setPointers(Pythia8::ParticleData* particle_data_, Pythia8::CoupSM* standard_model_, Pythia8::Info* info_)
+void ThreeBodyWidth::setPointers(Pythia8::ParticleData* particle_data_)
 {
     if(debug) print("set pointers");
     particle_data = particle_data_;
-    standard_model = standard_model_;
-    info = info_;
 }
 
 double ThreeBodyWidth::getWidth(int from_id_, int to_id_, int lepton_id_)
@@ -57,7 +55,7 @@ void ThreeBodyWidth::setChannel(int from_id_, int to_id_, int lepton_id_)
     id_to = std::abs(to_id_);
     id_lepton = std::abs(lepton_id_);
 
-    if (id_to > id_from) print("decaying", id_from, "to", id_to);
+//     if (id_to > id_from) print("decaying", id_from, "to", id_to);
     if (id_lepton > 20 || id_lepton < 10) print("lepton?", id_lepton);
 
     m_from = particle_data->m0(id_from);
@@ -505,8 +503,7 @@ double ThreeBodyWidth::function(double xi)
         return term1 + term2 + term3 + term4 + term5 + term6 + term7;
     }
     default : std::stringstream mess;
-        mess<< "unknown Meson Channel";
-        info->errorMsg("Warning in ThreeBodyWidth::function:", mess.str());
+        print("unknown Meson Channel");
         return 0.;
     }
 }

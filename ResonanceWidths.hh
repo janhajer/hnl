@@ -26,10 +26,16 @@ protected:
     virtual void calcPreFac(bool = false) override;
     virtual void calcWidth(bool calledFromInit = false) override;
 private:
+    bool can_two_body();
+    bool can_three_body(int id);
+    void add_two_body(Pythia8::ParticleDataEntry & particle, int neutrino);
+    void add_three_body(Pythia8::ParticleDataEntry & particle, int neutrino, int id);
     bool getChannels();
     double CKM2(int id);
+    double CKM2(int id_1,int id_2);
     double NeutU(int id_heavy, int id_light);
     double neutrino_coupling;
+    double width;
     ThreeBodyWidth three_body_width;
     Pythia8::CoupSM standard_model;
     Pythia8::ParticleDataEntry particle_data_entry;

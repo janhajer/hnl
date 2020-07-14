@@ -8,18 +8,16 @@ namespace neutrino
 
 enum class MesonChannel {None, Scalar, Vector};
 
-class ThreeBodyWidth : public Pythia8::FunctionEncapsulator
+struct ThreeBodyWidth : public Pythia8::FunctionEncapsulator
 {
-public:
-    void setPointers(Pythia8::ParticleData* particleDataPtrIn, Pythia8::CoupSM* coupSUSYPtrIn, Pythia8::Info* infoPtrIn);
+    void setPointers(Pythia8::ParticleData* particleDataPtrIn);
     double getWidth(int from_id_, int to_id_, int lepton_id_);
-    MesonChannel meson_channel;
 protected:
     virtual double f(std::vector<double> integrands) override;
+private:
+    MesonChannel meson_channel;
     bool integrate(double& result, double from, double to, double tolerance);
     Pythia8::ParticleData* particle_data;
-    Pythia8::CoupSM* standard_model;
-    Pythia8::Info* info;
     int id_from;
     int id_to;
     int id_lepton;
