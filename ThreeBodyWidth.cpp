@@ -32,46 +32,118 @@ void print(Object const& object, Arguments ... arguments) noexcept
 
 const bool debug = false;
 
+bool is_vector(int id)
+{
+    return id == 113 || id == 213 || id == 313 || id == 323 || id == 413 || id == 423 || id == 433;
 }
 
-void ThreeBodyWidth::setPointers(Pythia8::ParticleData* particle_data_)
+}
+
+bool is_B_c_star(int id)
 {
-    if(debug) print("set pointers");
+    return id == 543;
+}
+
+bool is_B_c(int id)
+{
+    return id == 541;
+}
+
+bool is_B_s_star(int id)
+{
+    return id == 533;
+}
+
+bool is_B_s(int id)
+{
+    return id == 531;
+}
+
+bool is_B_star(int id)
+{
+    return id == 513 || id == 523;
+}
+
+bool is_B(int id)
+{
+    return id == 511 || id == 521;
+}
+
+bool is_D_s_star(int id)
+{
+    return id == 433;
+}
+
+bool is_D_s(int id)
+{
+    return id == 431;
+}
+
+bool is_D_star(int id)
+{
+    return id == 413 || id == 423;
+}
+
+bool is_D(int id)
+{
+    return id == 411 || id == 421;
+}
+
+bool is_K_star(int id)
+{
+    return id == 313 || id == 323 || id == 311 || id == 321;
+}
+
+bool is_K(int id)
+{
+    return id == 130 || id == 310 || id == 311 || id == 321;
+}
+
+bool is_rho(int id)
+{
+    return id == 113 || id == 213;
+}
+
+bool is_pi(int id)
+{
+    return id == 111 || id == 211;
+}
+
+bool is_eta(int id)
+{
+    return id == 221 || id == 331;
+}
+
+void ThreeBodyWidth::set_pointers(Pythia8::ParticleData* particle_data_)
+{
+    if (debug) print("set pointers");
     particle_data = particle_data_;
 }
 
-double ThreeBodyWidth::getWidth(int from_id_, int to_id_, int lepton_id_)
+double ThreeBodyWidth::get_width(int from_id_, int to_id_, int lepton_id_)
 {
-    if(debug) print("get_width");
-    setChannel(from_id_, to_id_, lepton_id_);
-    double width;
-    return integrate(width, sqr(y_l + y_N), sqr(1 - y_h), 1e-3 * y_N) ? width : 0.;
-}
+    if (debug) print("get_width", from_id_, "to", to_id_, "with", lepton_id_);
 
-void ThreeBodyWidth::setChannel(int from_id_, int to_id_, int lepton_id_)
-{
-    if(debug) print("set channel from ", from_id_, "to", to_id_, "with", lepton_id_);
     id_from = std::abs(from_id_);
     id_to = std::abs(to_id_);
-    id_lepton = std::abs(lepton_id_);
+    auto id_lepton = std::abs(lepton_id_);
 
-//     if (id_to > id_from) print("decaying", id_from, "to", id_to);
+    if (id_to > id_from && id_from != 130 && id_to != 211) print("decaying", id_from, "to", id_to);
     if (id_lepton > 20 || id_lepton < 10) print("lepton?", id_lepton);
 
     m_from = particle_data->m0(id_from);
     m_to = particle_data->m0(id_to);
-    m_lepton = particle_data->m0(id_lepton);
-    m_neutrino = particle_data->m0(9900014);
 
-    y_h = m_to / m_from;
-    y_l = m_lepton / m_from;
-    y_N = m_neutrino / m_from;
+    auto y_h = m_to / m_from;
+    auto y_l = particle_data->m0(id_lepton) / m_from;
+    auto y_N = particle_data->m0(9900014) / m_from;
 
     mr_h = sqr(y_h);
     mr_l = sqr(y_l);
     mr_N = sqr(y_N);
 
-    channel = id_to == 113 || id_to == 213 || id_to == 313 || id_to == 323 || id_to == 413 || id_to == 423 || id_to == 433 ? MesonChannel::Vector : MesonChannel::Scalar;
+    double width;
+    return integrate(width, sqr(y_l + y_N), sqr(1 - y_h), 1e-3 * y_N) ? width : 0.;
 }
 
 double ThreeBodyWidth::f(std::vector<double> integrands)
@@ -79,28 +151,36 @@ double ThreeBodyWidth::f(std::vector<double> integrands)
     return function(integrands[0]);
 }
 
-
 bool ThreeBodyWidth::integrate(double& result, double from, double to, double tolerance)
 {
     std::vector<double> args(1);
-    return FunctionEncapsulator::integrateGauss(result, 0, from, to, args, tolerance);
+    return integrateGauss(result, 0, from, to, args, tolerance);
 }
 
-double lambda(int id, bool charged)
+bool is_neutral_Kaon(int id)
 {
-    return charged ?
-           (id == 311 ? 0.0267 : 0.0277) :
-           (id == 311 ? 0.0117 : 0.0183);
+    return id == 130 || id == 310 || id == 311;
 }
 
-double ThreeBodyWidth::K_meson_form_factor(double q2, int id, bool charged)
+double lambda(int id_from, int id_to, bool charged)
 {
-    return 0.970 * (1 + neutrino::lambda(id, charged) * q2 / sqr(particle_data->m0(211)));
+    if (is_neutral_Kaon(id_from) && id_to == 211) return charged ? 0.0267 : 0.0117;
+    if (id_from == 321 && id_to == 111) return charged ? 0.0277 : 0.0183;
+    print("not a valid kaon decay", id_from, id_to, charged);
+    return 0;
+}
+
+double ThreeBodyWidth::K_form_factor(double q2, bool charged)
+{
+    return 0.970 * (1 + neutrino::lambda(id_from, id_to, charged) * q2 / sqr(particle_data->m0(211)));
 }
 
 double FF_d_0(int id)
 {
-    return id < 300 ? 0.6114 : 0.7647;
+    if (is_pi(id)) return 0.6117;
+    if (is_K(id)) return 0.7647;
+    print("not a proper D decay", id);
+    return 0;
 }
 
 double ThreeBodyWidth::z(double q2)
@@ -114,19 +194,21 @@ double ThreeBodyWidth::z(double q2)
 
 double c(int id, bool charged)
 {
-    return charged ?
-           (id > 300 ? 0.066 : 1.985) :
-           (id > 300 ? 2.084 : 1.188);
+    if (is_pi(id)) return charged ? 1.985 : 1.188;
+    if (is_K(id)) return charged ? 0.066 : 2.084;
+    print("not a proper D decay", id, charged);
+    return 0;
 }
 
-double P(int id, bool charged)
+double P(int id, bool charged) // GeV^-2
 {
-    return charged ?
-           (id > 300 ? 0.224 : 0.1314) :
-           (id > 300 ? 0 : 0.0342);
+    if (is_pi(id)) return charged ? 0.1314 : 0.0342;
+    if (is_K(id)) return charged ? 0.224 : 0;
+    print("not a proper D decay", id, charged);
+    return 0;
 }
 
-double ThreeBodyWidth::D_meson_eta_form_factor(double q2, bool charged)
+double D_s_form_factor(double q2, bool charged)
 {
     double f_p_eta = 0.495;
     double alpha_p_eta = 0.198;
@@ -134,39 +216,46 @@ double ThreeBodyWidth::D_meson_eta_form_factor(double q2, bool charged)
     double f_0_eta = f_p_eta;
     double alpha_0_eta = 0;
     double q_r = q2 / sqr(m_D_s);
-    return charged ? f_p_eta / ((1 - q_r) * (1 - alpha_p_eta * q_r)) :  f_0_eta / (1 - alpha_0_eta * q_r);
+    return charged ? f_p_eta / (1 - q_r) / (1 - alpha_p_eta * q_r) :  f_0_eta / (1 - alpha_0_eta * q_r);
 }
 
-double ThreeBodyWidth::D_meson_form_factor(double q2, int id, bool charged)
+double ThreeBodyWidth::D_form_factor(double q2, bool charged)
 {
-    if (id == 221 || id == 331) return D_meson_eta_form_factor(q2, charged);
-    return (FF_d_0(id) * c(id, charged) * (z(q2) - z(0)) * (1 + z(q2) - z(0) / 2)) / (1 - P(id, charged) * q2);
+    if (is_eta(id_to)) return D_s_form_factor(q2, charged);
+    return (FF_d_0(id_to) * c(id_to, charged) * (z(q2) - z(0)) * (1 + (z(q2) + z(0)) / 2)) / (1 - P(id_to, charged) * q2);
 }
+
 double m_pole_prefactor(double q2, int id, bool charged)
 {
-    if (id < 400) return 1. / (1. - q2 / sqr(charged ? 5.325 : 5.65));
+    if (is_pi(id) || is_K(id)) return 1. / (1. - q2 / sqr(charged ? 5.325 : 5.65));
     return 1;
 }
 
 double a_0(int id, bool charged)
 {
-    if (id < 300) return charged ? 0.404 : 0.490;
-    if (id < 400) return charged ? 0.360 : 0.233;
-    return charged ? 0.909 : 0.794;
+    if (is_pi(id)) return charged ? 0.404 : 0.490;
+    if (is_K(id)) return charged ? 0.360 : 0.233;
+    if (is_D(id) || is_D_s(id)) return charged ? 0.909 : 0.794;
+    print("not a proper B decay", id, charged);
+    return 0.;
 }
 
 double a_1(int id, bool charged)
 {
-    if (id < 300) return charged ? -0.68 : -1.61;
-    if (id < 400) return charged ? -0.828 : 0.197;
-    return charged ? -7.11 : -2.45;
+    if (is_pi(id)) return charged ? -0.68 : -1.61;
+    if (is_K(id)) return charged ? -0.828 : 0.197;
+    if (is_D(id) || is_D_s(id)) return charged ? -7.11 : -2.45;
+    print("not a proper B decay", id, charged);
+    return 0.;
 }
 
 double a_2(int id, bool charged)
 {
-    if (id < 300) return charged ? -0.86 : 0.93;
-    if (id < 400) return charged ? 1.1 : 0.18;
-    return charged ? 66 : 33;
+    if (is_pi(id)) return charged ? -0.86 : 0.93;
+    if (is_K(id)) return charged ? 1.1 : 0.18;
+    if (is_D(id) || is_D_s(id)) return charged ? 66 : 33;
+    print("not a proper B decay", id, charged);
+    return 0.;
 }
 
 double a(int n, int id, int charged)
@@ -180,7 +269,7 @@ double a(int n, int id, int charged)
     return 0;
 }
 
-double ThreeBodyWidth::B_meson_form_factor(double q2, int id, bool charged)
+double ThreeBodyWidth::B_form_factor(double q2, int id, bool charged)
 {
     double z_q = z(q2);
     int N = 3;
@@ -189,17 +278,14 @@ double ThreeBodyWidth::B_meson_form_factor(double q2, int id, bool charged)
     return m_pole_prefactor(q2, id, charged) * sum;
 }
 
-auto get_hundredth(int id)
-{
-    return id > 999 ? 100 * ((id / 100) % 10) + 10 * ((id / 10) % 10) + id % 10 : id;
-}
-
 double ThreeBodyWidth::form_factor(double q2, int from_id, int to_id, bool charged)
 {
-    int id = get_hundredth(from_id);
-    if (id < 400) return K_meson_form_factor(q2, to_id, charged);
-    if (id < 500) return D_meson_form_factor(q2, to_id, charged);
-    return B_meson_form_factor(q2, to_id, charged);
+    if (is_K(from_id)) return K_form_factor(q2, charged);
+    if (is_D(from_id)) return D_form_factor(q2, charged);
+    if (is_D_s(from_id)) return D_s_form_factor(q2, charged);
+    if (is_B(from_id) || is_B_s(from_id)) return B_form_factor(q2, to_id, charged);
+    print("not a proper pseudoscalar decay", from_id, to_id, charged, q2);
+    return 0;
 }
 
 double ThreeBodyWidth::ffp(double sqr_q)
@@ -212,234 +298,183 @@ double ThreeBodyWidth::ff0(double sqr_q)
     return form_factor(sqr_q, id_from, id_to, false);
 }
 
-double ThreeBodyWidth::Gm(double xi)
+double fV(int id_from, int id_to)
 {
-    return xi * (mr_N + mr_l) - sqr(mr_N - mr_l);
-}
-
-double ThreeBodyWidth::F(double xi)
-{
-    return sqr(1 - xi) - 2 * mr_h * (1 + xi) + sqr(mr_h);
-}
-
-double ThreeBodyWidth::Gp(double xi)
-{
-    return xi * (mr_N + mr_l) + sqr(mr_N - mr_l);
-}
-
-bool is_D(int id)
-{
-    id = get_hundredth(id);
-    return id > 400 && id < 430;
-}
-
-bool is_B(int id)
-{
-    id = get_hundredth(id);
-    return id > 500 && id < 530;
-}
-
-bool is_Bs(int id)
-{
-    id = get_hundredth(id);
-    return id > 530 && id < 540;
-}
-
-bool is_Ds(int id)
-{
-    id = get_hundredth(id);
-    return id > 430 && id < 440;
-}
-
-bool is_K(int id)
-{
-    id = get_hundredth(id);
-    return id > 300 && id < 400;
-}
-
-bool is_rho(int id)
-{
-    id = get_hundredth(id);
-    return id < 300;
-}
-
-double fV(int id1, int id2)
-{
-    if (is_D(id1) && is_K(id2)) return 1.03;
-    if (is_B(id1) && is_D(id2)) return 0.76;
-    if (is_B(id1) && is_rho(id2)) return 0.295;
-    if (is_Bs(id1) && is_Ds(id2)) return 0.95;
-    if (is_Bs(id1) && is_K(id2)) return 0.291;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 1.03;
+    if (is_B(id_from) && is_D_star(id_to)) return 0.76;
+    if (is_B(id_from) && is_rho(id_to)) return 0.295;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 0.95;
+    if (is_B_s(id_from) && is_K_star(id_to)) return 0.291;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double fA0(int id1, int id2)
+double fA0(int id_from, int id_to)
 {
-    if (is_D(id1) && is_K(id2)) return 0.76;
-    if (is_B(id1) && is_D(id2)) return 0.69;
-    if (is_B(id1) && is_rho(id2)) return 0.231;
-    if (is_Bs(id1) && is_Ds(id2)) return 0.67;
-    if (is_Bs(id1) && is_K(id2)) return 0.289;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 0.76;
+    if (is_B(id_from) && is_D_star(id_to)) return 0.69;
+    if (is_B(id_from) && is_rho(id_to)) return 0.231;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 0.67;
+    if (is_B_s(id_from) && is_K_star(id_to)) return 0.289;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double fA1(int id1, int id2)
+double fA1(int id_from, int id_to)
 {
-    if (is_D(id1) && is_K(id2)) return 0.66;
-    if (is_B(id1) && is_D(id2)) return 0.66;
-    if (is_B(id1) && is_rho(id2)) return 0.269;
-    if (is_Bs(id1) && is_Ds(id2)) return 0.70;
-    if (is_Bs(id1) && is_K(id2)) return 0.287;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 0.66;
+    if (is_B(id_from) && is_D_star(id_to)) return 0.66;
+    if (is_B(id_from) && is_rho(id_to)) return 0.269;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 0.70;
+    if (is_B_s(id_from) && is_K_star(id_to)) return 0.287;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double fA2(int id1, int id2)
+double fA2(int id_from, int id_to)
 {
-    if (is_D(id1) && is_K(id2)) return 0.49;
-    if (is_B(id1) && is_D(id2)) return 0.62;
-    if (is_B(id1) && is_rho(id2)) return 0.282;
-    if (is_Bs(id1) && is_Ds(id2)) return 0.75;
-    if (is_Bs(id1) && is_K(id2)) return 0.286;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 0.49;
+    if (is_B(id_from) && is_D_star(id_to)) return 0.62;
+    if (is_B(id_from) && is_rho(id_to)) return 0.282;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 0.75;
+    if (is_B_s(id_from) && is_K_star(id_to)) return 0.286;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double sigmaV(int id1, int id2)
+double sigmaV(int id_from, int id_to)
 {
-    if (is_D(id1) && is_K(id2)) return 0.27;
-    if (is_B(id1) && is_D(id2)) return 0.57;
-    if (is_B(id1) && is_rho(id2)) return 0.875;
-    if (is_Bs(id1) && is_Ds(id2)) return 0.372;
-    if (is_Bs(id1) && is_K(id2)) return -0.516;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 0.27;
+    if (is_B(id_from) && is_D_star(id_to)) return 0.57;
+    if (is_B(id_from) && is_rho(id_to)) return 0.875;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 0.372;
+    if (is_B_s(id_from) && is_K_star(id_to)) return -0.516;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double sigmaA0(int id1, int id2)
+double sigmaA0(int id_from, int id_to)
 {
-    if (is_D(id1) && is_K(id2)) return 0.17;
-    if (is_B(id1) && is_D(id2)) return 0.59;
-    if (is_B(id1) && is_rho(id2)) return 0.796;
-    if (is_Bs(id1) && is_Ds(id2)) return 0.350;
-    if (is_Bs(id1) && is_K(id2)) return -0.383;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 0.17;
+    if (is_B(id_from) && is_D_star(id_to)) return 0.59;
+    if (is_B(id_from) && is_rho(id_to)) return 0.796;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 0.350;
+    if (is_B_s(id_from) && is_K_star(id_to)) return -0.383;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double sigmaA1(int id1, int id2)
+double sigmaA1(int id_from, int id_to)
 {
-    if (is_D(id1) && is_K(id2)) return 0.30;
-    if (is_B(id1) && is_D(id2)) return 0.78;
-    if (is_B(id1) && is_rho(id2)) return 0.54;
-    if (is_Bs(id1) && is_Ds(id2)) return 0.463;
-    if (is_Bs(id1) && is_K(id2)) return 0.;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 0.30;
+    if (is_B(id_from) && is_D_star(id_to)) return 0.78;
+    if (is_B(id_from) && is_rho(id_to)) return 0.54;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 0.463;
+    if (is_B_s(id_from) && is_K_star(id_to)) return 0.;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double sigmaA2(int id1, int id2)
+double sigmaA2(int id_from, int id_to)
 {
-    if (is_D(id1) && is_K(id2)) return 0.67;
-    if (is_B(id1) && is_D(id2)) return 1.40;
-    if (is_B(id1) && is_rho(id2)) return 1.34;
-    if (is_Bs(id1) && is_Ds(id2)) return 1.04;
-    if (is_Bs(id1) && is_K(id2)) return 1.05;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 0.67;
+    if (is_B(id_from) && is_D_star(id_to)) return 1.40;
+    if (is_B(id_from) && is_rho(id_to)) return 1.34;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 1.04;
+    if (is_B_s(id_from) && is_K_star(id_to)) return 1.05;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double xiV(int id1, int id2)
+double xiV(int id_from, int id_to)
 {
-    if (is_D(id1) && is_K(id2)) return 0.;
-    if (is_B(id1) && is_D(id2)) return 0.;
-    if (is_B(id1) && is_rho(id2)) return 0.;
-    if (is_Bs(id1) && is_Ds(id2)) return 0.561;
-    if (is_Bs(id1) && is_K(id2)) return 2.10;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 0.;
+    if (is_B(id_from) && is_D_star(id_to)) return 0.;
+    if (is_B(id_from) && is_rho(id_to)) return 0.;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 0.561;
+    if (is_B_s(id_from) && is_K_star(id_to)) return 2.10;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double xiA0(int id1, int id2)
+double xiA0(int id_from, int id_to)
 {
-    if (is_D(id1) && is_K(id2)) return 0.;
-    if (is_B(id1) && is_D(id2)) return 0.;
-    if (is_B(id1) && is_rho(id2)) return 0.055;
-    if (is_Bs(id1) && is_Ds(id2)) return 0.600;
-    if (is_Bs(id1) && is_K(id2)) return 1.58;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 0.;
+    if (is_B(id_from) && is_D_star(id_to)) return 0.;
+    if (is_B(id_from) && is_rho(id_to)) return 0.055;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 0.600;
+    if (is_B_s(id_from) && is_K_star(id_to)) return 1.58;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double xiA1(int id1, int id2)
+double xiA1(int id_from, int id_to)
 {
-    if (is_D(id1) && is_K(id2)) return 0.20;
-    if (is_B(id1) && is_D(id2)) return 0.;
-    if (is_B(id1) && is_rho(id2)) return 0.;
-    if (is_Bs(id1) && is_Ds(id2)) return 0.510;
-    if (is_Bs(id1) && is_K(id2)) return 1.06;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 0.20;
+    if (is_B(id_from) && is_D_star(id_to)) return 0.;
+    if (is_B(id_from) && is_rho(id_to)) return 0.;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 0.510;
+    if (is_B_s(id_from) && is_K_star(id_to)) return 1.06;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double xiA2(int id1, int id2)
+double xiA2(int id_from, int id_to)
 {
-    if (is_D(id1) && is_K(id2)) return 0.16;
-    if (is_B(id1) && is_D(id2)) return 0.41;
-    if (is_B(id1) && is_rho(id2)) return -0.21;
-    if (is_Bs(id1) && is_Ds(id2)) return 0.070;
-    if (is_Bs(id1) && is_K(id2)) return -0.074;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 0.16;
+    if (is_B(id_from) && is_D_star(id_to)) return 0.41;
+    if (is_B(id_from) && is_rho(id_to)) return -0.21;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 0.070;
+    if (is_B_s(id_from) && is_K_star(id_to)) return -0.074;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double MP(int id1, int id2)
+double MP(int id_from, int id_to) // GeV
 {
-    if (is_D(id1) && is_K(id2)) return 1.969;
-    if (is_B(id1) && is_D(id2)) return 6.275;
-    if (is_B(id1) && is_rho(id2)) return 5.279;
-    if (is_Bs(id1) && is_Ds(id2)) return 6.275;
-    if (is_Bs(id1) && is_K(id2)) return 5.367;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 1.969;
+    if (is_B(id_from) && is_D_star(id_to)) return 6.275;
+    if (is_B(id_from) && is_rho(id_to)) return 5.279;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 6.275;
+    if (is_B_s(id_from) && is_K_star(id_to)) return 5.367;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double MV(int id1, int id2)
+double MV(int id_from, int id_to) // GeV
 {
-    if (is_D(id1) && is_K(id2)) return 2.112;
-    if (is_B(id1) && is_D(id2)) return 6.331;
-    if (is_B(id1) && is_rho(id2)) return 5.325;
-    if (is_Bs(id1) && is_Ds(id2)) return 6.331;
-    if (is_Bs(id1) && is_K(id2)) return 5.415;
-    print("meson", id1, id2, "not found");
+    if (is_D(id_from) && is_K_star(id_to)) return 2.112;
+    if (is_B(id_from) && is_D_star(id_to)) return 6.331;
+    if (is_B(id_from) && is_rho(id_to)) return 5.325;
+    if (is_B_s(id_from) && is_D_s_star(id_to)) return 6.331;
+    if (is_B_s(id_from) && is_K_star(id_to)) return 5.415;
+    print("meson", id_from, id_to, "not found");
     return 0;
 }
 
-double V(double q2, int id1, int id2)
+double V(double q2, int id_from, int id_to)
 {
-    double ratio = q2 / sqr(MV(id1, id2));
-    return fV(id1, id2) / (1. - ratio) / (1. - sigmaV(id1, id2) * ratio - xiV(id1, id2) * sqr(ratio));
+    double ratio = q2 / sqr(MV(id_from, id_to));
+    return fV(id_from, id_to) / (1. - ratio) / (1. - sigmaV(id_from, id_to) * ratio - xiV(id_from, id_to) * sqr(ratio));
 }
 
-double A0(double q2, int id1, int id2)
+double A0(double q2, int id_from, int id_to)
 {
-    double ratioP = q2 / sqr(MP(id1, id2));
-    double ratioV = q2 / sqr(MV(id1, id2));
-    return fA0(id1, id2) / (1. - ratioP) / (1. - sigmaA0(id1, id2) * ratioV - xiA0(id1, id2) * sqr(ratioV));
+    double ratioP = q2 / sqr(MP(id_from, id_to));
+    double ratioV = q2 / sqr(MV(id_from, id_to));
+    return fA0(id_from, id_to) / (1. - ratioP) / (1. - sigmaA0(id_from, id_to) * ratioV - xiA0(id_from, id_to) * sqr(ratioV));
 }
 
-double A1(double q2, int id1, int id2)
+double A1(double q2, int id_from, int id_to)
 {
-    double ratio = q2 / sqr(MV(id1, id2));
-    return fA1(id1, id2) / (1. - sigmaA1(id1, id2) * ratio - xiA1(id1, id2) * sqr(ratio));
+    double ratio = q2 / sqr(MV(id_from, id_to));
+    return fA1(id_from, id_to) / (1. - sigmaA1(id_from, id_to) * ratio - xiA1(id_from, id_to) * sqr(ratio));
 }
 
-double A2(double q2, int id1, int id2)
+double A2(double q2, int id_from, int id_to)
 {
-    double ratio = q2 / sqr(MV(id1, id2));
-    return fA2(id1, id2) / (1. - sigmaA2(id1, id2) * ratio - xiA2(id1, id2) * sqr(ratio));
+    double ratio = q2 / sqr(MV(id_from, id_to));
+    return fA2(id_from, id_to) / (1. - sigmaA2(id_from, id_to) * ratio - xiA2(id_from, id_to) * sqr(ratio));
 }
 
 double ThreeBodyWidth::g(double q2)
@@ -454,7 +489,7 @@ double ThreeBodyWidth::am(double q2)
 
 double ThreeBodyWidth::ff(double q2)
 {
-    return A1(q2, id_from, id_to) / (m_from + m_to);
+    return A1(q2, id_from, id_to) * (m_from + m_to);
 }
 
 double ThreeBodyWidth::ap(double q2)
@@ -472,6 +507,21 @@ double ThreeBodyWidth::Lambda(double xi)
     return std::sqrt(lambda(1, mr_h, xi)) * std::sqrt(lambda(xi, mr_N, mr_l));
 }
 
+double ThreeBodyWidth::Gm(double xi)
+{
+    return xi * (mr_N + mr_l) - sqr(mr_N - mr_l);
+}
+
+double ThreeBodyWidth::Gp(double xi)
+{
+    return xi * (mr_N + mr_l) + sqr(mr_N - mr_l);
+}
+
+double ThreeBodyWidth::F(double xi)
+{
+    return sqr(1 - xi) - 2 * mr_h * (1 + xi) + sqr(mr_h);
+}
+
 double ThreeBodyWidth::function(double xi)
 {
     double m_from_2 = sqr(m_from);
@@ -480,14 +530,13 @@ double ThreeBodyWidth::function(double xi)
     double Gmxi = Gm(xi);
     double xi2 = sqr(xi);
     double xi3 = xi2 * xi;
-    switch (channel) {
-    case MesonChannel::Scalar : {
-        double term1 = sqr(ffp(q2)) * cube(Lambdaxi) / 3. / xi3;
-        double term2 = sqr(ffp(q2)) * Lambdaxi * Gmxi * lambda(1., mr_h, xi) / 2. / xi3;
+    if (!is_vector(id_to)) {
+        double ffp2q2 = sqr(ffp(q2));
+        double term1 = ffp2q2 * cube(Lambdaxi) / 3. / xi3;
+        double term2 = ffp2q2 * Lambdaxi * Gmxi * lambda(1., mr_h, xi) / 2. / xi3;
         double term3 = sqr(ff0(q2)) * Lambdaxi * Gmxi * sqr(1. - mr_h) / 2. / xi3;
         return term1 + term2 + term3;
-    }
-    case MesonChannel::Vector : {
+    } else {
         double fq2 = ff(q2);
         double Fxi = F(xi);
         double Gpxi = Gp(xi);
@@ -497,14 +546,10 @@ double ThreeBodyWidth::function(double xi)
         double term2 = 1. / 24. / m_from_2 / xi3 * sqr(fq2) * Lambdaxi * (3 * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi) + 12 * mr_h * xi * (2 * xi2 - Gpxi));
         double term3 = m_from_2 / 24. / xi3 * sqr(apq2) * Lambdaxi * Fxi * (Fxi * (2 * xi2 - Gpxi) + 3 * Gmxi * sqr(1 - mr_h));
         double term4 = m_from_2 / 8. / xi * sqr(amq2) * Lambdaxi * Fxi * Gmxi;
-        double term5 = 1. / 12. / xi3 * fq2 * apq2 * (3 * xi * Fxi * Gmxi + (1 - xi - mr_h) * (3 * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi)));
-        double term6 = 1. / 4. / xi2 / fq2 * amq2 * Lambdaxi * Gmxi;
+        double term5 = 1. / 12. / xi3 * fq2 * apq2 * Lambdaxi * (3 * xi * Fxi * Gmxi + (1 - xi - mr_h) * (3 * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi)));
+        double term6 = 1. / 4. / xi2 / fq2 * amq2 * Lambdaxi * Fxi * Gmxi;
         double term7 = m_from_2 / 4. / xi2 * apq2 * amq2 * Lambdaxi * Fxi * Gmxi * (1 - mr_h);
         return term1 + term2 + term3 + term4 + term5 + term6 + term7;
-    }
-    default : std::stringstream mess;
-        print("unknown Meson Channel");
-        return 0.;
     }
 }
 

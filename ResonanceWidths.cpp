@@ -46,7 +46,12 @@ void print(Object const& object, Arguments ... arguments) noexcept
     print(arguments ...);
 }
 
-bool debug = false;
+bool debug = true;
+
+bool is_vector(int id)
+{
+    return id == 113 || id == 213 || id == 313 || id == 323 || id == 413 || id == 423 || id == 433;
+}
 
 }
 
@@ -126,6 +131,7 @@ bool MesonResonance::can_three_body(int id)
     if (idRes == 431 && id == 323) return false;
     if (idRes == 511 && id == 313) return false;
     if (idRes == 521 && id == 323) return false;
+    if (particleDataPtr->chargeType(idRes) == particleDataPtr->chargeType(id)) return false;
     if (particleDataPtr->m0(idRes) < particleDataPtr->m0(id)) return false;
     if (idRes == 541) return false;
     auto qs_1 = quarks(idRes);
@@ -148,15 +154,13 @@ MesonResonance::MesonResonance(Pythia8::Pythia& pythia, double neutrino_coupling
     standard_model.init(pythia.settings, &pythia.rndm);
     pythia.particleData.findParticle(idRes)->setMWidth(tau_to_Gamma(pythia.particleData.findParticle(idRes)->tau0()));
 
-    for (auto pos = 0; pos < particle_data_entry.sizeChannels(); ++pos) {
-        auto channel = particle_data_entry.channel(pos);
-        channels[ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}] = {channel.onMode(), channel.bRatio(), channel.meMode()};
-    }
+//     for (auto pos = 0; pos < particle_data_entry.sizeChannels(); ++pos) {
+//         auto channel = particle_data_entry.channel(pos);
+//         channels[ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}] = {channel.onMode(), channel.bRatio(), channel.meMode()};
+//     }
 
-    for (auto pos = 0; pos < pythia.particleData.findParticle(idRes)->sizeChannels(); ++pos) {
-        pythia.particleData.findParticle(idRes)->channel(pos).meMode(101);
-    }
-    if (debug) print("Particle", idRes, particle_data_entry.name(), "mass", particle_data_entry.m0(), "tau", particle_data_entry.tau0());
+    for (auto pos = 0; pos < pythia.particleData.findParticle(idRes)->sizeChannels(); ++pos) pythia.particleData.findParticle(idRes)->channel(pos).meMode(101);
+    if (debug) print("Particle", idRes, pythia.particleData.findParticle(idRes)->name(), "mass", pythia.particleData.findParticle(idRes)->m0(), "tau", pythia.particleData.findParticle(idRes)->tau0(), pythia.particleData.findParticle(idRes)->mWidth());
 }
 
 bool MesonResonance::initBSM()
@@ -195,16 +199,16 @@ bool MesonResonance::allowCalc()
 void MesonResonance::add_two_body(Pythia8::ParticleDataEntry& particle, int neutrino)
 {
     if (!can_two_body()) return;
-    particle.chargeType() == 0 ?
-    particle.addChannel(1, 0., 0, 9900014, neutrino) :
+//     particle.chargeType() == 0 ?
+//     particle.addChannel(1, 0., 0, 9900014, neutrino) :
     particle.addChannel(1, 0., 0, 9900014, 1 - neutrino);
 }
 
 void MesonResonance::add_three_body(Pythia8::ParticleDataEntry& particle, int neutrino, int id)
 {
     if (!can_three_body(id)) return;
-    particle.chargeType() == particleDataPtr->chargeType(id) ?
-    particle.addChannel(1, 0., 0, 9900014, neutrino, id) :
+//     particle.chargeType() == particleDataPtr->chargeType(id) ?
+//     particle.addChannel(1, 0., 0, 9900014, neutrino, id) :
     particle.addChannel(1, 0., 0, 9900014, neutrino - 1, id);
 }
 
@@ -237,7 +241,7 @@ bool MesonResonance::getChannels()
 void MesonResonance::initConstants()
 {
     if (debug) print("initConstants");
-    three_body_width.setPointers(particleDataPtr);
+    three_body_width.set_pointers(particleDataPtr);
 }
 
 double decay_constant(int id) // GeV
@@ -287,7 +291,7 @@ double MesonResonance::NeutU(int id_heavy, int id_light)
 
 double clepsch_gordan_2(int id)
 {
-    return id == 221 ? .5 : 1;
+    return id == 111 || id == 113 ? .5 : 1;
 }
 
 double MesonResonance::CKM2(int id)
@@ -366,11 +370,6 @@ double lambda(double a, double b, double c)
     return sqr(a) + sqr(b) + sqr(c) - 2 * a * b - 2 * a * c - 2 * b * c;
 }
 
-bool is_vector(int id)
-{
-    return id == 113 || id == 213 || id == 313 || id == 323 || id == 431 || id == 423 || id == 433;
-}
-
 void MesonResonance::calcWidth(bool)
 {
     if (debug) print("calcWidth", idRes, id1Abs, id2Abs, id3Abs);
@@ -379,6 +378,7 @@ void MesonResonance::calcWidth(bool)
         return;
     }
     if (ps == 0.) {
+        if (debug) print("no phase space");
         preFac = 0.;
         widNow = 0.;
         return;
@@ -417,12 +417,12 @@ void MesonResonance::calcWidth(bool)
             preFac *= sqr(mHat) / 8 / sqr(M_PI) * clepsch_gordan_2(id2Abs) * CKM2(idRes, id2Abs);
             if (debug) print("preFac", preFac);
             if (is_vector(id2Abs)) preFac *= sqr(mHat) / sqr(mf2);
-            widNow = preFac * three_body_width.getWidth(idRes, id2Abs, id3Abs);
+            widNow = preFac * three_body_width.get_width(idRes, id2Abs, id3Abs);
         } else print("Three-body for", id1Abs, id2Abs, id3Abs, "not implemented");
         break;
     default : print("multiplicity", mult, "not implemented");
     }
-    if (debug) print("Calculated", widNow, "for", idRes, id2Abs, "with", preFac, "compare to", tau_to_Gamma(particle_data_entry.tau0()), particle_data_entry.mWidth());
+    if (debug) print("Calculated", widNow, "for", idRes, "to", id2Abs, "to", id2Abs, "with", preFac, "compare to", tau_to_Gamma(particle_data_entry.tau0()), particle_data_entry.mWidth());
 }
 
 }

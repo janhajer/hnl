@@ -87,19 +87,10 @@ void check_line()
     ++line;
 }
 
-auto get_resonances(Pythia8::Pythia& pythia, double coupling)
+auto get_resonances(Pythia8::Pythia& pythia, std::vector<int> const& mesons, double coupling)
 {
     std::vector<Pythia8::ResonanceWidths*> resonances;
-    resonances.emplace_back(new MesonResonance(pythia, coupling, 521));
-    resonances.emplace_back(new MesonResonance(pythia, coupling, 511));
-    resonances.emplace_back(new MesonResonance(pythia, coupling, 531));
-    resonances.emplace_back(new MesonResonance(pythia, coupling, 541));
-    resonances.emplace_back(new MesonResonance(pythia, coupling, 411));
-    resonances.emplace_back(new MesonResonance(pythia, coupling, 431));
-    resonances.emplace_back(new MesonResonance(pythia, coupling, 130));
-    resonances.emplace_back(new MesonResonance(pythia, coupling, 310));
-    resonances.emplace_back(new MesonResonance(pythia, coupling, 321));
-    resonances.emplace_back(new MesonResonance(pythia, coupling, 211));
+    for(auto meson : mesons) resonances.emplace_back(new MesonResonance(pythia, coupling, meson));
 //     resonances.emplace_back(new MesonResonance(pythia, coupling, 443));
 //     resonances.emplace_back(new MesonResonance(pythia, coupling, 553));
     return resonances;
@@ -127,7 +118,8 @@ void main_single()
     pythia.particleData.m0(9900014, 5);
 
     double coupling = 1.;
-    auto resonances = get_resonances(pythia, coupling);
+    std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541};
+    auto resonances = get_resonances(pythia, mesons, coupling);
     pythia.particleData.initWidths(resonances);
     for (auto* resonance : resonances) static_cast<MesonResonance*>(resonance)->AddMissingChannels(pythia.particleData);
 
@@ -162,7 +154,7 @@ void set_pythia(Pythia8::Pythia& pythia)
     pythia.readString("Init:showProcesses  = off");
     pythia.readString("Init:showChangedSettings = off");
     pythia.readString("Init:showMultipartonInteractions = off");
-    pythia.readString("ResonanceWidths:minWidth = 1E-15");
+    pythia.readString("ResonanceWidths:minWidth = 1E-25");
 }
 
 auto has_neutrino = [](auto const& channel)
@@ -170,53 +162,64 @@ auto has_neutrino = [](auto const& channel)
     return channel.product(0) == 9900014 || channel.product(1) == 9900014 || channel.product(2) == 9900014 || channel.product(3) == 9900014 || channel.product(4) == 9900014;
 };
 
+struct Loop{
+    int steps = 10;
+    double m_min = .01;
+    double m_max = 0.2;
+    double mass(int step){
+        using namespace neutrino;
+        return lin_scale(m_min, m_max, step, steps);
+    }
+};
+
+template<typename Data>
+void save_data(Data & result, int meson)
+{
+    Loop loop;
+    std::ofstream output_file(std::to_string(meson) + ".dat");
+    output_file << 0 << '\t' << 1 << '\t' << 2 << '\t' << 3 << '\t' << 4;
+    for (auto step = 0; step <= loop.steps; ++step) output_file << std::scientific << '\t' << loop.mass(step);
+    output_file << '\n';
+    for (auto& row : result[meson]) {
+        output_file << std::scientific << std::get<0>(row.first) << '\t' << std::get<1>(row.first) << '\t' << std::get<2>(row.first) << '\t' << std::get<3>(row.first) << '\t' << std::get<4>(row.first) << '\t';
+        for (auto step = 0; step < loop.steps; ++step) output_file << std::scientific << row.second[step] << '\t';
+        output_file << '\n';
+    }
+}
+
 void main_loop()
 {
     using namespace neutrino;
 
-    std::vector<int> mesons{511, 521, 531, 541};
-//     std::vector<int> mesons{541};
+//     std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541};
+    std::vector<int> mesons{130};
     std::map<int, std::map<std::tuple<int, int, int, int, int>, std::map<int, double>>> result;
-    int steps = 20;
-    double m_min = .1;
-    double m_max = 6.5;
-    for (auto step = 0; step <= steps; ++step) {
-        print(step, "of", steps);
+    Loop loop;
+    for (auto step = 0; step <= loop.steps; ++step) {
+        print(step, "of", loop.steps);
         Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
         set_pythia(pythia);
-        pythia.particleData.m0(9900014, lin_scale(m_min, m_max, step, steps));
-        auto resonances = get_resonances(pythia, 1);
+        pythia.particleData.m0(9900014, loop.mass(step));
+        auto resonances = get_resonances(pythia, mesons, 1);
         pythia.particleData.initWidths(resonances);
         for (auto* resonance : resonances) static_cast<MesonResonance*>(resonance)->AddMissingChannels(pythia.particleData);
         pythia.init();
         for (auto meson : mesons) {
-            auto* particle = pythia.particleData.findParticle(meson);
-            for (auto pos = 0; pos < particle->sizeChannels(); ++pos) {
-                auto channel = particle->channel(pos);
+            auto const& particle = *pythia.particleData.findParticle(meson);
+            for (auto pos = 0; pos < particle.sizeChannels(); ++pos) {
+                auto channel = particle.channel(pos);
                 auto ratio = channel.bRatio();
                 if (ratio > 0. && has_neutrino(channel))
-                result[meson][ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}][step] = ratio;
+                    result[meson][ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}][step] = ratio;
             }
         }
     }
-    for (auto meson : mesons) {
-        std::ofstream output_file(std::to_string(meson) + ".dat");
-        output_file << 0 << '\t' << 1 << '\t' << 2 << '\t' << 3 << '\t' << 4;
-        for (auto step = 0; step <= steps; ++step) {
-            double mass = lin_scale(m_min, m_max, step, steps);
-            output_file << std::scientific << '\t' << mass;
-        }
-        output_file << '\n';
-        for (auto& row : result[meson]) {
-            output_file << std::scientific << std::get<0>(row.first) << '\t' << std::get<1>(row.first) << '\t' << std::get<2>(row.first) << '\t' << std::get<3>(row.first) << '\t' << std::get<4>(row.first) << '\t';
-            for (auto step = 0; step < steps; ++step) output_file << std::scientific << row.second[step] << '\t';
-            output_file << '\n';
-        }
-    }
+    for (auto meson : mesons) save_data(result, meson);
 }
 
 
-int main(int argc, char* argv[]){
+int main(int , char* [])
+{
     main_loop();
 }
 
