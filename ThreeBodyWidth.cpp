@@ -120,13 +120,19 @@ void ThreeBodyWidth::set_pointers(Pythia8::ParticleData* particle_data_)
     particle_data = particle_data_;
 }
 
-double ThreeBodyWidth::get_width(int from_id_, int to_id_, int lepton_id_)
+double ThreeBodyWidth::get_width(int from_id_, int neutrino_id, int to_id_, int lepton_id_)
 {
-    if (debug) print("get_width", from_id_, "to", to_id_, "with", lepton_id_);
+    if (debug) print("get_width", from_id_, "to", to_id_, "with", lepton_id_, "and", neutrino_id);
 
     id_from = std::abs(from_id_);
     id_to = std::abs(to_id_);
     auto id_lepton = std::abs(lepton_id_);
+    auto id_neutrino = std::abs(neutrino_id);
+
+    if (id_from < 100 || id_from > 1000) print("id from", id_from);
+    if (id_to < 100 || id_to > 1000) print("id to", id_to);
+    if (id_lepton < 10 || id_lepton > 20) print("id lepton", id_lepton);
+    if (id_neutrino < 1E5) print("id neutrino", id_neutrino);
 
     if (id_to > id_from && id_from != 130 && id_to != 211) print("decaying", id_from, "to", id_to);
     if (id_lepton > 20 || id_lepton < 10) print("lepton?", id_lepton);
@@ -136,14 +142,14 @@ double ThreeBodyWidth::get_width(int from_id_, int to_id_, int lepton_id_)
 
     auto y_h = m_to / m_from;
     auto y_l = particle_data->m0(id_lepton) / m_from;
-    auto y_N = particle_data->m0(9900014) / m_from;
+    auto y_N = particle_data->m0(id_neutrino) / m_from;
 
     mr_h = sqr(y_h);
     mr_l = sqr(y_l);
     mr_N = sqr(y_N);
 
     double width;
-    return integrate(width, sqr(y_l + y_N), sqr(1 - y_h), 1e-3 * y_N) ? width : 0.;
+    return integrate(width, sqr(y_l + y_N), sqr(1. - y_h), 1e-3 * y_N) ? width : 0.;
 }
 
 double ThreeBodyWidth::f(std::vector<double> integrands)
@@ -216,19 +222,25 @@ double D_s_form_factor(double q2, bool charged)
     double f_0_eta = f_p_eta;
     double alpha_0_eta = 0;
     double q_r = q2 / sqr(m_D_s);
-    return charged ? f_p_eta / (1 - q_r) / (1 - alpha_p_eta * q_r) :  f_0_eta / (1 - alpha_0_eta * q_r);
+    auto res = charged ? f_p_eta / (1 - q_r) / (1 - alpha_p_eta * q_r) :  f_0_eta / (1 - alpha_0_eta * q_r);
+    print(res);
+    return res;
 }
 
 double ThreeBodyWidth::D_form_factor(double q2, bool charged)
 {
-    if (is_eta(id_to)) return D_s_form_factor(q2, charged);
-    return (FF_d_0(id_to) * c(id_to, charged) * (z(q2) - z(0)) * (1 + (z(q2) + z(0)) / 2)) / (1 - P(id_to, charged) * q2);
+    return (FF_d_0(id_to) - c(id_to, charged) * (z(q2) - z(0)) * (1. + (z(q2) + z(0)) / 2.)) / (1. - P(id_to, charged) * q2);
 }
 
 double m_pole_prefactor(double q2, int id, bool charged)
 {
-    if (is_pi(id) || is_K(id)) return 1. / (1. - q2 / sqr(charged ? 5.325 : 5.65));
-    return 1;
+    if (is_D(id) || is_D_s(id)) return 1.;
+    if (is_pi(id) || is_K(id)) {
+        double xi = q2 / sqr(charged ? 5.325 : 5.65);
+        return 1. / (1. - xi);
+    }
+    print("not a proper B decay", id, charged);
+    return 0.;
 }
 
 double a_0(int id, bool charged)
@@ -269,33 +281,34 @@ double a(int n, int id, int charged)
     return 0;
 }
 
-double ThreeBodyWidth::B_form_factor(double q2, int id, bool charged)
+double ThreeBodyWidth::B_form_factor(double q2, bool charged)
 {
-    double z_q = z(q2);
+    double zq2 = z(q2);
     int N = 3;
-    double sum = 0;
-    for (auto n = 0; n < N; ++n) sum += a(n, id, charged) * (std::pow(z_q, n) - std::pow(-1, n - N) * n / N * std::pow(z_q, N));
-    return m_pole_prefactor(q2, id, charged) * sum;
+    double zq2N3 = cube(zq2) / N;
+    double sum = 0.;
+    for (int n = 0; n < N; ++n) sum += a(n, id_to, charged) * (std::pow(zq2, n) + (n == 1 ? -n : n) * zq2N3);
+    return m_pole_prefactor(q2, id_to, charged) * sum;
 }
 
-double ThreeBodyWidth::form_factor(double q2, int from_id, int to_id, bool charged)
+double ThreeBodyWidth::form_factor(double q2, bool charged)
 {
-    if (is_K(from_id)) return K_form_factor(q2, charged);
-    if (is_D(from_id)) return D_form_factor(q2, charged);
-    if (is_D_s(from_id)) return D_s_form_factor(q2, charged);
-    if (is_B(from_id) || is_B_s(from_id)) return B_form_factor(q2, to_id, charged);
-    print("not a proper pseudoscalar decay", from_id, to_id, charged, q2);
-    return 0;
+    if (is_K(id_from)) return K_form_factor(q2, charged);
+    if (is_D(id_from)) return D_form_factor(q2, charged);
+    if (is_D_s(id_from)) return D_s_form_factor(q2, charged);
+    if (is_B(id_from) || is_B_s(id_from)) return B_form_factor(q2, charged);
+    print("not a proper pseudoscalar decay", id_from, id_to, charged, q2);
+    return 0.;
 }
 
-double ThreeBodyWidth::ffp(double sqr_q)
+double ThreeBodyWidth::form_factor_plus(double sqr_q)
 {
-    return form_factor(sqr_q, id_from, id_to, true);
+    return form_factor(sqr_q, true);
 }
 
-double ThreeBodyWidth::ff0(double sqr_q)
+double ThreeBodyWidth::form_factor_0(double sqr_q)
 {
-    return form_factor(sqr_q, id_from, id_to, false);
+    return form_factor(sqr_q, false);
 }
 
 double fV(int id_from, int id_to)
@@ -504,7 +517,7 @@ double ThreeBodyWidth::lambda(double a, double b, double c)
 
 double ThreeBodyWidth::Lambda(double xi)
 {
-    return std::sqrt(lambda(1, mr_h, xi)) * std::sqrt(lambda(xi, mr_N, mr_l));
+    return std::sqrt(lambda(1, mr_h, xi) * lambda(xi, mr_N, mr_l));
 }
 
 double ThreeBodyWidth::Gm(double xi)
@@ -531,10 +544,10 @@ double ThreeBodyWidth::function(double xi)
     double xi2 = sqr(xi);
     double xi3 = xi2 * xi;
     if (!is_vector(id_to)) {
-        double ffp2q2 = sqr(ffp(q2));
+        double ffp2q2 = sqr(form_factor_plus(q2));
         double term1 = ffp2q2 * cube(Lambdaxi) / 3. / xi3;
         double term2 = ffp2q2 * Lambdaxi * Gmxi * lambda(1., mr_h, xi) / 2. / xi3;
-        double term3 = sqr(ff0(q2)) * Lambdaxi * Gmxi * sqr(1. - mr_h) / 2. / xi3;
+        double term3 = sqr(form_factor_0(q2)) * Lambdaxi * Gmxi * sqr(1. - mr_h) / 2. / xi3;
         return term1 + term2 + term3;
     } else {
         double fq2 = ff(q2);
@@ -543,12 +556,12 @@ double ThreeBodyWidth::function(double xi)
         double apq2 = ap(q2);
         double amq2 = am(q2);
         double term1 = m_from_2 * mr_h / 3. / xi2 * g(q2) * Lambdaxi * Fxi * (2 * xi2 - Gpxi);
-        double term2 = 1. / 24. / m_from_2 / xi3 * sqr(fq2) * Lambdaxi * (3 * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi) + 12 * mr_h * xi * (2 * xi2 - Gpxi));
-        double term3 = m_from_2 / 24. / xi3 * sqr(apq2) * Lambdaxi * Fxi * (Fxi * (2 * xi2 - Gpxi) + 3 * Gmxi * sqr(1 - mr_h));
+        double term2 = 1. / 24. / m_from_2 / xi3 * sqr(fq2) * Lambdaxi * (3. * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi) + 12. * mr_h * xi * (2 * xi2 - Gpxi));
+        double term3 = m_from_2 / 24. / xi3 * sqr(apq2) * Lambdaxi * Fxi * (Fxi * (2 * xi2 - Gpxi) + 3. * Gmxi * sqr(1. - mr_h));
         double term4 = m_from_2 / 8. / xi * sqr(amq2) * Lambdaxi * Fxi * Gmxi;
         double term5 = 1. / 12. / xi3 * fq2 * apq2 * Lambdaxi * (3 * xi * Fxi * Gmxi + (1 - xi - mr_h) * (3 * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi)));
         double term6 = 1. / 4. / xi2 / fq2 * amq2 * Lambdaxi * Fxi * Gmxi;
-        double term7 = m_from_2 / 4. / xi2 * apq2 * amq2 * Lambdaxi * Fxi * Gmxi * (1 - mr_h);
+        double term7 = m_from_2 / 4. / xi2 * apq2 * amq2 * Lambdaxi * Fxi * Gmxi * (1. - mr_h);
         return term1 + term2 + term3 + term4 + term5 + term6 + term7;
     }
 }

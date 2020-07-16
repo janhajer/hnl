@@ -87,10 +87,24 @@ void check_line()
     ++line;
 }
 
-auto get_resonances(Pythia8::Pythia& pythia, std::vector<int> const& mesons, double coupling)
+
+auto neutrino_coupling_2 = [](int id_heavy, int id_light) -> double
+{
+    if (id_light != 12 && id_light != 14 && id_light != 16) {
+        print(id_light, "is not a light neutrino");
+        return 0;
+    }
+    if (id_heavy != 9900012 && id_heavy != 9900014 && id_heavy != 9900016) {
+        print(id_heavy, "is not a heavy neutrino");
+        return 0;
+    }
+    return id_heavy == 9900012 && id_light == 12 ? 1 : 0;
+};
+
+auto get_resonances(Pythia8::Pythia& pythia, std::vector<int> const& mesons)
 {
     std::vector<Pythia8::ResonanceWidths*> resonances;
-    for(auto meson : mesons) resonances.emplace_back(new MesonResonance(pythia, coupling, meson));
+    for (auto meson : mesons) resonances.emplace_back(new MesonResonance(pythia, neutrino_coupling_2, meson));
 //     resonances.emplace_back(new MesonResonance(pythia, coupling, 443));
 //     resonances.emplace_back(new MesonResonance(pythia, coupling, 553));
     return resonances;
@@ -98,6 +112,12 @@ auto get_resonances(Pythia8::Pythia& pythia, std::vector<int> const& mesons, dou
 
 }
 
+
+namespace{
+
+    const int heavy_neutrino = 9900012;
+
+}
 
 void main_single()
 {
@@ -115,11 +135,10 @@ void main_single()
     pythia.readString("HardQCD:all = on");
     pythia.readString("PhaseSpace:pTHatMin = 1");
     pythia.readString("Main:numberOfEvents = 50");
-    pythia.particleData.m0(9900014, 5);
+    pythia.particleData.m0(heavy_neutrino, 5);
 
-    double coupling = 1.;
     std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541};
-    auto resonances = get_resonances(pythia, mesons, coupling);
+    auto resonances = get_resonances(pythia, mesons);
     pythia.particleData.initWidths(resonances);
     for (auto* resonance : resonances) static_cast<MesonResonance*>(resonance)->AddMissingChannels(pythia.particleData);
 
@@ -159,21 +178,22 @@ void set_pythia(Pythia8::Pythia& pythia)
 
 auto has_neutrino = [](auto const& channel)
 {
-    return channel.product(0) == 9900014 || channel.product(1) == 9900014 || channel.product(2) == 9900014 || channel.product(3) == 9900014 || channel.product(4) == 9900014;
+    return channel.product(0) == heavy_neutrino || channel.product(1) == heavy_neutrino || channel.product(2) == heavy_neutrino || channel.product(3) == heavy_neutrino || channel.product(4) == heavy_neutrino;
 };
 
-struct Loop{
+struct Loop {
     int steps = 10;
-    double m_min = .01;
-    double m_max = 0.2;
-    double mass(int step){
+    double m_min = .1;
+    double m_max = 5;
+    double mass(int step)
+    {
         using namespace neutrino;
         return lin_scale(m_min, m_max, step, steps);
     }
 };
 
 template<typename Data>
-void save_data(Data & result, int meson)
+void save_data(Data& result, int meson)
 {
     Loop loop;
     std::ofstream output_file(std::to_string(meson) + ".dat");
@@ -192,15 +212,15 @@ void main_loop()
     using namespace neutrino;
 
 //     std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541};
-    std::vector<int> mesons{130};
+    std::vector<int> mesons{521};
     std::map<int, std::map<std::tuple<int, int, int, int, int>, std::map<int, double>>> result;
     Loop loop;
     for (auto step = 0; step <= loop.steps; ++step) {
         print(step, "of", loop.steps);
         Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
         set_pythia(pythia);
-        pythia.particleData.m0(9900014, loop.mass(step));
-        auto resonances = get_resonances(pythia, mesons, 1);
+        pythia.particleData.m0(heavy_neutrino, loop.mass(step));
+        auto resonances = get_resonances(pythia, mesons);
         pythia.particleData.initWidths(resonances);
         for (auto* resonance : resonances) static_cast<MesonResonance*>(resonance)->AddMissingChannels(pythia.particleData);
         pythia.init();
@@ -218,7 +238,7 @@ void main_loop()
 }
 
 
-int main(int , char* [])
+int main(int, char* [])
 {
     main_loop();
 }
@@ -228,12 +248,13 @@ int main_test(int argc, char* argv[])
 {
     using namespace neutrino;
 
+
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
-    pythia.particleData.m0(9900014, 1);
-    pythia.readString("9900014:addChannel = 1 0. 0 13 -13 12");
-    pythia.readString("9900014:addChannel = 1 0. 0 13 -13 12");
-    pythia.readString("9900014:addChannel = 1 0. 0 13 -13 14");
-    pythia.readString("9900014:addChannel = 1 0. 0 13 -13 16");
+    pythia.particleData.m0(heavy_neutrino, 1);
+    pythia.readString(std::to_string(heavy_neutrino) + ":addChannel = 1 0. 0 13 -13 12");
+    pythia.readString(std::to_string(heavy_neutrino) + ":addChannel = 1 0. 0 13 -13 12");
+    pythia.readString(std::to_string(heavy_neutrino) + ":addChannel = 1 0. 0 13 -13 14");
+    pythia.readString(std::to_string(heavy_neutrino) + ":addChannel = 1 0. 0 13 -13 16");
 
     for (auto const& line : three_body_decay(411, {{0, 0.0004000}, {111, 0.0043000}, {113, 0.0028000}, {221, 0.0026000}, {223, 0.0028000}, {311, 0.0874000}, {-313, 0.0533000}, {-315, 0.0038000}, {331, 0.0005000}, {-10313, 0.0036000}})) pythia.readString(line);
     for (auto const& line : four_body_decay(411, {{311, 111, 0.0014000}, {-321, 211, 0.0027000}})) pythia.readString(line);
@@ -253,7 +274,7 @@ int main_test(int argc, char* argv[])
     std::vector<int> particles{411, 421, 511, 521};
     pythia.setDecayPtr(&decayer, particles);
 
-    pythia.particleData.initWidths({new NeutrinoResonanceWidth(9900014)});
+    pythia.particleData.initWidths({new NeutrinoResonanceWidth(heavy_neutrino)});
 
 //     UserHook user_hook(1.4, 3.5);
 //     pythia.setUserHooksPtr(&user_hook);

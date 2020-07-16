@@ -46,11 +46,16 @@ void print(Object const& object, Arguments ... arguments) noexcept
     print(arguments ...);
 }
 
-bool debug = true;
+const bool debug = false;
 
 bool is_vector(int id)
 {
     return id == 113 || id == 213 || id == 313 || id == 323 || id == 413 || id == 423 || id == 433;
+}
+
+bool is_neutrino(int id)
+{
+    return id == 9900012 || id == 9900014 || id == 9900016;
 }
 
 }
@@ -79,7 +84,7 @@ std::pair<quark, quark> quarks(int id)
     case 431 : return {quark::charm, quark::strange};
     case 521 : return {quark::up, quark::bottom};
     case 541 : return {quark::charm, quark::bottom};
-    case 111 : return {quark::up, quark::down};
+    case 111 : return {quark::down, quark::down};
     case 221 : return {quark::up, quark::strange};
     case 331 : return {quark::up, quark::strange};
     case 441 : return {quark::charm, quark::strange};
@@ -118,6 +123,7 @@ bool MesonResonance::can_two_body()
 {
     if (idRes == 553) return true;
     if (idRes == 443) return true;
+    if (idRes == 431) return true;
     auto qs = quarks(idRes);
     return (is_down_type(qs.first) && is_up_type(qs.second)) || (is_up_type(qs.first) && is_down_type(qs.second));
 }
@@ -129,8 +135,12 @@ bool MesonResonance::can_three_body(int id)
     if (idRes == 411 && id == 213) return false;
     if (idRes == 431 && id == 313) return false;
     if (idRes == 431 && id == 323) return false;
+    if (idRes == 431 && id == 311) return false;
+    if (id == 221) return idRes == 431 ? true : false;
     if (idRes == 511 && id == 313) return false;
     if (idRes == 521 && id == 323) return false;
+    if (idRes == 421 && id == 213) return false;
+    if (idRes == 521 && id == 111) return true;
     if (particleDataPtr->chargeType(idRes) == particleDataPtr->chargeType(id)) return false;
     if (particleDataPtr->m0(idRes) < particleDataPtr->m0(id)) return false;
     if (idRes == 541) return false;
@@ -139,25 +149,18 @@ bool MesonResonance::can_three_body(int id)
     return qs_1.first == qs_2.first || qs_1.first == qs_2.second || qs_1.second == qs_2.second || qs_1.second == qs_2.first;
 }
 
-
 double tau_to_Gamma(double tau)//mm/c->GeV
 {
     return 1.97327E-13 / tau;
 }
 
-
-MesonResonance::MesonResonance(Pythia8::Pythia& pythia, double neutrino_coupling_, int id_from_) :
+MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from) :
     neutrino_coupling(neutrino_coupling_)
 {
-    initBasic(id_from_);
+    initBasic(id_from);
     if (idRes == 311) print("do not use", 311);
     standard_model.init(pythia.settings, &pythia.rndm);
     pythia.particleData.findParticle(idRes)->setMWidth(tau_to_Gamma(pythia.particleData.findParticle(idRes)->tau0()));
-
-//     for (auto pos = 0; pos < particle_data_entry.sizeChannels(); ++pos) {
-//         auto channel = particle_data_entry.channel(pos);
-//         channels[ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}] = {channel.onMode(), channel.bRatio(), channel.meMode()};
-//     }
 
     for (auto pos = 0; pos < pythia.particleData.findParticle(idRes)->sizeChannels(); ++pos) pythia.particleData.findParticle(idRes)->channel(pos).meMode(101);
     if (debug) print("Particle", idRes, pythia.particleData.findParticle(idRes)->name(), "mass", pythia.particleData.findParticle(idRes)->m0(), "tau", pythia.particleData.findParticle(idRes)->tau0(), pythia.particleData.findParticle(idRes)->mWidth());
@@ -172,17 +175,6 @@ bool MesonResonance::initBSM()
 void MesonResonance::AddMissingChannels(Pythia8::ParticleData& particle_data)
 {
     auto* particle = particle_data.findParticle(idRes);
-//     for (auto const& row : channels) {
-//         if (std::get<0>(row.first) == 9900014) continue;
-//         if (std::get<1>(row.first) == 9900014) continue;
-//         if (std::get<2>(row.first) == 9900014) continue;
-//         if (std::get<3>(row.first) == 9900014) continue;
-//         if (std::get<4>(row.first) == 9900014) continue;
-// //         if (debug)
-//             print("add", row.second.onMode, row.second.bRatio, 110, std::get<0>(row.first), std::get<1>(row.first), std::get<2>(row.first), std::get<3>(row.first), std::get<4>(row.first));
-//         particle->addChannel(row.second.onMode, row.second.bRatio, row.second.meMode, std::get<0>(row.first), std::get<1>(row.first), std::get<2>(row.first), std::get<3>(row.first), std::get<4>(row.first));
-//     }
-//     particle->setTau0(particle_data_entry.tau0());
     particle->rescaleBR();
 }
 
@@ -196,45 +188,46 @@ bool MesonResonance::allowCalc()
     return done;
 }
 
-void MesonResonance::add_two_body(Pythia8::ParticleDataEntry& particle, int neutrino)
+void MesonResonance::add_two_body(Pythia8::ParticleDataEntry& particle)
 {
     if (!can_two_body()) return;
-//     particle.chargeType() == 0 ?
-//     particle.addChannel(1, 0., 0, 9900014, neutrino) :
-    particle.addChannel(1, 0., 0, 9900014, 1 - neutrino);
+    for (auto neutrino : {
+                9900012, 9900014, 9900016
+            }) for (auto lepton : {
+                            11, 13, 15
+                        }) particle.addChannel(1, 0., 0, neutrino, -lepton);
 }
 
-void MesonResonance::add_three_body(Pythia8::ParticleDataEntry& particle, int neutrino, int id)
+void MesonResonance::add_three_body(Pythia8::ParticleDataEntry& particle, int id)
 {
     if (!can_three_body(id)) return;
-//     particle.chargeType() == particleDataPtr->chargeType(id) ?
-//     particle.addChannel(1, 0., 0, 9900014, neutrino, id) :
-    particle.addChannel(1, 0., 0, 9900014, neutrino - 1, id);
+    for (auto neutrino : {
+                9900012, 9900014, 9900016
+            }) for (auto lepton : {
+                            11, 13, 15
+                        }) particle.addChannel(1, 0., 0, neutrino, lepton, id);
 }
 
 bool MesonResonance::getChannels()
 {
     if (debug) print("getChannels");
     auto& particle = *particleDataPtr->particleDataEntryPtr(idRes);
-//     particle.clearChannels();
-    std::vector<int> neutrinos{14};
-    for (auto const& neutrino : neutrinos) {
-        add_two_body(particle, neutrino);
-        add_three_body(particle, neutrino, 111);
-        add_three_body(particle, neutrino, 211);
-        add_three_body(particle, neutrino, 311);
-        add_three_body(particle, neutrino, 321);
-        add_three_body(particle, neutrino, 411);
-        add_three_body(particle, neutrino, 421);
-        add_three_body(particle, neutrino, 431);
-        add_three_body(particle, neutrino, 113);
-        add_three_body(particle, neutrino, 213);
-        add_three_body(particle, neutrino, 313);
-        add_three_body(particle, neutrino, 323);
-        add_three_body(particle, neutrino, 413);
-        add_three_body(particle, neutrino, 423);
-        add_three_body(particle, neutrino, 433);
-    }
+    add_two_body(particle);
+    add_three_body(particle, 111);
+    add_three_body(particle, 211);
+    add_three_body(particle, 311);
+    add_three_body(particle, 321);
+    add_three_body(particle, 411);
+    add_three_body(particle, 421);
+    add_three_body(particle, 431);
+    add_three_body(particle, 113);
+    add_three_body(particle, 213);
+    add_three_body(particle, 313);
+    add_three_body(particle, 323);
+    add_three_body(particle, 413);
+    add_three_body(particle, 423);
+    add_three_body(particle, 433);
+    add_three_body(particle, 221);
     return true;
 }
 
@@ -280,15 +273,6 @@ std::pair<int, int> quark_pair(int id)
     }
 }
 
-double MesonResonance::NeutU(int id_heavy, int id_light)
-{
-    auto diff = id_heavy - id_light - 9900000;
-    if (debug) print("diff", diff);
-    double cpl = (diff == 0 || diff == 1) ? neutrino_coupling : 0.;
-    if (debug) print("coupl", cpl);
-    return cpl;
-}
-
 double clepsch_gordan_2(int id)
 {
     return id == 111 || id == 113 ? .5 : 1;
@@ -300,33 +284,22 @@ double MesonResonance::CKM2(int id)
     return standard_model.V2CKMgen(pair.first, pair.second);
 }
 
-
 auto get_up_type(std::array<quark, 4> const& quarks)
 {
-    quark res = quark::top;
-    for (auto quark_1 : quarks) {
-        if (is_down_type(quark_1)) continue;
-        res = quark_1;
-        for (auto quark_2 : quarks) {
-            if (is_down_type(quark_2)) continue;
-            if (quark_1 != quark_2) return quark_2;
-        }
-    }
-    return res;
+    std::map<quark, int> map;
+    for(auto quark : quarks) if(is_up_type(quark)) ++map[quark];
+    for(auto pair : map) if(pair.second == 1 || pair.second == 3) return pair.first;
+    print("do not end up here");
+    return quark::top;
 }
 
 auto get_down_type(std::array<quark, 4> const& quarks)
 {
-    quark res = quark::top;
-    for (auto quark_1 : quarks) {
-        if (is_up_type(quark_1)) continue;
-        res = quark_1;
-        for (auto quark_2 : quarks) {
-            if (is_up_type(quark_2)) continue;
-            if (quark_1 != quark_2) return quark_2;
-        }
-    }
-    return res;
+    std::map<quark, int> map;
+    for(auto quark : quarks) if(is_down_type(quark)) ++map[quark];
+    for(auto pair : map) if(pair.second == 1 || pair.second == 3) return pair.first;
+    print("no result for", quarks );
+    return quark::top;
 }
 
 int up_idx(quark up)
@@ -353,10 +326,13 @@ int down_idx(quark down)
 
 double MesonResonance::CKM2(int id_1, int id_2)
 {
+    if(id_1==431 && id_2==221) return standard_model.V2CKMgen(2, 2);
     auto pair_1 = quarks(id_1);
     auto pair_2 = quarks(id_2);
     auto up = get_up_type({pair_1.first, pair_1.second, pair_2.first, pair_2.second});
     auto down = get_down_type({pair_1.first, pair_1.second, pair_2.first, pair_2.second});
+
+    print("In", idRes, id1Abs, id2Abs, id3Abs, "take CKM", up_idx(up), down_idx(down));
     return standard_model.V2CKMgen(up_idx(up), down_idx(down));
 }
 
@@ -373,7 +349,7 @@ double lambda(double a, double b, double c)
 void MesonResonance::calcWidth(bool)
 {
     if (debug) print("calcWidth", idRes, id1Abs, id2Abs, id3Abs);
-    if (id1Abs != 9900014 && id2Abs != 9900014 && id3Abs != 9900014) {
+    if (!is_neutrino(id1Abs)) {
         print("do not end up here");
         return;
     }
@@ -384,15 +360,12 @@ void MesonResonance::calcWidth(bool)
         return;
     }
     auto id_lep = mult == 2 ? id2Abs : id3Abs;
-    preFac = NeutU(id1Abs, id_lep) * sqr(standard_model.GF()) * Pythia8::pow3(mHat) / 8 / M_PI;
+    if (id_lep == 14) print(idRes, id1Abs, id2Abs, id3Abs);
+    preFac = neutrino_coupling(id1Abs, id_lep + 1) * sqr(standard_model.GF()) * Pythia8::pow3(mHat) / 8 / M_PI;
     if (debug) print("preFac", preFac);
+    if (preFac <= 0.) return;
     switch (mult) {
-    case 2 : if (id1Abs == 9900014 && id2Abs > 10 && id2Abs < 17) {
-//             print("ids", idRes, id1Abs, id2Abs);
-//             print("masses", mHat, mf1, mf2);
-//             print("ratios 1", mr1, mr2);
-//             print("ratios 2", sqr(mf1 / mHat), sqr(mf2 / mHat));
-//             print("lambda", lambda(1, mr1, mr2));
+    case 2 : if (is_neutrino(id1Abs) && id2Abs > 10 && id2Abs < 17) {
             preFac *= (mr1 + mr2 - sqr(mr2 - mr1)) * std::sqrt(lambda(1, mr1, mr2));
             if (debug) print("preFac", preFac);
             if (idRes == 443) {
@@ -413,16 +386,16 @@ void MesonResonance::calcWidth(bool)
             }
         } else print("Two-body not implemented");
         break;
-    case 3 : if (id1Abs == 9900014 && id3Abs > 10 && id3Abs < 17 && id2Abs > 20) {
+    case 3 : if (is_neutrino(id1Abs) && id3Abs > 10 && id3Abs < 17 && id2Abs > 20) {
             preFac *= sqr(mHat) / 8 / sqr(M_PI) * clepsch_gordan_2(id2Abs) * CKM2(idRes, id2Abs);
-            if (debug) print("preFac", preFac);
             if (is_vector(id2Abs)) preFac *= sqr(mHat) / sqr(mf2);
-            widNow = preFac * three_body_width.get_width(idRes, id2Abs, id3Abs);
+            if (debug) print("preFac", preFac);
+            widNow = preFac * three_body_width.get_width(idRes, id1Abs, id2Abs, id3Abs);
         } else print("Three-body for", id1Abs, id2Abs, id3Abs, "not implemented");
         break;
     default : print("multiplicity", mult, "not implemented");
     }
-    if (debug) print("Calculated", widNow, "for", idRes, "to", id2Abs, "to", id2Abs, "with", preFac, "compare to", tau_to_Gamma(particle_data_entry.tau0()), particle_data_entry.mWidth());
+    if (debug) print("Calculated", widNow, "for", idRes, "to", id2Abs, "and", id1Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particle_data_entry.tau0()), particle_data_entry.mWidth());
 }
 
 }

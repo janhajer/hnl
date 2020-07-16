@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include "Pythia8/ResonanceWidths.h"
 #include "Pythia8/SusyCouplings.h"
 #include "Pythia8/Settings.h"
@@ -17,8 +18,8 @@ struct BRatio {
 };
 
 struct MesonResonance : public Pythia8::ResonanceWidths {
-    MesonResonance(Pythia8::Pythia & pythia, double neutrino_coupling_, int id_from_);
-    void AddMissingChannels(Pythia8::ParticleData & particle_data);
+    MesonResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from);
+    void AddMissingChannels(Pythia8::ParticleData& particle_data);
 protected:
     virtual bool initBSM() override;
     virtual bool allowCalc() override;
@@ -28,14 +29,13 @@ protected:
 private:
     bool can_two_body();
     bool can_three_body(int id);
-    void add_two_body(Pythia8::ParticleDataEntry & particle, int neutrino);
-    void add_three_body(Pythia8::ParticleDataEntry & particle, int neutrino, int id);
+    void add_two_body(Pythia8::ParticleDataEntry& particle);
+    void add_three_body(Pythia8::ParticleDataEntry& particle, int id);
     bool getChannels();
     double CKM2(int id);
-    double CKM2(int id_1,int id_2);
-    double NeutU(int id_heavy, int id_light);
+    double CKM2(int id_1, int id_2);
 private:
-    double neutrino_coupling;
+    std::function<double (int id_heavy, int id_light)> neutrino_coupling;
     double width;
     ThreeBodyWidth three_body_width;
     Pythia8::CoupSM standard_model;
