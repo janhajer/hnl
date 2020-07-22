@@ -4,10 +4,22 @@
 #include "Decayer.hh"
 #include "ResonanceWidths.hh"
 #include "ResonanceWidth.hh"
+#include "Pythia8Plugins/HepMC2.h"
+#include "HepMC/Units.h"
 // #include <boost/units/pow.hpp>
 #include <iostream>
 #include <map>
 #include <tuple>
+
+
+
+namespace
+{
+
+const int heavy_neutrino = 9900012;
+
+}
+
 
 namespace neutrino
 {
@@ -31,24 +43,28 @@ std::vector<std::string> four_body_decay(int in, std::vector<std::tuple<int, int
 }
 
 struct UserHook : public Pythia8::UserHooks {
-    UserHook(double eta_min_, double eta_max_) : eta_min(eta_min_), eta_max(eta_max_)  {}
-    virtual bool canVetoStep() override
+    UserHook(double eta_min_ = 0, double eta_max_ = 0) : eta_min(eta_min_), eta_max(eta_max_)  {}
+    virtual bool canVetoPartonLevel() override
     {
         return true;
     }
-    virtual bool doVetoResonanceDecays(Pythia8::Event& event) override
+    virtual int numberVetoStep() override
     {
+        return 100;
+    }
+    virtual bool doVetoPartonLevel(Pythia8::Event const& event) override
+    {
+        print("doVetoStep", event.size());
         for (auto line = 0; line < event.size(); ++line) {
-            auto particle = event[line];
-            if (std::abs(particle.id()) > 200) print(line, particle.id());
-            if (std::abs(particle.id()) == to_underlying(Id::neutrino2)) {
-//                 && std::abs(particle.eta()) > eta_min && std::abs(particle.eta()) < eta_max)
-                print("Found !!");
+            auto const& particle = event[line];
+            auto absid = std::abs(particle.id());
+            if (absid == heavy_neutrino) {
+                print("Success in", "line", line, "from mother", event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs());
                 return false;
             }
         }
         print("Not found");
-        return true;
+        return false;
     }
 private:
     double eta_min;
@@ -105,23 +121,29 @@ auto get_resonances(Pythia8::Pythia& pythia, std::vector<int> const& mesons)
 {
     std::vector<Pythia8::ResonanceWidths*> resonances;
     for (auto meson : mesons) resonances.emplace_back(new MesonResonance(pythia, neutrino_coupling_2, meson));
-//     resonances.emplace_back(new MesonResonance(pythia, coupling, 443));
-//     resonances.emplace_back(new MesonResonance(pythia, coupling, 553));
     return resonances;
 }
 
+struct Loop {
+    double m_min = .1;
+    int steps = 20;
+    double mass(double max, int step)
+    {
+        return lin_scale(m_min, max, step, steps);
+    }
+};
+
 }
 
-
-namespace{
-
-    const int heavy_neutrino = 9900012;
-
-}
-
-void main_single()
+void main_single(double mass)
 {
     using namespace neutrino;
+
+    HepMC::Pythia8ToHepMC pythia_to_hep;
+    pythia_to_hep.set_store_proc();
+    pythia_to_hep.set_store_xsec();
+    pythia_to_hep.set_store_pdf();
+    HepMC::IO_GenEvent io_event("neutrino_" + std::to_string(mass) + ".hep", std::ios::out);
 
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     pythia.readString("Beams:idA = 2212");
@@ -130,36 +152,71 @@ void main_single()
 //     pythia.readString("Bottomonium:all = on");
 //     pythia.readString("Charmonium:all = on");
 //     pythia.readString("Onia:all(3S1) = on");
-    pythia.readString("HardQCD:qqbar2ccbar  = on");
-    pythia.readString("HardQCD:gg2bbbar  = on");
-    pythia.readString("HardQCD:all = on");
-    pythia.readString("PhaseSpace:pTHatMin = 1");
-    pythia.readString("Main:numberOfEvents = 50");
-    pythia.particleData.m0(heavy_neutrino, 5);
+    pythia.readString("SoftQCD:nonDiffractive = on");
+//     pythia.readString("HardQCD:qqbar2ccbar  = on");
+//     pythia.readString("HardQCD:gg2bbbar  = on");
+//     pythia.readString("HardQCD:all = on");
+//     pythia.readString("PhaseSpace:pTHatMin = .1");
+    pythia.readString("Next:numberShowEvent = 0");
+    pythia.readString("Next:numberShowInfo = 0");
+    pythia.readString("Next:numberShowProcess = 0");
+    pythia.readString("Main:numberOfEvents = 1000");
+    pythia.particleData.m0(heavy_neutrino, mass);
 
-    std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541};
-    auto resonances = get_resonances(pythia, mesons);
+    std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
+    auto resonances = transform(mesons, [&pythia](int meson) -> Pythia8::ResonanceWidths* {
+        return new MesonResonance(pythia, neutrino_coupling_2, meson);
+    });
+//     auto resonances = get_resonances(pythia, mesons);
     pythia.particleData.initWidths(resonances);
-    for (auto* resonance : resonances) static_cast<MesonResonance*>(resonance)->AddMissingChannels(pythia.particleData);
+    for (auto meson : mesons) pythia.particleData.findParticle(meson)->rescaleBR();
 
     pythia.init();
 
     int total = 0;
     int successfull = 0;
     while (successfull < pythia.mode("Main:numberOfEvents")) {
-        ++total;
         if (!pythia.next()) continue;
+        ++total;
+        bool success = false;
         for (auto line = 0; line < pythia.event.size(); ++line) {
-            auto particle = pythia.event[line];
-            auto absid = std::abs(particle.id());
-            if (absid == to_underlying(Id::neutrino2)) {
-                print("Success event", successfull, "of", total, "in line", line, "from mother", pythia.event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs());
-                ++successfull;
-            }
+            auto const& particle = pythia.event[line];
+            if (std::abs(particle.id()) != heavy_neutrino) continue;
+            double eta = std::abs(particle.eta());
+            if (!(1.4 < eta && eta < 3.5)) continue;
+            print("Success event", successfull, "of", total, "in line", line, "from mother", pythia.event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs(), "and", particle.eta(), particle.phi());
+            success = true;
+            break;
+
         }
+        if (!success) continue;
+        ++successfull;
+        HepMC::GenEvent gen_event;
+        pythia_to_hep.fill_next_event(pythia, &gen_event);
+        io_event.write_event(&gen_event);
     }
+
     pythia.stat();
 
+    print("\nwritten", successfull, "events of", total, "that is a fraction", double(successfull) / total);
+    print("\ntherefore", pythia.info.sigmaGen(), pythia.info.sigmaGen() * successfull / total);
+
+    io_event.write_comment("sigma " + std::to_string(pythia.info.sigmaGen() * successfull / total) + " mb");
+
+}
+
+void loop_single()
+{
+    using namespace neutrino;
+    Loop loop;
+    for (auto step = 0; step <= loop.steps; ++step) {
+        auto mass = loop.mass(4., step);
+        std::ofstream ofstream("neutrino_" + std::to_string(mass) + ".txt");
+        std::streambuf* streambuf = std::cout.rdbuf();
+        std::cout.rdbuf(ofstream.rdbuf());
+        main_single(mass);
+        std::cout.rdbuf(streambuf);
+    }
 }
 
 void set_pythia(Pythia8::Pythia& pythia)
@@ -181,28 +238,19 @@ auto has_neutrino = [](auto const& channel)
     return channel.product(0) == heavy_neutrino || channel.product(1) == heavy_neutrino || channel.product(2) == heavy_neutrino || channel.product(3) == heavy_neutrino || channel.product(4) == heavy_neutrino;
 };
 
-struct Loop {
-    int steps = 10;
-    double m_min = .1;
-    double m_max = 5;
-    double mass(int step)
-    {
-        using namespace neutrino;
-        return lin_scale(m_min, m_max, step, steps);
-    }
-};
 
 template<typename Data>
-void save_data(Data& result, int meson)
+void save_data(Data& result, double mass, int meson)
 {
+    using namespace neutrino;
     Loop loop;
     std::ofstream output_file(std::to_string(meson) + ".dat");
     output_file << 0 << '\t' << 1 << '\t' << 2 << '\t' << 3 << '\t' << 4;
-    for (auto step = 0; step <= loop.steps; ++step) output_file << std::scientific << '\t' << loop.mass(step);
+    for (auto step = 0; step <= loop.steps; ++step) output_file << std::scientific << '\t' << loop.mass(mass, step);
     output_file << '\n';
     for (auto& row : result[meson]) {
         output_file << std::scientific << std::get<0>(row.first) << '\t' << std::get<1>(row.first) << '\t' << std::get<2>(row.first) << '\t' << std::get<3>(row.first) << '\t' << std::get<4>(row.first) << '\t';
-        for (auto step = 0; step < loop.steps; ++step) output_file << std::scientific << row.second[step] << '\t';
+        for (auto step = 0; step <= loop.steps; ++step) output_file << std::scientific << row.second[step] << '\t';
         output_file << '\n';
     }
 }
@@ -211,20 +259,25 @@ void main_loop()
 {
     using namespace neutrino;
 
-//     std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541};
-    std::vector<int> mesons{521};
+    std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
+//     std::vector<int> mesons{431,411,421};
+//     std::vector<int> mesons{511, 521, 531, 541};
+//     std::vector<int> mesons{443, 553};
     std::map<int, std::map<std::tuple<int, int, int, int, int>, std::map<int, double>>> result;
-    Loop loop;
-    for (auto step = 0; step <= loop.steps; ++step) {
-        print(step, "of", loop.steps);
-        Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
-        set_pythia(pythia);
-        pythia.particleData.m0(heavy_neutrino, loop.mass(step));
-        auto resonances = get_resonances(pythia, mesons);
-        pythia.particleData.initWidths(resonances);
-        for (auto* resonance : resonances) static_cast<MesonResonance*>(resonance)->AddMissingChannels(pythia.particleData);
-        pythia.init();
-        for (auto meson : mesons) {
+    for (auto meson : mesons) {
+        Loop loop;
+        double mass = 0;
+        for (auto step = 0; step <= loop.steps; ++step) {
+            print(step, "of", loop.steps);
+            Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+            set_pythia(pythia);
+            mass = pythia.particleData.m0(meson);
+            pythia.particleData.m0(heavy_neutrino, loop.mass(mass, step));
+            auto resonances = get_resonances(pythia, mesons);
+            pythia.particleData.initWidths(resonances);
+            for (auto* resonance : resonances) static_cast<MesonResonance*>(resonance)->AddMissingChannels(pythia.particleData);
+            pythia.init();
+//         for (auto meson : mesons) {
             auto const& particle = *pythia.particleData.findParticle(meson);
             for (auto pos = 0; pos < particle.sizeChannels(); ++pos) {
                 auto channel = particle.channel(pos);
@@ -232,14 +285,84 @@ void main_loop()
                 if (ratio > 0. && has_neutrino(channel))
                     result[meson][ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}][step] = ratio;
             }
+//         }
+//     for (auto meson : mesons)
         }
+        save_data(result, mass, meson);
     }
-    for (auto meson : mesons) save_data(result, meson);
 }
 
+void main_read()
+{
+    std::string file = "weakbosons";
+    Pythia8::Pythia pythia;
+    pythia.readString("Beams:frameType = 4");
+    pythia.readString("Beams:LHEF =" + file + ".lhe");
+    pythia.init();
+
+    for (int event = 0; ; ++event) {
+        if (!pythia.next()) {
+            if (pythia.info.atEndOfFile()) break;
+            continue;
+        }
+        for (int line = 0; line < pythia.event.size(); ++line) {
+            auto const& particle = pythia.event[line];
+            neutrino::print("next line");
+            if (std::abs(particle.id()) != heavy_neutrino) continue;
+            neutrino::print("pt", particle.pT(), "eta", particle.eta(), "phi", particle.phi());
+        }
+    }
+    pythia.stat();
+}
+
+using namespace neutrino;
+auto is_good_event = [](HepMC::GenEvent* const event) -> bool
+{
+    for (auto iterator = event->particles_begin(); iterator != event->particles_end(); ++iterator) {
+        auto* particle = *iterator;
+        if (particle->pdg_id() == heavy_neutrino) {
+            auto vProdSave = particle->production_vertex()->position();
+            auto pSave = particle->momentum();
+            auto tauSave = 1.;
+            auto mSave = pSave.m();
+
+            double xDec = vProdSave.px() + tauSave * pSave.px() / mSave;
+            double yDec = vProdSave.py() + tauSave * pSave.py() / mSave;
+            double zDec = vProdSave.pz() + tauSave * pSave.pz() / mSave;
+            double tDec = vProdSave.e()  + tauSave * pSave.e()  / mSave;
+            auto dec = Vec4();
+
+
+            return true;
+        }
+    }
+    return false;
+};
+
+void main_read_2(double coupling)
+{
+    HepMC::IO_GenEvent ascii_in("test", std::ios::in);
+    int total = 0;
+    int good = 0;
+    auto event = ascii_in.read_next_event();
+    while (event) {
+        total++;
+        if (is_good_event(event)) {
+            ++good;
+        }
+        delete event;
+        ascii_in >> event;
+    }
+    double fraction = double(good) / total;
+    print("Fraction", fraction);
+}
 
 int main(int, char* [])
 {
+//     main_single(1.);
+//     main_read();
+//     main_read_2();
+//     loop_single();
     main_loop();
 }
 

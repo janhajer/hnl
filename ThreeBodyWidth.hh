@@ -15,7 +15,6 @@ protected:
 private:
     bool integrate(double& result, double from, double to, double tolerance);
     double function(double integrand);
-    double lambda(double a, double b, double c);
     double Lambda(double xi);
     double F(double xi);
     double Gp(double xi);
@@ -33,13 +32,38 @@ private:
     double ap(double q2);
 private:
     Pythia8::ParticleData* particle_data;
+    int id_from;
+    int id_to;
     double m_from;
     double m_to;
     double mr_h;
-    double mr_N;
     double mr_l;
-    int id_from;
-    int id_to;
+    double mr_N;
 };
+
+
+
+
+
+struct NeutrinoThreeBodyWidth : public Pythia8::FunctionEncapsulator
+{
+    void set_pointers(Pythia8::ParticleData* particleDataPtrIn);
+    double get_width(int from_id_, int neutrino_id, int to_id_, int lepton_id_);
+protected:
+    virtual double f(std::vector<double> integrands) override;
+private:
+    bool integrate(double& result, double from, double to, double tolerance);
+    double function(double integrand);
+    double lambda(double a, double b, double c);
+private:
+    Pythia8::ParticleData* particle_data;
+    double mr_l;
+    double mr_u;
+    double mr_d;
+};
+
+
+
+
 
 }

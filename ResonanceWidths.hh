@@ -36,7 +36,6 @@ private:
     double CKM2(int id_1, int id_2);
 private:
     std::function<double (int id_heavy, int id_light)> neutrino_coupling;
-    double width;
     ThreeBodyWidth three_body_width;
     Pythia8::CoupSM standard_model;
     Pythia8::ParticleDataEntry particle_data_entry;

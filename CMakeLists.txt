@@ -3,14 +3,16 @@ cmake_minimum_required(VERSION 3.4)
 project(Neutrino)
 
 include_directories("/home/jhajer/Development/pythia8243/include")
+include_directories("/home/jhajer/Development/HEPMC2/")
 LINK_DIRECTORIES("/home/jhajer/Development/pythia8243/lib")
+LINK_DIRECTORIES("/home/jhajer/Development/HEPMC2/build/lib/")
 
 set(graphic OFF)
 
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token -pthread -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token -pthread -fPIC -ldl")
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb")
 
@@ -41,13 +43,13 @@ elseif(graphic)
 endif(graphic)
 
 # hepmc
-set(HepMC3_DIR ${PROJECT_SOURCE_DIR})
-find_package(HepMC3)
+# set(HepMC3_DIR ${PROJECT_SOURCE_DIR})
+# find_package(HepMC3)
 
 # root
-find_package(ROOT)
-include_directories("${ROOT_INCLUDE_DIRS}")
-set(root-libs ${ROOT_LIBRARIES})
+# find_package(ROOT)
+# include_directories("${ROOT_INCLUDE_DIRS}")
+# set(root-libs ${ROOT_LIBRARIES})
 
 # delphes
 # link_directories(~/local/lib/)
@@ -73,18 +75,18 @@ set(plot-libs ${hepmc-libs} ${root-libs})
 # add_library(pythia-test ResonanceWidths.cpp ThreeBodyWidth.cpp)
 
 add_executable(MAPP main-pythia.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp)
-target_link_libraries(MAPP pythia8)
+target_link_libraries(MAPP pythia8 HepMC)
 
-add_executable(Mapp main-mapp-pythia.cpp)
-target_link_libraries(Mapp ${hepmc-libs})
-
-add_executable(MappPlot main-mapp-plot.cpp)
-target_link_libraries(MappPlot ${plot-libs})
-
-if(graphic)
-  add_executable(Geometry geometry.cpp)
-  target_link_libraries(Geometry ${hepmc-libs} ${qt-libs})
-endif(graphic)
+# add_executable(Mapp main-mapp-pythia.cpp)
+# target_link_libraries(Mapp ${hepmc-libs})
+#
+# add_executable(MappPlot main-mapp-plot.cpp)
+# target_link_libraries(MappPlot ${plot-libs})
+#
+# if(graphic)
+#   add_executable(Geometry geometry.cpp)
+#   target_link_libraries(Geometry ${hepmc-libs} ${qt-libs})
+# endif(graphic)
 
 # add_executable(CMS13 main-cms-13.cpp)
 # target_link_libraries(CMS13 ${delphes-libs})

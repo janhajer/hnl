@@ -222,9 +222,7 @@ double D_s_form_factor(double q2, bool charged)
     double f_0_eta = f_p_eta;
     double alpha_0_eta = 0;
     double q_r = q2 / sqr(m_D_s);
-    auto res = charged ? f_p_eta / (1 - q_r) / (1 - alpha_p_eta * q_r) :  f_0_eta / (1 - alpha_0_eta * q_r);
-    print(res);
-    return res;
+    return charged ? f_p_eta / (1 - q_r) / (1 - alpha_p_eta * q_r) :  f_0_eta / (1 - alpha_0_eta * q_r);
 }
 
 double ThreeBodyWidth::D_form_factor(double q2, bool charged)
@@ -281,13 +279,23 @@ double a(int n, int id, int charged)
     return 0;
 }
 
+double zq2n(double zq2, int n){
+    switch(n){
+        case 0 : return 1.;
+        case 1 : return zq2;
+        case 2 : return sqr(zq2);
+        default : print("unexpected integer");
+    }
+    return 0.;
+}
+
 double ThreeBodyWidth::B_form_factor(double q2, bool charged)
 {
     double zq2 = z(q2);
     int N = 3;
     double zq2N3 = cube(zq2) / N;
     double sum = 0.;
-    for (int n = 0; n < N; ++n) sum += a(n, id_to, charged) * (std::pow(zq2, n) + (n == 1 ? -n : n) * zq2N3);
+    for (int n = 0; n < N; ++n) sum += a(n, id_to, charged) * (zq2n(zq2, n) + (n == 1 ? -n : n) * zq2N3);
     return m_pole_prefactor(q2, id_to, charged) * sum;
 }
 
