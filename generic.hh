@@ -169,7 +169,7 @@ void print() noexcept
 template<typename Object, typename ... Arguments>
 void print(Object const& object, Arguments ... arguments) noexcept
 {
-    std::cout << std::boolalpha << object << ' ';
+    std::cout << std::boolalpha << std::scientific << object << ' ';
     print(arguments ...);
 }
 

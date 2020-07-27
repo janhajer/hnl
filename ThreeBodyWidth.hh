@@ -6,6 +6,20 @@
 namespace neutrino
 {
 
+
+struct ThreeBody : public Pythia8::FunctionEncapsulator
+{
+    void set_pointers(Pythia8::ParticleData* particleDataPtrIn);
+protected:
+    virtual double f(std::vector<double> integrands) override;
+    virtual bool integrate(double& result, double from, double to, double tolerance);
+    virtual double function(double integrand) = 0;
+    Pythia8::ParticleData* particle_data;
+    double mr1;
+    double mr2;
+    double mr3;
+};
+
 struct ThreeBodyWidth : public Pythia8::FunctionEncapsulator
 {
     void set_pointers(Pythia8::ParticleData* particleDataPtrIn);
@@ -54,14 +68,12 @@ protected:
 private:
     bool integrate(double& result, double from, double to, double tolerance);
     double function(double integrand);
-    double lambda(double a, double b, double c);
 private:
     Pythia8::ParticleData* particle_data;
-    double mr_l;
-    double mr_u;
-    double mr_d;
+    double mr1;
+    double mr2;
+    double mr3;
 };
-
 
 
 

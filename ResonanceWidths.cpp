@@ -1,5 +1,7 @@
 #include "ResonanceWidths.hh"
 #include <boost/range/adaptor/indexed.hpp>
+#include <boost/algorithm/cxx11/none_of.hpp>
+#include <boost/range/algorithm/sort.hpp>
 
 namespace neutrino
 {
@@ -26,15 +28,15 @@ void print() noexcept
     std::cout << std::endl;
 }
 
-template<typename Element, template <typename, typename = std::allocator<Element>> class Container>
-auto & operator<<(std::ostream& stream, Container<Element> const& container) noexcept
+template<typename Element, size_t size>
+auto& operator<<(std::ostream& stream, std::array<Element, size> const& container) noexcept
 {
     for (auto const& element : boost::adaptors::index(container)) stream << '\n' << element.index() << ": " << element.value();
     return stream;
 }
 
-template<typename Element, size_t size>
-auto& operator<<(std::ostream& stream, std::array<Element, size> const& container) noexcept
+template<typename Element, template <typename, typename = std::allocator<Element>> class Container>
+auto & operator<<(std::ostream& stream, Container<Element> const& container) noexcept
 {
     for (auto const& element : boost::adaptors::index(container)) stream << '\n' << element.index() << ": " << element.value();
     return stream;
@@ -55,6 +57,66 @@ bool is_vector(int id)
 bool is_neutrino(int id)
 {
     return id == 9900012 || id == 9900014 || id == 9900016;
+}
+
+std::vector<int> fermions()
+{
+    return {1, 2, 3, 4, 5, 6, 11, 12, 13, 14, 15, 16};
+}
+
+std::vector<int> down_type()
+{
+    return {1, 3, 5};
+}
+
+std::vector<int> up_type()
+{
+    return {2, 4, 6};
+}
+
+std::vector<int> charge_leptons()
+{
+    return {11, 13, 15};
+}
+
+std::vector<int> light_neutrinos()
+{
+    return {12, 14, 16};
+}
+
+std::vector<int> heavy_neutrinos()
+{
+    return {9900012, 9900014, 9900016};
+}
+
+bool is_lepton(int id)
+{
+    return id > 10 && id < 20;
+}
+
+bool is_charge_lepton(int id)
+{
+    return id > 10 && id < 20 && id % 2 == 1;
+}
+
+bool is_light_neutrino(int id)
+{
+    return id > 10 && id < 20 && id % 2 == 0;
+}
+
+bool is_quark(int id)
+{
+    return id < 10;
+}
+
+bool is_up_type(int id)
+{
+    return id % 2 == 0;
+}
+
+bool is_meson(int id)
+{
+    return id > 100 && id < 1000;
 }
 
 }
@@ -162,26 +224,21 @@ MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (in
     neutrino_coupling(neutrino_coupling_)
 {
     initBasic(id_from);
+    init(&pythia.info, &pythia.settings, &pythia.particleData, pythia.couplingsPtr);
     if (idRes == 311) print("do not use", 311);
-    standard_model.init(pythia.settings, &pythia.rndm);
-    auto* particle = pythia.particleData.findParticle(idRes);
-    if (particle->mWidth() == 0. || particle->tau0() > 0.) particle->setMWidth(tau_to_Gamma(particle->tau0()));
-    else if (particle->mWidth() > 0. || particle->tau0() == 0.) particle->setTau0(Gamma_to_tau(particle->mWidth()));
+//     couplingsPtr->init(pythia.settings, &pythia.rndm);
+//     auto* particle = pythia.particleData.findParticle(idRes);
+    if (particlePtr->mWidth() == 0. || particlePtr->tau0() > 0.) particlePtr->setMWidth(tau_to_Gamma(particlePtr->tau0()));
+    else if (particlePtr->mWidth() > 0. || particlePtr->tau0() == 0.) particlePtr->setTau0(Gamma_to_tau(particlePtr->mWidth()));
     else print("that was unexpectet");
-    for (auto pos = 0; pos < particle->sizeChannels(); ++pos) particle->channel(pos).meMode(101);
-    if (debug) print("Particle", idRes, particle->name(), "mass", particle->m0(), "tau", particle->tau0(), particle->mWidth());
-    particle_data_entry = *particle;
+    for (auto pos = 0; pos < particlePtr->sizeChannels(); ++pos) particlePtr->channel(pos).meMode(101);
+    if (debug) print("Particle", idRes, particlePtr->name(), "mass", particlePtr->m0(), "tau", particlePtr->tau0(), particlePtr->mWidth());
 }
 
 bool MesonResonance::initBSM()
 {
     if (debug) print("initBSM");
     return true;
-}
-
-void MesonResonance::AddMissingChannels(Pythia8::ParticleData& particle_data)
-{
-    particle_data.findParticle(idRes)->rescaleBR();
 }
 
 bool MesonResonance::allowCalc()
@@ -194,46 +251,29 @@ bool MesonResonance::allowCalc()
     return done;
 }
 
-void MesonResonance::add_two_body(Pythia8::ParticleDataEntry& particle)
+void MesonResonance::add_two_body()
 {
     if (!can_two_body()) return;
-    for (auto neutrino : {
-                9900012, 9900014, 9900016
-            }) for (auto lepton : {
-                            11, 13, 15
-                        }) particle.addChannel(1, 0., 0, neutrino, -lepton);
+    for (auto neutrino : heavy_neutrinos()) for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, -lepton);
 }
 
-void MesonResonance::add_three_body(Pythia8::ParticleDataEntry& particle, int id)
+void MesonResonance::add_three_body(int id)
 {
     if (!can_three_body(id)) return;
-    for (auto neutrino : {
-                9900012, 9900014, 9900016
-            }) for (auto lepton : {
-                            11, 13, 15
-                        }) particle.addChannel(1, 0., 0, neutrino, lepton, id);
+    for (auto neutrino : heavy_neutrinos()) for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, lepton, id);
+}
+
+
+std::vector<int> MesonResonance::mesons()
+{
+    return {111, 211, 311, 321, 411, 421, 431, 113, 213, 313, 323, 413, 423, 433, 221};
 }
 
 bool MesonResonance::getChannels()
 {
     if (debug) print("getChannels");
-    auto& particle = *particleDataPtr->particleDataEntryPtr(idRes);
-    add_two_body(particle);
-    add_three_body(particle, 111);
-    add_three_body(particle, 211);
-    add_three_body(particle, 311);
-    add_three_body(particle, 321);
-    add_three_body(particle, 411);
-    add_three_body(particle, 421);
-    add_three_body(particle, 431);
-    add_three_body(particle, 113);
-    add_three_body(particle, 213);
-    add_three_body(particle, 313);
-    add_three_body(particle, 323);
-    add_three_body(particle, 413);
-    add_three_body(particle, 423);
-    add_three_body(particle, 433);
-    add_three_body(particle, 221);
+    add_two_body();
+    for (auto meson : mesons()) add_three_body(meson);
     return true;
 }
 
@@ -268,6 +308,18 @@ double decay_constant(int id) // GeV
     return 0.;
 }
 
+double NeutrinoResonance::correction_factor(int id)
+{
+    switch (id) {
+    case 113 : return 1 - 2 * couplingsPtr->sin2thetaW();
+    case 223 : return couplingsPtr->sin2thetaW() * 4 / 3;
+    case 333 : return couplingsPtr->sin2thetaW() * 4 / 3 - 1;
+    case 443 : return 1 - couplingsPtr->sin2thetaW() * 8 / 3;
+    default : print("meson ", id, " not known", "decay_constant");
+    }
+    return 0.;
+}
+
 std::pair<int, int> quark_pair(int id)
 {
     switch (id) {
@@ -281,6 +333,9 @@ std::pair<int, int> quark_pair(int id)
     case 221 : return {1, 2};
     case 331 : return {1, 2};
     case 441 : return {2, 2};
+    case 213 : return {1, 1};
+    case 413 : return {2, 1};
+    case 433 : return {2, 2};
     default : print("meson ", id, " not known", "quark_pair");
     }
     return {0, 0};
@@ -294,7 +349,7 @@ double clepsch_gordan_2(int id)
 double MesonResonance::CKM2(int id)
 {
     std::pair<int, int> pair = quark_pair(id);
-    return standard_model.V2CKMgen(pair.first, pair.second);
+    return couplingsPtr->V2CKMgen(pair.first, pair.second);
 }
 
 auto get_up_type(std::array<quark, 4> const& quarks)
@@ -326,6 +381,17 @@ int up_idx(quark up)
     return 0;
 }
 
+int up_idx(int up)
+{
+    switch (up) {
+    case 2 : return 1;
+    case 4 : return 2;
+    case 6 : return 3;
+    default : print(up, "is not an up type");
+    }
+    return 0;
+}
+
 int down_idx(quark down)
 {
     switch (down) {
@@ -337,16 +403,27 @@ int down_idx(quark down)
     return 0;
 }
 
+int down_idx(int down)
+{
+    switch (down) {
+    case 1 : return 1;
+    case 3 : return 2;
+    case 5 : return 3;
+    default : print(down, "is not an down type");
+    }
+    return 0;
+}
+
 double MesonResonance::CKM2(int id_1, int id_2)
 {
-    if (id_1 == 431 && id_2 == 221) return standard_model.VCKMgen(2, 2);
+    if (id_1 == 431 && id_2 == 221) return couplingsPtr->VCKMgen(2, 2);
     auto pair_1 = quarks(id_1);
     auto pair_2 = quarks(id_2);
     auto up = get_up_type({pair_1.first, pair_1.second, pair_2.first, pair_2.second});
     auto down = get_down_type({pair_1.first, pair_1.second, pair_2.first, pair_2.second});
 
     if (debug) print("In", idRes, id1Abs, id2Abs, id3Abs, "take CKM", up_idx(up), down_idx(down));
-    return standard_model.V2CKMgen(up_idx(up), down_idx(down));
+    return couplingsPtr->V2CKMgen(up_idx(up), down_idx(down));
 }
 
 void MesonResonance::calcPreFac(bool) // Common coupling factors.
@@ -354,11 +431,16 @@ void MesonResonance::calcPreFac(bool) // Common coupling factors.
     if (debug) print("calcPreFac");
 }
 
+namespace
+{
+
 double lambda(double a, double b, double c)
 {
     auto res = sqr(a) + sqr(b) + sqr(c) - 2. * a * b - 2. * a * c - 2. * b * c;
     if (res < 0) print("lambda is neg");
     return res;
+}
+
 }
 
 void check_channel(Pythia8::DecayChannel const& channel)
@@ -392,7 +474,7 @@ void MesonResonance::calcWidth(bool)
         if (ps == 0.) return;
         if (is_neutrino(id1Abs)) {
             auto id_lep = mult == 2 ? id2Abs : id3Abs;
-            auto bL = 1.18921 * particleDataPtr->m0(23) * std::sqrt(standard_model.GF()) * neutrino_coupling(id1Abs, id_lep + 1);
+            auto bL = 1.18921 * particleDataPtr->m0(23) * std::sqrt(couplingsPtr->GF()) * neutrino_coupling(id1Abs, id_lep + 1);
             widNow = mRes * std::sqrt(lambda(1, mf1, mf2)) / 24. / M_PI / mRes * sqr(bL) * ((2. - sqr(mr1 - mr2) - mr1 - mr2) - 6. * mr1 * mr2);
             return;
         }
@@ -403,7 +485,7 @@ void MesonResonance::calcWidth(bool)
     }
 
     auto id_lep = mult == 2 ? id2Abs : id3Abs;
-    preFac = neutrino_coupling(id1Abs, id_lep + 1) * sqr(standard_model.GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
+    preFac = neutrino_coupling(id1Abs, id_lep + 1) * sqr(couplingsPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
     if (debug) print("preFac", preFac);
     if (preFac <= 0.) return;
     switch (mult) {
@@ -411,18 +493,18 @@ void MesonResonance::calcWidth(bool)
             preFac *= (mr1 + mr2 - sqr(mr2 - mr1)) * std::sqrt(lambda(1., mr1, mr2));
             if (debug) print("preFac", preFac);
             if (idRes == 443 || idRes == 553) {
-                preFac *= 27. * mHat / 8. / M_PI / sqr(standard_model.alphaEM(sqr(mHat)));
-                auto term = 4. / 3. * standard_model.sin2thetaW();
+                preFac *= 27. * mHat / 8. / M_PI / sqr(couplingsPtr->alphaEM(sqr(mHat)));
+                auto term = 4. / 3. * couplingsPtr->sin2thetaW();
                 if (idRes == 443) {
                     preFac *= sqr(1. - 2 * term) / 4.;
-                    auto channel = particle_data_entry.channel(1);
+                    auto channel = particlePtr->channel(1);
                     check_channel(channel);
-                    widNow = preFac * channel.bRatio() * particle_data_entry.mWidth() ;
+                    widNow = preFac * channel.bRatio() * particlePtr->mWidth() ;
                 } else if (idRes == 553) {
                     preFac *= sqr(1. - term);
-                    auto channel = particle_data_entry.channel(2);
+                    auto channel = particlePtr->channel(2);
                     check_channel(channel);
-                    widNow = preFac * channel.bRatio() * particle_data_entry.mWidth();
+                    widNow = preFac * channel.bRatio() * particlePtr->mWidth();
                 }
             } else {
                 preFac *= CKM2(idRes);
@@ -439,7 +521,7 @@ void MesonResonance::calcWidth(bool)
         break;
     default : print("multiplicity", mult, "not implemented");
     }
-    if (debug) print("Calculated", widNow, "for", idRes, "to", id2Abs, "and", id1Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particle_data_entry.tau0()), particle_data_entry.mWidth());
+    if (debug) print("Calculated", widNow, "for", idRes, "to", id2Abs, "and", id1Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particlePtr->tau0()), particlePtr->mWidth());
 }
 
 
@@ -449,244 +531,224 @@ void MesonResonance::calcWidth(bool)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from) :
     neutrino_coupling(neutrino_coupling_)
 {
+    if (debug) print("NeutrinoResonance", id_from);
     initBasic(id_from);
-    if (idRes == 311) print("do not use", 311);
-    standard_model.init(pythia.settings, &pythia.rndm);
-    auto* particle = pythia.particleData.findParticle(idRes);
-    if (particle->mWidth() == 0. || particle->tau0() > 0.) particle->setMWidth(tau_to_Gamma(particle->tau0()));
-    else if (particle->mWidth() > 0. || particle->tau0() == 0.) particle->setTau0(Gamma_to_tau(particle->mWidth()));
-    else print("that was unexpectet");
-    for (auto pos = 0; pos < particle->sizeChannels(); ++pos) particle->channel(pos).meMode(101);
-    if (debug) print("Particle", idRes, particle->name(), "mass", particle->m0(), "tau", particle->tau0(), particle->mWidth());
-    particle_data_entry = *particle;
-}
-
-bool NeutrinoResonance::can_two_body()
-{
-    if (idRes == 553) return true;
-    if (idRes == 443) return true;
-    if (idRes == 431) return true;
-    auto qs = quarks(idRes);
-    return (is_down_type(qs.first) && is_up_type(qs.second)) || (is_up_type(qs.first) && is_down_type(qs.second));
-}
-
-bool NeutrinoResonance::can_three_body(int id)
-{
-    if (idRes == 443) return false;
-    if (idRes == id) return false;
-    if (idRes == 411 && id == 213) return false;
-    if (idRes == 431 && id == 313) return false;
-    if (idRes == 431 && id == 323) return false;
-    if (idRes == 431 && id == 311) return false;
-    if (id == 221) return idRes == 431 ? true : false;
-    if (idRes == 511 && id == 313) return false;
-    if (idRes == 521 && id == 323) return false;
-    if (idRes == 421 && id == 213) return false;
-    if (idRes == 521 && id == 111) return true;
-    if (particleDataPtr->chargeType(idRes) == particleDataPtr->chargeType(id)) return false;
-    if (particleDataPtr->m0(idRes) < particleDataPtr->m0(id)) return false;
-    if (idRes == 541) return false;
-    auto qs_1 = quarks(idRes);
-    auto qs_2 = quarks(id);
-    return qs_1.first == qs_2.first || qs_1.first == qs_2.second || qs_1.second == qs_2.second || qs_1.second == qs_2.first;
+    init(&pythia.info, &pythia.settings, &pythia.particleData, pythia.couplingsPtr);
+    if (debug) print("Neutrino decay", "Particle", idRes, particlePtr->name(), "mass", particlePtr->m0(), "tau", particlePtr->tau0(), particlePtr->mWidth());
 }
 
 bool NeutrinoResonance::initBSM()
 {
-    if (debug) print("initBSM");
+    if (debug) print("Neutrino decay", "initBSM");
     return true;
-}
-
-void NeutrinoResonance::AddMissingChannels(Pythia8::ParticleData& particle_data)
-{
-    particle_data.findParticle(idRes)->rescaleBR();
 }
 
 bool NeutrinoResonance::allowCalc()
 {
-    if (debug) print("allowCalc");
+    if (debug) print("Neutrino decay", "allowCalc");
     bool done = getChannels();
-    std::stringstream idStream;
-    idStream << "ID = " << idRes ;
-    if (!done) infoPtr->errorMsg("Error in SusyResonanceWidths::allowcalc: " "unable to reset decay table.", idStream.str(), true);
+    if (!done) print("Error in NeutrinoResonance::allowcalc: " "unable to reset decay table.", idRes);
     return done;
 }
 
-void NeutrinoResonance::add_two_body(Pythia8::ParticleDataEntry& particle)
+bool NeutrinoResonance::can_two_body(int id)
 {
-    if (!can_two_body()) return;
-    for (auto neutrino : {
-                9900012, 9900014, 9900016
-            }) for (auto lepton : {
-                            11, 13, 15
-                        }) particle.addChannel(1, 0., 0, neutrino, -lepton);
+    if (particlePtr->m0() < particleDataPtr->m0(id)) return false;
+    return true;
 }
 
-void NeutrinoResonance::add_three_body(Pythia8::ParticleDataEntry& particle, int id)
+bool NeutrinoResonance::can_three_body()
 {
-    if (!can_three_body(id)) return;
-    for (auto neutrino : {
-                9900012, 9900014, 9900016
-            }) for (auto lepton : {
-                            11, 13, 15
-                        }) particle.addChannel(1, 0., 0, neutrino, lepton, id);
+    return true;
+}
+
+void NeutrinoResonance::add_three_body()
+{
+    if (!can_three_body()) return;
+    for (auto lepton : charge_leptons()) {
+        for (auto up : up_type()) for (auto down : down_type()) particlePtr->addChannel(1, 0., 0, lepton, up, -down);
+        for (auto neut : light_neutrinos()) for (auto lep_2 : charge_leptons()) if (lep_2 != lepton && lep_2 + 1 == neut) particlePtr->addChannel(1, 0., 0, lepton, neut, -lep_2);
+    }
+    for (auto neutrino : light_neutrinos()) for (auto fermion : fermions()) particlePtr->addChannel(1, 0., 0, neutrino, fermion, -fermion);
+}
+
+void NeutrinoResonance::add_two_body(int id)
+{
+    if (!can_two_body(id)) return;
+    if (particleDataPtr->chargeType(id) == 0) for (auto lepton : light_neutrinos()) particlePtr->addChannel(1, 1., 0, lepton, id);
+    else for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 1., 0, lepton, -id);
+}
+
+std::vector<int> NeutrinoResonance::mesons()
+{
+    return {111, 211, 321, 411, 431, 113, 213, 413, 433, 221};
 }
 
 bool NeutrinoResonance::getChannels()
 {
-    if (debug) print("getChannels");
-    auto& particle = *particleDataPtr->particleDataEntryPtr(idRes);
-    add_two_body(particle);
-    add_three_body(particle, 111);
-    add_three_body(particle, 211);
-    add_three_body(particle, 311);
-    add_three_body(particle, 321);
-    add_three_body(particle, 411);
-    add_three_body(particle, 421);
-    add_three_body(particle, 431);
-    add_three_body(particle, 113);
-    add_three_body(particle, 213);
-    add_three_body(particle, 313);
-    add_three_body(particle, 323);
-    add_three_body(particle, 413);
-    add_three_body(particle, 423);
-    add_three_body(particle, 433);
-    add_three_body(particle, 221);
+    if (debug) print("Neutrino decay", "getChannels");
+    particlePtr->clearChannels();
+//     for (auto meson : mesons()) add_two_body(meson);
+    add_three_body();
     return true;
 }
 
 void NeutrinoResonance::initConstants()
 {
-    if (debug) print("initConstants");
+    if (debug) print("Neutrino decay", "initConstants");
     three_body_width.set_pointers(particleDataPtr);
 }
 
 double NeutrinoResonance::CKM2(int id)
 {
     std::pair<int, int> pair = quark_pair(id);
-    return standard_model.V2CKMgen(pair.first, pair.second);
+    return couplingsPtr->V2CKMgen(pair.first, pair.second);
 }
 
-double NeutrinoResonance::CKM2(int id_1, int id_2)
+double NeutrinoResonance::CKM2(int up, int down)
 {
-    if (id_1 == 431 && id_2 == 221) return standard_model.VCKMgen(2, 2);
-    auto pair_1 = quarks(id_1);
-    auto pair_2 = quarks(id_2);
-    auto up = get_up_type({pair_1.first, pair_1.second, pair_2.first, pair_2.second});
-    auto down = get_down_type({pair_1.first, pair_1.second, pair_2.first, pair_2.second});
-
-    if (debug) print("In", idRes, id1Abs, id2Abs, id3Abs, "take CKM", up_idx(up), down_idx(down));
-    return standard_model.V2CKMgen(up_idx(up), down_idx(down));
+    return couplingsPtr->V2CKMgen(up_idx(up), down_idx(down));
 }
 
-double NeutrinoResonance::NW(int id_0, int id_1, int id_2)
+double NeutrinoResonance::NW(int up, int down)
 {
-    return id_0 < 10 ? 3 * CKM2(id_1, id_2) : 1.;
+    return is_quark(up) && is_quark(down) ? 3 * CKM2(up, down) : 1.;
 }
 
 void NeutrinoResonance::calcPreFac(bool) // Common coupling factors.
 {
-    if (debug) print("calcPreFac");
+    if (debug) print("Neutrino decay", "calcPreFac");
 }
 
-double L(double x)
+double L(double x2)
 {
-    double sqrt = std::sqrt(1 - 4 * x);
-    return std::log((1. - 3. * x - (1 - x) * sqrt) / x / (1 + sqrt));
+    if (x2 < 0.000026112) return -21.; // The log explodes for electrons the approximate value is irrelevant as it will be multiplied by a very small number.
+    auto sqrt = std::sqrt(1. - 4. * x2);
+    return std::log((1. - 3. * x2 - (1. - x2) * sqrt) / x2 / (1. + sqrt));
 }
 
-
-bool is_lepton(int id)
+double NeutrinoResonance::Cf1(int id_neut, int id_ferm)
 {
-    return id > 10 && id < 20 && id % 2 == 1;
+    double first = is_quark(id_ferm) ? (is_up_type(id_ferm) ? 2. : 1.) / 3. : (id_ferm + 1 == id_neut ? -1 : 1);
+    double second = is_quark(id_ferm) ? (is_up_type(id_ferm) ? 4. : 1.) / 9. : 1.;
+    return 1. / 4. * (1. - 4. * first * couplingsPtr->sin2thetaW() + 8. * second * sqr(couplingsPtr->sin2thetaW()));
 }
 
-bool is_light_neutrino(int id)
+double NeutrinoResonance::Cf2(int id_neut, int id_ferm)
 {
-    return id > 10 && id < 20 && id % 2 == 0;
+    double first = is_quark(id_ferm) ? (is_up_type(id_ferm) ? 1. : 1. / 2.) / 3. : 1. / 2.;
+    double second = is_quark(id_ferm) ? (is_up_type(id_ferm) ? 4. : 2.) / 3. : 2.;
+    double third = is_quark(id_ferm) ? 1. : (id_ferm + 1 == id_neut ? -1. : 1.);
+    return first * couplingsPtr->sin2thetaW() * (second * couplingsPtr->sin2thetaW() - third);
 }
 
-bool is_quark(int id)
+double NeutrinoResonance::NZ(int id2Abs)
 {
-    return id < 10;
-}
-
-bool is_up_type(int id)
-{
-    return id % 2 == 0;
-}
-
-double NeutrinoResonance::Cf1()
-{
-    double first = is_quark(id2Abs) ? (is_up_type(id2Abs) ? - 2. / 3. : - 1. / 3) : (id2Abs == id3Abs ? 1 : -1);
-    double second = is_quark(id2Abs) ? (is_up_type(id2Abs) ? 4. / 9 : 1. / 9) : 1;
-    return 1. / 4.*(1 + 4 * first * standard_model.sin2thetaW() + 8.*second * sqr(standard_model.sin2thetaW()));
-}
-
-double NeutrinoResonance::Cf2()
-{
-    double first = is_quark(id2Abs) ? (is_up_type(id2Abs) ? 1. / 3. : 1. / 6) : 1. / 2;
-    double second = is_quark(id2Abs) ? (is_up_type(id2Abs) ? 4. / 3 : 2. / 3) : 2;
-    double third = is_quark(id2Abs) ? -1 : (id2Abs == id3Abs ? 1 : -1);
-    return first * standard_model.sin2thetaW() * (second * standard_model.sin2thetaW() + third);
-}
-
-double NeutrinoResonance::NZ()
-{
-    return is_quark(id2Abs) && is_quark(id3Abs) ? 3 : 1;
+    return is_quark(id2Abs) ? 3 : 1;
 }
 
 void NeutrinoResonance::calcWidth(bool)
 {
+    if (debug) print("Neutrino decay", "calcWidth", idRes, id1Abs, id2Abs, id3Abs);
+    preFac = 0.;
+    widNow = 0.;
 
-    if (debug) print("calcWidth", idRes, id1Abs, id2Abs, id3Abs);
-    if (!is_neutrino(id1Abs)) {
-        print("do not end up here", idRes, id1Abs, id2Abs, id3Abs);
+
+    auto id1 = particlePtr->channel(iChannel).product(0);
+    auto id2 = particlePtr->channel(iChannel).product(1);
+    auto id3 = particlePtr->channel(iChannel).product(2);
+
+    auto id1Abs = std::abs(id1);
+    auto id2Abs = std::abs(id2);
+    auto id3Abs = std::abs(id3);
+
+    auto mf1 = particleDataPtr->m0(id1Abs);
+    auto mf2 = particleDataPtr->m0(id2Abs);
+
+    auto mr1 = sqr(mf1 / mHat);
+    auto mr2 = sqr(mf2 / mHat);
+
+    auto id_lep = id1Abs % 2 == 0 ? id1Abs : id1Abs + 1;
+
+    if (!is_lepton(id_lep)) {
+        print("Neutrino decay", "the second daughter should be a lepton", idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
         return;
     }
     if (ps == 0.) {
-        if (debug) print("no phase space");
-        preFac = 0.;
-        widNow = 0.;
+        if (debug) print("Neutrino decay", "no phase space", idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
         return;
     }
 
-    auto id_lep = mult == 2 ? id2Abs : id3Abs;
-    preFac = neutrino_coupling(id1Abs, id_lep + 1) * sqr(standard_model.GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
-    if (debug) print("preFac", preFac);
-    if (preFac <= 0.) return;
+    preFac = neutrino_coupling(idRes, id_lep) * sqr(couplingsPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
+    if (preFac <= 0.) {
+        if (debug) print("Neutrino decay", "preFac", preFac, id_lep, idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
+        return;
+    }
+
     switch (mult) {
     case 2 :
-        preFac *= 1. / 2 * sqr(decay_constant(id2Abs)) * CKM2(id2Abs);
-        if (is_lepton(id1Abs) && id2Abs > 100 && !is_vector(id2Abs)) {
-            widNow = preFac * sqr(1 - mr1) - mr2 * (1 + mr1) * std::sqrt(lambda(1, mr1, mr2));
-        } else  if (is_lepton(id1Abs) && id2Abs > 100 && is_vector(id2Abs)) {
-
-        } else print("Two-body not implemented");
+        if (is_meson(id2Abs)) {
+            preFac *= sqr(decay_constant(id2Abs)) / 2;
+            if (is_charge_lepton(id1Abs)) {
+                preFac *= CKM2(id2Abs);
+                if (is_vector(id2Abs)) {
+                    preFac /= sqr(mf2); // dimension of form factor
+                    widNow = preFac * (sqr(1 - mr1) + mr2 * (1 + mr1) - 2 * sqr(mr2)) * std::sqrt(lambda(1, mr2, mr1));
+                } else  {
+                    widNow = preFac * (sqr(1 - mr1) - mr2 * (1 + mr1)) * std::sqrt(lambda(1, mr2, mr1));
+                }
+            } else if (is_light_neutrino(id1Abs)) {
+                preFac /= 2;
+                if (is_vector(id2Abs)) {
+                    preFac *= sqr(correction_factor(id2Abs)) / sqr(mr2); // dimension of form factor
+                    widNow = preFac * (1 + 2 * mr2) * sqr(1 - mr2);
+                } else {
+                    widNow = preFac * sqr(1 - mr2);
+                }
+            } else print("Neutrino decay", "Two-body not implemented", id1Abs, id2Abs, id3Abs);
+        } else print("Neutrino decay", "Two-body not implemented", id1Abs, id2Abs, id3Abs);
         break;
-    case 3 : if (id1Abs > 10 && id1Abs < 20) {
-            preFac *= sqr(mHat) / 24. / sqr(M_PI);
-            if (id1Abs % 2 == 1) {
-                preFac *= NW(id1Abs, id2Abs, id3Abs);
-                if (debug) print("preFac", preFac);
-                widNow = preFac * three_body_width.get_width(idRes, id1Abs, id2Abs, id3Abs);
+    case 3 :
+        preFac *= sqr(mHat) / 24. / sqr(M_PI);
+        if (is_charge_lepton(id1Abs)) {
+            preFac *= NW(id2Abs, id3Abs);
+            if (debug) print("Neutrino decay", "preFac", preFac);
+            widNow = preFac * three_body_width.get_width(idRes, id1Abs, id2Abs, id3Abs);
+        } else if (is_light_neutrino(id1Abs) && id2Abs == id3Abs) {
+            if (is_light_neutrino(id2Abs)) {
+                preFac /= 4.;
+                widNow = preFac * (1. + (id1Abs == id2Abs ? 1. : 0.));
             } else {
-                if (id2Abs % 2 == 0 && id3Abs % 2 == 0) {
-                    preFac *= NZ();
-                    widNow = preFac * Cf1() * ((1 - 14 * mr2 - 2 * sqr(mr2) - 12.*cube(mr2)) * std::sqrt(1. - 4. * mr2) + 12. * sqr(mr2) * (sqr(mr2) - 1.) * L(mr2)) + 4 * Cf2() * (mr2 * (2 + 10 * mr2 - 12 * sqr(mr2)) * std::sqrt(1 - 4 * mr2) + 6 * sqr(mr2) * (1 - 2 * mr2 + 2 * sqr(mr2)) * L(mr2));
-                } else if (id2Abs % 2 == 1 && id3Abs % 2 == 1) {
-                    preFac /= 4.;
-                    widNow = preFac * (1 + id2Abs == id3Abs ? 1 : 0);
-                } else print("not possible", id1Abs, id1Abs, id1Abs);
+                preFac *= NZ(id2Abs);
+                if (mr2 <= 1E-8) print("bad mass", mr2, idRes, id1Abs, id2Abs, id3Abs);
+                auto term_1 = (1. - 14. * mr2 - 2. * sqr(mr2) - 12. * cube(mr2)) * std::sqrt(1. - 4. * mr2) + 12. * sqr(mr2) * (sqr(mr2) - 1.) * L(mr2);
+                auto term_2 = mr2 * (2. + 10. * mr2 - 12 * sqr(mr2)) * std::sqrt(1. - 4. * mr2) + 6 * sqr(mr2) * (1. - 2. * mr2 + 2 * sqr(mr2)) * L(mr2);
+                widNow = preFac * (Cf1(id1Abs, id2Abs) * term_1 + 4. * Cf2(id1Abs, id2Abs) * term_2);
             }
-        } else print("Three-body for", id1Abs, id2Abs, id3Abs, "not implemented");
+        } else print("this is unexpectet");
         break;
-    default : print("multiplicity", mult, "not implemented");
+    default : print("Neutrino decay", "multiplicity", mult, "not implemented");
     }
-    if (debug) print("Calculated", widNow, "for", idRes, "to", id2Abs, "and", id1Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particle_data_entry.tau0()), particle_data_entry.mWidth());
+    sum += widNow;
+    if (debug) print("Neutrino decay", "Calculated", widNow, "for", idRes, "to", id1Abs, "and", id2Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particlePtr->tau0()), particlePtr->mWidth(), sum);
+    if (debug) print(minWidth, particlePtr->isResonance(), particlePtr->mayDecay(), particlePtr->doExternalDecay(), particlePtr->isVisible(), particlePtr->doForceWidth(), particlePtr->mWidth());
 }
 
 }

@@ -1,4 +1,5 @@
 #include "ThreeBodyWidth.hh"
+#include "ThreeBodyWidth.hh"
 
 namespace neutrino
 {
@@ -113,6 +114,38 @@ bool is_eta(int id)
 {
     return id == 221 || id == 331;
 }
+
+
+
+
+
+
+
+void ThreeBody::set_pointers(Pythia8::ParticleData* particle_data_)
+{
+    if (debug) print("set pointers");
+    particle_data = particle_data_;
+}
+
+double ThreeBody::f(std::vector<double> integrands)
+{
+    return function(integrands[0]);
+}
+
+bool ThreeBody::integrate(double& result, double from, double to, double tolerance)
+{
+    std::vector<double> args(1);
+    return integrateGauss(result, 0, from, to, args, tolerance);
+}
+
+
+
+
+
+
+
+
+
 
 void ThreeBodyWidth::set_pointers(Pythia8::ParticleData* particle_data_)
 {
@@ -279,12 +312,13 @@ double a(int n, int id, int charged)
     return 0;
 }
 
-double zq2n(double zq2, int n){
-    switch(n){
-        case 0 : return 1.;
-        case 1 : return zq2;
-        case 2 : return sqr(zq2);
-        default : print("unexpected integer");
+double zq2n(double zq2, int n)
+{
+    switch (n) {
+    case 0 : return 1.;
+    case 1 : return zq2;
+    case 2 : return sqr(zq2);
+    default : print("unexpected integer");
     }
     return 0.;
 }
@@ -518,14 +552,23 @@ double ThreeBodyWidth::ap(double q2)
     return - A2(q2, id_from, id_to) / (m_from + m_to);
 }
 
-double ThreeBodyWidth::lambda(double a, double b, double c)
+namespace{
+
+double lambda(double a, double b, double c)
 {
     return sqr(a) + sqr(b) + sqr(c) - 2 * a * b - 2 * a * c - 2 * b * c;
 }
 
+}
+
+double Lambda(double x, double mr_to, double mr_1, double mr_2)
+{
+    return std::sqrt(lambda(1., mr_to, x) * lambda(x, mr_1, mr_2));
+}
+
 double ThreeBodyWidth::Lambda(double xi)
 {
-    return std::sqrt(lambda(1, mr_h, xi) * lambda(xi, mr_N, mr_l));
+    return neutrino::Lambda(xi, mr_h, mr_N, mr_l);
 }
 
 double ThreeBodyWidth::Gm(double xi)
@@ -572,6 +615,60 @@ double ThreeBodyWidth::function(double xi)
         double term7 = m_from_2 / 4. / xi2 * apq2 * amq2 * Lambdaxi * Fxi * Gmxi * (1. - mr_h);
         return term1 + term2 + term3 + term4 + term5 + term6 + term7;
     }
+}
+
+
+////////////////////////////
+
+
+
+
+
+
+
+void NeutrinoThreeBodyWidth::set_pointers(Pythia8::ParticleData* particle_data_)
+{
+    if (debug) print("set pointers");
+    particle_data = particle_data_;
+}
+
+double NeutrinoThreeBodyWidth::f(std::vector<double> integrands)
+{
+    return function(integrands[0]);
+}
+
+bool NeutrinoThreeBodyWidth::integrate(double& result, double from, double to, double tolerance)
+{
+    std::vector<double> args(1);
+    return integrateGauss(result, 0, from, to, args, tolerance);
+}
+
+double NeutrinoThreeBodyWidth::get_width(int id_from, int id_lepton, int id_up, int id_down)
+{
+    if (debug) print("get_width", id_from, "to", id_up, "with", id_down, "and", id_lepton);
+
+    if (id_from < 1E5) print("id neutrino", id_lepton);
+    if (id_lepton < 10 || id_lepton > 20) print("id lepton", id_lepton);
+    if (id_down > 20) print("id down", id_down);
+    if (id_up > 20) print("id up", id_up);
+
+    auto m_from = particle_data->m0(id_from);
+
+    auto y_l = particle_data->m0(id_lepton) / m_from;
+    auto y_u = particle_data->m0(id_up) / m_from;
+    auto y_d = particle_data->m0(id_down) / m_from;
+
+    mr1 = sqr(y_l);
+    mr2 = sqr(y_d);
+    mr3 = sqr(y_u);
+
+    double width;
+    return integrate(width, sqr(y_d + y_u), sqr(1. - y_l), 1e-3 * y_l) ? width : 0.;
+}
+
+double NeutrinoThreeBodyWidth::function(double x)
+{
+    return 12. / x * (x - mr2 - mr3) * (1 + mr1 - x) * Lambda(x, mr1, mr2, mr3);
 }
 
 }
