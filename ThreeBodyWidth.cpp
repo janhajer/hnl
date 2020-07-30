@@ -7,6 +7,8 @@ namespace neutrino
 namespace
 {
 
+const bool debug = false;
+
 template<typename Object>
 auto sqr(Object const& object) noexcept
 {
@@ -31,13 +33,9 @@ void print(Object const& object, Arguments ... arguments) noexcept
     print(arguments ...);
 }
 
-const bool debug = false;
-
 bool is_vector(int id)
 {
     return id == 113 || id == 213 || id == 313 || id == 323 || id == 413 || id == 423 || id == 433;
-}
-
 }
 
 bool is_B_c_star(int id)
@@ -115,37 +113,29 @@ bool is_eta(int id)
     return id == 221 || id == 331;
 }
 
-
-
-
-
-
-
-void ThreeBody::set_pointers(Pythia8::ParticleData* particle_data_)
+bool is_neutral_Kaon(int id)
 {
-    if (debug) print("set pointers");
-    particle_data = particle_data_;
+    return id == 130 || id == 310 || id == 311;
 }
 
-double ThreeBody::f(std::vector<double> integrands)
-{
-    return function(integrands[0]);
 }
 
-bool ThreeBody::integrate(double& result, double from, double to, double tolerance)
-{
-    std::vector<double> args(1);
-    return integrateGauss(result, 0, from, to, args, tolerance);
-}
-
-
-
-
-
-
-
-
-
+// void ThreeBody::set_pointers(Pythia8::ParticleData* particle_data_)
+// {
+//     if (debug) print("set pointers");
+//     particle_data = particle_data_;
+// }
+//
+// double ThreeBody::f(std::vector<double> integrands)
+// {
+//     return function(integrands[0]);
+// }
+//
+// bool ThreeBody::integrate(double& result, double from, double to, double tolerance)
+// {
+//     std::vector<double> args(1);
+//     return integrateGauss(result, 0, from, to, args, tolerance);
+// }
 
 void ThreeBodyWidth::set_pointers(Pythia8::ParticleData* particle_data_)
 {
@@ -170,12 +160,12 @@ double ThreeBodyWidth::get_width(int from_id_, int neutrino_id, int to_id_, int 
     if (id_to > id_from && id_from != 130 && id_to != 211) print("decaying", id_from, "to", id_to);
     if (id_lepton > 20 || id_lepton < 10) print("lepton?", id_lepton);
 
-    m_from = particle_data->m0(id_from);
+    mHat = particle_data->m0(id_from);
     m_to = particle_data->m0(id_to);
 
-    auto y_h = m_to / m_from;
-    auto y_l = particle_data->m0(id_lepton) / m_from;
-    auto y_N = particle_data->m0(id_neutrino) / m_from;
+    auto y_h = m_to / mHat;
+    auto y_l = particle_data->m0(id_lepton) / mHat;
+    auto y_N = particle_data->m0(id_neutrino) / mHat;
 
     mr_h = sqr(y_h);
     mr_l = sqr(y_l);
@@ -194,11 +184,6 @@ bool ThreeBodyWidth::integrate(double& result, double from, double to, double to
 {
     std::vector<double> args(1);
     return integrateGauss(result, 0, from, to, args, tolerance);
-}
-
-bool is_neutral_Kaon(int id)
-{
-    return id == 130 || id == 310 || id == 311;
 }
 
 double lambda(int id_from, int id_to, bool charged)
@@ -224,8 +209,8 @@ double FF_d_0(int id)
 
 double ThreeBodyWidth::z(double q2)
 {
-    double t_p = sqr(m_from + m_to);
-    double t_0 = (m_from + m_to) * sqr(std::sqrt(m_from) - std::sqrt(m_to));
+    double t_p = sqr(mHat + m_to);
+    double t_0 = (mHat + m_to) * sqr(std::sqrt(mHat) - std::sqrt(m_to));
     double first = std::sqrt(t_p - q2);
     double second = std::sqrt(t_p - t_0);
     return (first - second) / (first + second);
@@ -265,6 +250,7 @@ double ThreeBodyWidth::D_form_factor(double q2, bool charged)
 
 double m_pole_prefactor(double q2, int id, bool charged)
 {
+    return 1.;
     if (is_D(id) || is_D_s(id)) return 1.;
     if (is_pi(id) || is_K(id)) {
         double xi = q2 / sqr(charged ? 5.325 : 5.65);
@@ -312,12 +298,12 @@ double a(int n, int id, int charged)
     return 0;
 }
 
-double zq2n(double zq2, int n)
+double zq2n(int n, double zq2, double zq2N3)
 {
     switch (n) {
     case 0 : return 1.;
-    case 1 : return zq2;
-    case 2 : return sqr(zq2);
+    case 1 : return zq2 - zq2N3;
+    case 2 : return sqr(zq2) + 2 * zq2N3;
     default : print("unexpected integer");
     }
     return 0.;
@@ -329,7 +315,7 @@ double ThreeBodyWidth::B_form_factor(double q2, bool charged)
     int N = 3;
     double zq2N3 = cube(zq2) / N;
     double sum = 0.;
-    for (int n = 0; n < N; ++n) sum += a(n, id_to, charged) * (zq2n(zq2, n) + (n == 1 ? -n : n) * zq2N3);
+    for (int n = 0; n < N; ++n) sum += a(n, id_to, charged) * zq2n(n, zq2, zq2N3);
     return m_pole_prefactor(q2, id_to, charged) * sum;
 }
 
@@ -534,22 +520,22 @@ double A2(double q2, int id_from, int id_to)
 
 double ThreeBodyWidth::g(double q2)
 {
-    return V(q2, id_from, id_to) / (m_from + m_to);
+    return V(q2, id_from, id_to) / (mHat + m_to);
 }
 
 double ThreeBodyWidth::am(double q2)
 {
-    return (A2(q2, id_from, id_to) * (m_from - m_to) - A1(q2, id_from, id_to) * (m_from - m_to) + 2 * A0(q2, id_from, id_to) * m_to) / q2;
+    return (A2(q2, id_from, id_to) * (mHat - m_to) - A1(q2, id_from, id_to) * (mHat - m_to) + 2 * A0(q2, id_from, id_to) * m_to) / q2;
 }
 
 double ThreeBodyWidth::ff(double q2)
 {
-    return A1(q2, id_from, id_to) * (m_from + m_to);
+    return A1(q2, id_from, id_to) * (mHat + m_to);
 }
 
 double ThreeBodyWidth::ap(double q2)
 {
-    return - A2(q2, id_from, id_to) / (m_from + m_to);
+    return - A2(q2, id_from, id_to) / (mHat + m_to);
 }
 
 namespace{
@@ -588,8 +574,8 @@ double ThreeBodyWidth::F(double xi)
 
 double ThreeBodyWidth::function(double xi)
 {
-    double m_from_2 = sqr(m_from);
-    double q2 = xi * m_from_2;
+    double mHat2 = sqr(mHat);
+    double q2 = xi * mHat2;
     double Lambdaxi = Lambda(xi);
     double Gmxi = Gm(xi);
     double xi2 = sqr(xi);
@@ -606,13 +592,13 @@ double ThreeBodyWidth::function(double xi)
         double Gpxi = Gp(xi);
         double apq2 = ap(q2);
         double amq2 = am(q2);
-        double term1 = m_from_2 * mr_h / 3. / xi2 * g(q2) * Lambdaxi * Fxi * (2 * xi2 - Gpxi);
-        double term2 = 1. / 24. / m_from_2 / xi3 * sqr(fq2) * Lambdaxi * (3. * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi) + 12. * mr_h * xi * (2 * xi2 - Gpxi));
-        double term3 = m_from_2 / 24. / xi3 * sqr(apq2) * Lambdaxi * Fxi * (Fxi * (2 * xi2 - Gpxi) + 3. * Gmxi * sqr(1. - mr_h));
-        double term4 = m_from_2 / 8. / xi * sqr(amq2) * Lambdaxi * Fxi * Gmxi;
+        double term1 = mHat2 * mr_h / 3. / xi2 * g(q2) * Lambdaxi * Fxi * (2 * xi2 - Gpxi);
+        double term2 = 1. / 24. / mHat2 / xi3 * sqr(fq2) * Lambdaxi * (3. * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi) + 12. * mr_h * xi * (2 * xi2 - Gpxi));
+        double term3 = mHat2 / 24. / xi3 * sqr(apq2) * Lambdaxi * Fxi * (Fxi * (2 * xi2 - Gpxi) + 3. * Gmxi * sqr(1. - mr_h));
+        double term4 = mHat2 / 8. / xi * sqr(amq2) * Lambdaxi * Fxi * Gmxi;
         double term5 = 1. / 12. / xi3 * fq2 * apq2 * Lambdaxi * (3 * xi * Fxi * Gmxi + (1 - xi - mr_h) * (3 * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi)));
         double term6 = 1. / 4. / xi2 / fq2 * amq2 * Lambdaxi * Fxi * Gmxi;
-        double term7 = m_from_2 / 4. / xi2 * apq2 * amq2 * Lambdaxi * Fxi * Gmxi * (1. - mr_h);
+        double term7 = mHat2 / 4. / xi2 * apq2 * amq2 * Lambdaxi * Fxi * Gmxi * (1. - mr_h);
         return term1 + term2 + term3 + term4 + term5 + term6 + term7;
     }
 }

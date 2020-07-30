@@ -114,9 +114,9 @@ auto neutrino_coupling_2 = [](int id_heavy, int id_light) -> double
         print(id_heavy, "is not a heavy neutrino");
         return 0;
     }
-    auto id = id_heavy - 9900012;
-    return id == 0 || id == 2 || id == 4 ? 1 : 0;
-    return id_heavy == 9900012 && id_light == 12 ? 1 : 0;
+    auto id = id_heavy - 9900000 - id_light;
+    return id == 0 ? 1 : 0;
+    return id == 0 || std::abs(id) == 2 || std::abs(id) == 4 ? 1 : 0;
 };
 
 auto get_resonances(Pythia8::Pythia& pythia, std::vector<int> const& ids)
@@ -133,7 +133,7 @@ struct Loop {
     int steps;
     double mass(double max, int step) const
     {
-        return lin_scale(m_min, max, step, steps);
+        return log_scale(m_min, max, step, steps);
     }
 };
 
@@ -229,12 +229,15 @@ void set_pythia(Pythia8::Pythia& pythia)
     pythia.readString("Beams:idB = 2212");
     pythia.readString("Beams:eCM = 14000.");
     pythia.readString("Bottomonium:all = on");
-    pythia.readString("Charmonium:all = on");
+//     pythia.readString("Charmonium:all = on");
 
     pythia.readString("Init:showChangedParticleData = off");
     pythia.readString("Init:showProcesses  = off");
     pythia.readString("Init:showChangedSettings = off");
     pythia.readString("Init:showMultipartonInteractions = off");
+    pythia.readString("PhaseSpace:showViolation = on");
+    pythia.readString("PhaseSpace:increaseMaximum = on");
+//     pythia.readString("PhaseSpace:showSearch = on");
 //     pythia.readString("ResonanceWidths:minWidth = 1E-15");
 }
 
@@ -277,22 +280,29 @@ void main_loop()
 {
     using namespace neutrino;
 
-//     std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
-//     std::vector<int> mesons{431,411,421};
-//     std::vector<int> mesons{511, 521, 531, 541};
-//     std::vector<int> mesons{443, 553};
-    std::vector<int> sources{heavy_neutrino};
+//     std::vector<int> sources{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
+//     std::vector<int> sources{431, 411, 421};
+//     std::vector<int> sources{511, 521, 531, 541};
+    std::vector<int> sources{511, 521, 531};
+//     std::vector<int> sources{443, 553};
+//     std::vector<int> sources{heavy_neutrino};
     Result result;
     for (auto source : sources) {
-        Loop loop(2, 4);
+        Loop loop(.1, 100);
         double mass_max = 5;
         for (auto step = 0; step <= loop.steps; ++step) {
             print(step, "of", loop.steps);
             Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
             set_pythia(pythia);
-            if (!is_neutrino(source)) mass_max = pythia.particleData.m0(source);
-            if (is_neutrino(source)) pythia.particleData.m0(heavy_neutrino, loop.mass(mass_max, step));
-            for (auto source : sources) pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling_2, source));
+            if (!is_neutrino(source)) mass_max = pythia.particleData.m0(source) * 1.01;
+            pythia.particleData.m0(1, 0.0048);
+            pythia.particleData.m0(2, 0.0023);
+            pythia.particleData.m0(3, 0.095);
+            pythia.particleData.m0(4, 1.275);
+            pythia.particleData.m0(5, 4.180);
+            pythia.particleData.m0(heavy_neutrino, loop.mass(mass_max, step));
+            is_neutrino(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling_2, source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling_2, source));
+            pythia.particleData.findParticle(source)->rescaleBR();
             pythia.init();
             auto const& particle = *pythia.particleData.findParticle(source);
             for (auto pos = 0; pos < particle.sizeChannels(); ++pos) {
