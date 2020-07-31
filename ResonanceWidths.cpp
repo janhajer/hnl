@@ -272,6 +272,8 @@ MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (in
         particlePtr->channel(pos).meMode(vector.at(pos).meMode);
         particlePtr->channel(pos).onMode(vector.at(pos).onMode);
     }
+    particlePtr->setIsResonance(false);
+    particlePtr->setMayDecay(true);
 }
 
 bool MesonResonance::initBSM()
@@ -297,7 +299,7 @@ void MesonResonance::add_two_body()
 void MesonResonance::add_three_body(int meson)
 {
     if (!can_three_body(meson)) return;
-    for (auto neutrino : heavy_neutrinos()) for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, lepton, meson);
+    for (auto neutrino : heavy_neutrinos()) for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, particlePtr->chargeType() == 0 ? lepton : - lepton, meson);
 }
 
 std::vector<int> MesonResonance::mesons()
@@ -308,6 +310,7 @@ std::vector<int> MesonResonance::mesons()
 bool MesonResonance::getChannels()
 {
     if (debug) print("getChannels");
+//     particlePtr->clearChannels(); // NOT GOOD
     add_two_body();
     for (auto meson : mesons()) add_three_body(meson);
     return true;

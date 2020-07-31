@@ -250,7 +250,6 @@ double ThreeBodyWidth::D_form_factor(double q2, bool charged)
 
 double m_pole_prefactor(double q2, int id, bool charged)
 {
-    return 1.;
     if (is_D(id) || is_D_s(id)) return 1.;
     if (is_pi(id) || is_K(id)) {
         double xi = q2 / sqr(charged ? 5.325 : 5.65);
@@ -312,7 +311,7 @@ double zq2n(int n, double zq2, double zq2N3)
 double ThreeBodyWidth::B_form_factor(double q2, bool charged)
 {
     double zq2 = z(q2);
-    int N = 3;
+    int N = 2;
     double zq2N3 = cube(zq2) / N;
     double sum = 0.;
     for (int n = 0; n < N; ++n) sum += a(n, id_to, charged) * zq2n(n, zq2, zq2N3);
