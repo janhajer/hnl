@@ -6,6 +6,20 @@
 namespace neutrino
 {
 
+// Base class to encapsulate a (double) function of an arbitrary number
+// of (double) arguments (to avoid using function pointers).
+class FunctionEncapsulator  {
+public:
+  FunctionEncapsulator() {};
+  virtual ~FunctionEncapsulator() { };
+  virtual double f(std::vector<double> args);
+  // Integrate over function argument iArg, using Gaussian quadrature.
+  bool integrateGauss(double& result, int iArg, double xLo, double xHi,
+    std::vector<double> args, double tol=1e-6);
+  // Solve f(args) = target for argument iArg, using Brent's method
+  bool brent(double& solution, double target, int iArg, double xLo, double xHi,
+    std::vector<double> argsIn, double tol=1e-6, int maxIter=10000);
+};
 
 // struct ThreeBody : public Pythia8::FunctionEncapsulator
 // {
@@ -20,7 +34,7 @@ namespace neutrino
 //     double mr3;
 // };
 
-struct ThreeBodyWidth : public Pythia8::FunctionEncapsulator
+struct ThreeBodyWidth : public FunctionEncapsulator
 {
     void set_pointers(Pythia8::ParticleData* particleDataPtrIn);
     double get_width(int from_id_, int neutrino_id, int to_id_, int lepton_id_);
