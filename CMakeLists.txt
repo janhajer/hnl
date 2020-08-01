@@ -2,15 +2,15 @@ cmake_minimum_required(VERSION 3.4)
 
 project(Neutrino)
 
-include_directories("/home/jhajer/Development/pythia8243/include")
-include_directories("/home/jhajer/Development/HEPMC2/")
-LINK_DIRECTORIES("/home/jhajer/Development/pythia8243/lib")
-LINK_DIRECTORIES("/home/jhajer/Development/HEPMC2/build/lib/")
+include_directories("~/Development/pythia/include")
+include_directories("~/Development/HEPMC2/")
+LINK_DIRECTORIES("~/Development/pythia/lib")
+LINK_DIRECTORIES("~/Development/HEPMC2/build/lib/")
 
 set(graphic OFF)
 
 set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token -pthread -fPIC -ldl")
 

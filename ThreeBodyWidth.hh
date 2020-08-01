@@ -2,6 +2,7 @@
 
 #include "Pythia8/ParticleData.h"
 #include "Pythia8/StandardModel.h"
+#include "Pythia8/PythiaStdlib.h"
 
 namespace neutrino
 {
