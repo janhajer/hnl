@@ -310,7 +310,6 @@ std::vector<int> MesonResonance::mesons()
 bool MesonResonance::getChannels()
 {
     if (debug) print("getChannels");
-//     particlePtr->clearChannels(); // NOT GOOD
     add_two_body();
     for (auto meson : mesons()) add_three_body(meson);
     return true;
@@ -342,7 +341,7 @@ double decay_constant(int id) // GeV
     case 223 : return 0.153;
     case 333 : return 0.234;
     case 443 : return 1.29;
-    default : print("meson ", id, " not known", "decay_constant");
+    default : print("decay_constant for meson", id, "not known");
     }
     return 0.;
 }
@@ -354,7 +353,7 @@ double NeutrinoResonance::correction_factor(int id)
     case 223 : return couplingsPtr->sin2thetaW() * 4 / 3;
     case 333 : return couplingsPtr->sin2thetaW() * 4 / 3 - 1;
     case 443 : return 1 - couplingsPtr->sin2thetaW() * 8 / 3;
-    default : print("meson ", id, " not known", "decay_constant");
+    default : print("correction_factor for meson", id, "not known");
     }
     return 0.;
 }
