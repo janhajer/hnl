@@ -103,11 +103,11 @@ void set_pythia_global(Pythia8::Pythia& pythia)
     pythia.readString("Beams:idA = 2212");
     pythia.readString("Beams:idB = 2212");
     pythia.readString("Beams:eCM = 14000.");
-//     pythia.particleData.m0(1, 0.0048);
-//     pythia.particleData.m0(2, 0.0023);
-//     pythia.particleData.m0(3, 0.095);
-//     pythia.particleData.m0(4, 1.275);
-//     pythia.particleData.m0(5, 4.180);
+     pythia.particleData.m0(1, 0.0048);
+     pythia.particleData.m0(2, 0.0023);
+     pythia.particleData.m0(3, 0.095);
+     pythia.particleData.m0(4, 1.275);
+     pythia.particleData.m0(5, 4.180);
 }
 
 void set_pythia_single(Pythia8::Pythia& pythia, double mass)
@@ -192,7 +192,7 @@ void get_neutrino(double mass)
 void get_neutrinos()
 {
     using namespace neutrino;
-    Loop loop(.5, 10);
+    Loop loop(.1, 50);
     for (auto step = 0; step <= loop.steps; ++step) {
         auto mass = loop.mass(6., step);
         std::ofstream ofstream("neutrino_" + std::to_string(mass) + ".txt");
@@ -261,9 +261,9 @@ void get_branching_fractions()
             if (!is_neutrino(source)) mass_max = pythia.particleData.m0(source) * 1.01;
             pythia.particleData.m0(heavy_neutrino, loop.mass(mass_max, step));
             is_neutrino(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling_2, source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling_2, source));
-            pythia.particleData.findParticle(source)->rescaleBR();
+            pythia.particleData.particleDataEntryPtr(source)->rescaleBR();
             pythia.init();
-            auto const& particle = *pythia.particleData.findParticle(source);
+            auto const& particle = *pythia.particleData.particleDataEntryPtr(source);
             for (auto pos = 0; pos < particle.sizeChannels(); ++pos) {
                 auto channel = particle.channel(pos);
                 auto ratio = channel.bRatio();

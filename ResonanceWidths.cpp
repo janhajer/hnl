@@ -257,7 +257,7 @@ MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (in
     neutrino_coupling(neutrino_coupling_)
 {
     initBasic(id_from);
-    particlePtr = pythia.particleData.findParticle(idRes);
+    particlePtr = pythia.particleData.particleDataEntryPtr(idRes);
     std::vector<BRatio> vector;
     for (auto pos = 0; pos < particlePtr->sizeChannels(); ++pos) particlePtr->channel(pos).meMode(101);
     for (auto pos = 0; pos < particlePtr->sizeChannels(); ++pos) vector.emplace_back(particlePtr->channel(pos).onMode(), particlePtr->channel(pos).bRatio(), 101);

@@ -74,7 +74,7 @@ private:
 
 
 
-struct NeutrinoThreeBodyWidth : public Pythia8::FunctionEncapsulator
+struct NeutrinoThreeBodyWidth : public FunctionEncapsulator
 {
     void set_pointers(Pythia8::ParticleData* particleDataPtrIn);
     double get_width(int from_id_, int neutrino_id, int to_id_, int lepton_id_);
