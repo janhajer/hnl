@@ -1,8 +1,12 @@
 #pragma once
 
 #include <functional>
-#include "Pythia8/Pythia.h"
+#include "Pythia8/ResonanceWidths.h"
 #include "ThreeBodyWidth.hh"
+
+namespace Pythia8{
+    class Pythia;
+}
 
 namespace neutrino
 {
@@ -13,8 +17,8 @@ namespace neutrino
 //     virtual bool initBSM() override;
 //     virtual bool allowCalc() override;
 //     virtual void initConstants() override;
-//     virtual void calcPreFac(bool calledFromInit = false) override;
-//     virtual void calcWidth(bool calledFromInit = false) override;
+//     virtual void calcPreFac(bool called_from_init = false) override;
+//     virtual void calcWidth(bool called_from_init = false) override;
 // private:
 //     bool can_two_body();
 //     bool can_three_body(int id);
@@ -32,15 +36,14 @@ protected:
     virtual bool initBSM() override;
     virtual bool allowCalc() override;
     virtual void initConstants() override;
-    virtual void calcPreFac(bool calledFromInit = false) override;
-    virtual void calcWidth(bool calledFromInit = false) override;
+    virtual void calcPreFac(bool called_from_init = false) override;
+    virtual void calcWidth(bool called_from_init = false) override;
 private:
     bool can_two_body();
     bool can_three_body(int meson);
     void add_two_body();
     void add_three_body(int meson);
     std::vector<int> mesons();
-    bool getChannels();
     double CKM2(int id);
     double CKM2(int id_1, int id_2);
 private:
@@ -54,15 +57,14 @@ protected:
     virtual bool initBSM() override;
     virtual bool allowCalc() override;
     virtual void initConstants() override;
-    virtual void calcPreFac(bool calledFromInit = false) override;
-    virtual void calcWidth(bool calledFromInit = false) override;
+    virtual void calcPreFac(bool called_from_init = false) override;
+    virtual void calcWidth(bool called_from_init = false) override;
 private:
     bool can_two_body(int meson);
     bool can_three_body();
     void add_three_body();
     void add_two_body(int id);
     std::vector<int> mesons();
-    bool getChannels();
     double CKM2(int meson);
     double CKM2(int up, int down);
     double NW(int up, int down);

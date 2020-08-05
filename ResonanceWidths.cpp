@@ -1,6 +1,8 @@
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/algorithm/cxx11/none_of.hpp>
 #include <boost/range/algorithm/sort.hpp>
+
+#include "Pythia8/Pythia.h"
 #include "ResonanceWidths.hh"
 
 namespace neutrino
@@ -142,8 +144,6 @@ bool is_neutrino(int id)
     return id == 9900012 || id == 9900014 || id == 9900016;
 }
 
-}
-
 enum class quark {up, down, strange, charm, bottom, top};
 
 auto& operator<<(std::ostream& stream, quark id) noexcept
@@ -203,6 +203,26 @@ bool is_down_type(quark q)
     return q == quark::down || q == quark::strange || q == quark::bottom;
 }
 
+double tau_to_Gamma(double tau)//mm/c->GeV
+{
+    return 1.97327E-13 / tau;
+}
+
+double Gamma_to_tau(double Gamma)//mm/c->GeV
+{
+    return 1.97327E-13 / Gamma;
+}
+
+
+struct BRatio {
+    BRatio(int a, double b, int c) : onMode(a), bRatio(b), meMode(c) {};
+    int onMode;
+    double bRatio;
+    int meMode;
+};
+
+}
+
 bool MesonResonance::can_two_body()
 {
     if (idRes == 553) return true;
@@ -235,59 +255,36 @@ bool MesonResonance::can_three_body(int meson)
     return qs_1.first == qs_2.first || qs_1.first == qs_2.second || qs_1.second == qs_2.second || qs_1.second == qs_2.first;
 }
 
-double tau_to_Gamma(double tau)//mm/c->GeV
-{
-    return 1.97327E-13 / tau;
-}
-
-double Gamma_to_tau(double Gamma)//mm/c->GeV
-{
-    return 1.97327E-13 / Gamma;
-}
-
-
-struct BRatio {
-    BRatio(int a, double b, int c) : onMode(a), bRatio(b), meMode(c) {};
-    int onMode;
-    double bRatio;
-    int meMode;
-};
-
 MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from) :
     neutrino_coupling(neutrino_coupling_)
 {
+    if (debug) print("Meson Resonance for", id_from);
     initBasic(id_from);
     particlePtr = pythia.particleData.particleDataEntryPtr(idRes);
     std::vector<BRatio> vector;
-    for (auto pos = 0; pos < particlePtr->sizeChannels(); ++pos) particlePtr->channel(pos).meMode(101);
-    for (auto pos = 0; pos < particlePtr->sizeChannels(); ++pos) vector.emplace_back(particlePtr->channel(pos).onMode(), particlePtr->channel(pos).bRatio(), 101);
+    for (auto pos = 0; pos < particlePtr->sizeChannels(); ++pos) {
+        particlePtr->channel(pos).meMode(101);
+        vector.emplace_back(particlePtr->channel(pos).onMode(), particlePtr->channel(pos).bRatio(), 101);
+    }
     init(&pythia.info, &pythia.settings, &pythia.particleData, pythia.couplingsPtr);
-    if (idRes == 311) print("do not use", 311);
-    if (particlePtr->mWidth() == 0. || particlePtr->tau0() > 0.) particlePtr->setMWidth(tau_to_Gamma(particlePtr->tau0()));
-    else if (particlePtr->mWidth() > 0. || particlePtr->tau0() == 0.) particlePtr->setTau0(Gamma_to_tau(particlePtr->mWidth()));
-    else print("that was unexpectet");
-    if (debug) print("Particle", idRes, particlePtr->name(), "mass", particlePtr->m0(), "tau", particlePtr->tau0(), particlePtr->mWidth());
     for (std::size_t pos = 0; pos < vector.size(); ++pos) {
         particlePtr->channel(pos).bRatio(vector.at(pos).bRatio);
         particlePtr->channel(pos).meMode(vector.at(pos).meMode);
         particlePtr->channel(pos).onMode(vector.at(pos).onMode);
     }
-    particlePtr->setIsResonance(false);
-    particlePtr->setMayDecay(true);
 }
 
 bool MesonResonance::initBSM()
 {
     if (debug) print("initBSM");
+    if (idRes == 311) print("do not use", 311);
+    if (particlePtr->mWidth() == 0. || particlePtr->tau0() > 0.) particlePtr->setMWidth(tau_to_Gamma(particlePtr->tau0()));
+    else if (particlePtr->mWidth() > 0. || particlePtr->tau0() == 0.) particlePtr->setTau0(Gamma_to_tau(particlePtr->mWidth()));
+    else print("that was unexpectet");
+    if (debug) print("Particle", idRes, particlePtr->name(), "mass", particlePtr->m0(), "tau", particlePtr->tau0(), particlePtr->mWidth());
+    particlePtr->setIsResonance(false);
+    particlePtr->setMayDecay(true);
     return true;
-}
-
-bool MesonResonance::allowCalc()
-{
-    if (debug) print("allowCalc");
-    bool done = getChannels();
-    if (!done) print("Can not set channels for", idRes);
-    return done;
 }
 
 void MesonResonance::add_two_body()
@@ -307,9 +304,9 @@ std::vector<int> MesonResonance::mesons()
     return {111, 211, 311, 321, 411, 421, 431, 113, 213, 313, 323, 413, 423, 433, 221};
 }
 
-bool MesonResonance::getChannels()
+bool MesonResonance::allowCalc()
 {
-    if (debug) print("getChannels");
+    if (debug) print("allowCalc");
     add_two_body();
     for (auto meson : mesons()) add_three_body(meson);
     return true;
@@ -374,7 +371,7 @@ std::pair<int, int> quark_pair(int id)
     case 213 : return {1, 1};
     case 413 : return {2, 1};
     case 433 : return {2, 2};
-    default : print("meson ", id, " not known", "quark_pair");
+    default : print("quark pair for meson", id, "not known");
     }
     return {0, 0};
 }
@@ -489,19 +486,21 @@ void check_channel(Pythia8::DecayChannel const& channel)
 void MesonResonance::calcWidth(bool test)
 {
     if (debug) print("calcWidth", idRes, id1Abs, id2Abs, id3Abs, "with mass", particleDataPtr->m0(id1Abs));
-    preFac = 0.;
+    auto id_lep = mult == 2 ? id2Abs : id3Abs;
+    preFac = neutrino_coupling(id1Abs, id_lep + 1) * sqr(couplingsPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
+    if (debug) print("preFac", preFac);
     widNow = 0.;
+    if (preFac <= 0.) return;
     if (!is_neutrino(id1Abs)) {
         print(test, "The first particle should be a neutrino", idRes, id1Abs, id2Abs, id3Abs);
         return;
     }
-
     if (mHat < mf1 + mf2 + (mult == 2 ? 0 : mf3)) {
         if (debug) print("no phase space", idRes, "to", id1Abs, id2Abs, id3Abs, "mass", mHat, "sum", mf1 + mf2 + mf3, mf1 + mf2);
         return;
     }
 
-    if (idRes == 24) {
+    if (idRes == 24) { // Not used at the moment
         print("do the W");
         auto thetaWRat = 1. / (12. * couplingsPtr->sin2thetaW());
         alpEM = couplingsPtr->alphaEM(sqr(mHat));
@@ -522,10 +521,6 @@ void MesonResonance::calcWidth(bool test)
         return;
     }
 
-    auto id_lep = mult == 2 ? id2Abs : id3Abs;
-    preFac = neutrino_coupling(id1Abs, id_lep + 1) * sqr(couplingsPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
-    if (debug) print("preFac", preFac);
-    if (preFac <= 0.) return;
     switch (mult) {
     case 2 : if (is_neutrino(id1Abs) && id2Abs > 10 && id2Abs < 17) {
             preFac *= (mr1 + mr2 - sqr(mr2 - mr1)) * std::sqrt(lambda(1., mr1, mr2));
@@ -548,33 +543,19 @@ void MesonResonance::calcWidth(bool test)
                 preFac *= CKM2(idRes);
                 widNow = preFac * sqr(decay_constant(idRes));
             }
-        } else print("Two-body not implemented");
+        } else print("Two-body for", id1Abs, "and", id2Abs, "not implemented");
         break;
     case 3 : if (is_neutrino(id1Abs) && id3Abs > 10 && id3Abs < 17 && id2Abs > 20) {
             preFac *= sqr(mHat) / 8. / sqr(M_PI) * clebsch_gordan_2(id2Abs) * CKM2(idRes, id2Abs);
             if (is_vector(id2Abs)) preFac *= sqr(mHat) / sqr(mf2);
             if (debug) print("preFac", preFac);
             widNow = preFac * three_body_width.get_width(idRes, id1Abs, id2Abs, id3Abs);
-        } else print("Three-body for", id1Abs, id2Abs, id3Abs, "not implemented");
+        } else print("Three-body for", id1Abs, ",", id2Abs, ", and", id3Abs, "not implemented");
         break;
     default : print("multiplicity", mult, "not implemented");
     }
     if (debug) print("Calculated", widNow, "for", idRes, "to", id2Abs, "and", id1Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particlePtr->tau0()), particlePtr->mWidth());
 }
-
-
-////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -588,6 +569,7 @@ NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<doub
 {
     if (debug) print("NeutrinoResonance", id_from);
     initBasic(id_from);
+    particlePtr = pythia.particleData.particleDataEntryPtr(idRes);
     init(&pythia.info, &pythia.settings, &pythia.particleData, pythia.couplingsPtr);
     if (debug) print("Particle", idRes, particlePtr->name(), "mass", particlePtr->m0(), "tau", particlePtr->tau0(), particlePtr->mWidth());
 }
@@ -595,15 +577,9 @@ NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<doub
 bool NeutrinoResonance::initBSM()
 {
     if (debug) print("initBSM");
+    particlePtr->setIsResonance(false);
+    particlePtr->setMayDecay(true);
     return true;
-}
-
-bool NeutrinoResonance::allowCalc()
-{
-    if (debug) print("allowCalc");
-    bool done = getChannels();
-    if (!done) print("Error in NeutrinoResonance::allowcalc: " "unable to reset decay table.", idRes);
-    return done;
 }
 
 bool NeutrinoResonance::can_two_body(int meson)
@@ -635,7 +611,7 @@ void NeutrinoResonance::add_two_body(int meson)
 {
     if (!can_two_body(meson)) return;
     if (particleDataPtr->chargeType(meson) == 0) for (auto lepton : light_neutrinos()) particlePtr->addChannel(1, 1., 0, lepton, meson);
-    else for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 1., 0, lepton, -meson);
+    else for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 1., 0, lepton, meson);
 }
 
 std::vector<int> NeutrinoResonance::mesons()
@@ -643,9 +619,9 @@ std::vector<int> NeutrinoResonance::mesons()
     return {111, 211, 321, 411, 431, 113, 213, 413, 433, 221};
 }
 
-bool NeutrinoResonance::getChannels()
+bool NeutrinoResonance::allowCalc()
 {
-    if (debug) print("getChannels");
+    if (debug) print("allowCalc");
     particlePtr->clearChannels();
     if (mHat < 1) for (auto meson : mesons()) add_two_body(meson);
     add_three_body();
@@ -674,14 +650,9 @@ double NeutrinoResonance::NW(int up, int down)
     return is_quark(up) && is_quark(down) ? 3. * CKM2(up, down) : 1.;
 }
 
-void NeutrinoResonance::calcPreFac(bool) // Common coupling factors.
-{
-    if (debug) print("calcPreFac");
-}
-
 double L(double x2)
 {
-    if (x2 < 0.000026112) return -21.; // The log becomes complex for electrons the approximate value is irrelevant as it will be multiplied by a very small number.
+    if (x2 < 0.000026112) return -21.; // The log becomes complex for electrons; this approximate value is irrelevant as it will be multiplied by a very small number.
     auto sqrt = std::sqrt(1. - 4. * x2);
     return std::log((1. - 3. * x2 - (1. - x2) * sqrt) / x2 / (1. + sqrt));
 }
@@ -706,42 +677,42 @@ double NeutrinoResonance::NZ(int fermion)
     return is_quark(fermion) ? 3 : 1;
 }
 
+void NeutrinoResonance::calcPreFac(bool)
+{
+    if (debug) print("calcPreFac");
+}
+
 void NeutrinoResonance::calcWidth(bool)
 {
     if (debug) print("calcWidth", idRes, id1Abs, id2Abs, id3Abs);
-    preFac = 0.;
+
+    auto id1Abs = std::abs(particlePtr->channel(iChannel).product(0));
+    if (!is_lepton(id1Abs)) {
+        print("the second daughter should be a lepton", idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
+        return;
+    }
     widNow = 0.;
+    preFac = sqr(couplingsPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
+    preFac *= neutrino_coupling(idRes, id1Abs % 2 == 0 ? id1Abs : id1Abs + 1);
+
+    if (preFac <= 0.) {
+        if (debug) print("preFac", preFac, idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
+        return;
+    }
 
     if (mHat < mf1 + mf2 + (mult == 2 ? 0 : mf3)) {
         if (debug) print("no phase space", idRes, "to", id1Abs, id2Abs, id3Abs, "mass", mHat, "sum", mf1 + mf2 + mf3, mf1 + mf2);
         return;
     }
 
-    auto id1 = particlePtr->channel(iChannel).product(0);
-    auto id2 = particlePtr->channel(iChannel).product(1);
-    auto id3 = particlePtr->channel(iChannel).product(2);
-
-    auto id1Abs = std::abs(id1);
-    auto id2Abs = std::abs(id2);
-    auto id3Abs = std::abs(id3);
+    auto id2Abs = std::abs(particlePtr->channel(iChannel).product(1));
+    auto id3Abs = std::abs(particlePtr->channel(iChannel).product(2));
 
     auto mf1 = particleDataPtr->m0(id1Abs);
     auto mf2 = particleDataPtr->m0(id2Abs);
 
     auto mr1 = sqr(mf1 / mHat);
     auto mr2 = sqr(mf2 / mHat);
-
-
-    if (!is_lepton(id1Abs)) {
-        print("the second daughter should be a lepton", idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
-        return;
-    }
-
-    preFac = neutrino_coupling(idRes, id1Abs % 2 == 0 ? id1Abs : id1Abs + 1) * sqr(couplingsPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
-    if (preFac <= 0.) {
-        if (debug) print("preFac", preFac, idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
-        return;
-    }
 
     switch (mult) {
     case 2 :
@@ -795,6 +766,7 @@ void NeutrinoResonance::calcWidth(bool)
     sum += widNow;
     if (debug) print("Calculated", widNow, "for", idRes, "to", id1Abs, "and", id2Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particlePtr->tau0()), particlePtr->mWidth(), sum);
     if (debug) print(minWidth, particlePtr->isResonance(), particlePtr->mayDecay(), particlePtr->doExternalDecay(), particlePtr->isVisible(), particlePtr->doForceWidth(), particlePtr->mWidth());
+    print(sum,Gamma_to_tau(sum));
 }
 
 }

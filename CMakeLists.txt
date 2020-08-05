@@ -7,7 +7,7 @@ include_directories("~/Development/HEPMC2/")
 LINK_DIRECTORIES("~/Development/pythia/lib")
 LINK_DIRECTORIES("~/Development/HEPMC2/build/lib/")
 
-set(graphic OFF)
+set(graphic ON)
 
 set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_CXX_STANDARD 17)
@@ -75,18 +75,18 @@ set(plot-libs ${hepmc-libs} ${root-libs})
 # add_library(pythia-test ResonanceWidths.cpp ThreeBodyWidth.cpp)
 
 add_executable(MAPP main-pythia.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp)
-target_link_libraries(MAPP pythia8 HepMC)
+target_link_libraries(MAPP pythia8 HepMC ${boost-libs})
 
 # add_executable(Mapp main-mapp-pythia.cpp)
 # target_link_libraries(Mapp ${hepmc-libs})
 #
 # add_executable(MappPlot main-mapp-plot.cpp)
 # target_link_libraries(MappPlot ${plot-libs})
-#
-# if(graphic)
-#   add_executable(Geometry geometry.cpp)
-#   target_link_libraries(Geometry ${hepmc-libs} ${qt-libs})
-# endif(graphic)
+
+if(graphic)
+  add_executable(Geometry geometry.cpp)
+  target_link_libraries(Geometry HepMC ${hepmc-libs} ${qt-libs})
+endif(graphic)
 
 # add_executable(CMS13 main-cms-13.cpp)
 # target_link_libraries(CMS13 ${delphes-libs})
