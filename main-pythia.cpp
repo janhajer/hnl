@@ -25,7 +25,7 @@ double tau_to_Gamma(double tau)//mm/c->GeV
 
 }
 
-namespace neutrino
+namespace hnl
 {
 
 struct UserHook : public Pythia8::UserHooks {
@@ -69,7 +69,7 @@ auto lin_scale(double min, double max, int bin, int bin_number) noexcept
 void check_line()
 {
     static int line = 0;
-    using namespace neutrino;
+    using namespace hnl;
     print("line", line);
     ++line;
 }
@@ -134,7 +134,7 @@ void set_pythia_single(Pythia8::Pythia& pythia, double mass)
 
 int write_hepmc(double mass)
 {
-    using namespace neutrino;
+    using namespace hnl;
 
     HepMC::Pythia8ToHepMC pythia_to_hep;
     pythia_to_hep.set_store_proc();
@@ -194,7 +194,7 @@ int write_hepmc(double mass)
 
 int write_hepmcs()
 {
-    using namespace neutrino;
+    using namespace hnl;
     Loop loop(.1, 50);
     for (auto step = 0; step <= loop.steps; ++step) {
         auto mass = loop.mass(6., step);
@@ -228,9 +228,9 @@ auto has_neutrino = [](auto const& channel)
 };
 
 template<typename Data>
-void save_data(Data& result, neutrino::Loop const& loop, double mass, int source)
+void save_data(Data& result, hnl::Loop const& loop, double mass, int source)
 {
-    using namespace neutrino;
+    using namespace hnl;
     std::ofstream output_file(std::to_string(source) + ".dat");
     output_file << 0 << '\t' << 1 << '\t' << 2 << '\t' << 3 << '\t' << 4;
     for (auto step = 0; step <= loop.steps; ++step) output_file << std::scientific << '\t' << loop.mass(mass, step);
@@ -245,7 +245,7 @@ void save_data(Data& result, neutrino::Loop const& loop, double mass, int source
 int write_branching_fractions()
 {
     using Result = std::map<int, std::map<std::tuple<int, int, int, int, int>, std::map<int, double>>>;
-    using namespace neutrino;
+    using namespace hnl;
 
 //     std::vector<int> sources{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
 //     std::vector<int> sources{431, 411, 421};
@@ -279,7 +279,7 @@ int write_branching_fractions()
     return 0;
 }
 
-using namespace neutrino;
+using namespace hnl;
 
 auto retrive_neutrino(HepMC::GenEvent* const gen_event, double tau) -> Pythia8::Particle
 {

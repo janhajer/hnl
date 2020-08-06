@@ -14,7 +14,7 @@
 #include <boost/range/algorithm_ext/erase.hpp>
 #include <boost/range/size.hpp>
 
-namespace neutrino
+namespace hnl
 {
 
 template <typename T>

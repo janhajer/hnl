@@ -10,7 +10,7 @@
 
 #include "generic.hh"
 
-namespace neutrino
+namespace hnl
 {
 
 namespace cgal

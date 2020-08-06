@@ -8,7 +8,7 @@ namespace Pythia8{
     class Pythia;
 }
 
-namespace neutrino
+namespace hnl
 {
 
 // struct ResonanceWidths : public Pythia8::ResonanceWidths {

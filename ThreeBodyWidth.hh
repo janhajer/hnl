@@ -6,7 +6,7 @@ namespace Pythia8{
     class ParticleData;
 }
 
-namespace neutrino
+namespace hnl
 {
 
 // Base class to encapsulate a (double) function of an arbitrary number

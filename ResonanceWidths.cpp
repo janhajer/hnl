@@ -5,7 +5,7 @@
 #include "Pythia8/Pythia.h"
 #include "ResonanceWidths.hh"
 
-namespace neutrino
+namespace hnl
 {
 
 namespace

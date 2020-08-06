@@ -13,7 +13,7 @@
 #include "HepMC/GenParticle.h"
 #include "units.hh"
 
-namespace neutrino
+namespace hnl
 {
 
 namespace hep
@@ -29,7 +29,7 @@ std::ostream& operator<<(std::ostream& stream, FourVector const& vector)noexcept
 }
 #include "draw_polyhedron.h"
 
-namespace neutrino
+namespace hnl
 {
 namespace cgal
 {
@@ -136,7 +136,7 @@ auto get_point(hep::Particle const& particle)
 
 }
 
-using namespace neutrino;
+using namespace hnl;
 using namespace cgal;
 
 int main()

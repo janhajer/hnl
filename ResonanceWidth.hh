@@ -2,7 +2,7 @@
 
 #include "Pythia8/Pythia.h"
 
-namespace neutrino
+namespace hnl
 {
 
 struct NeutrinoResonanceWidth : public Pythia8::ResonanceWidths {

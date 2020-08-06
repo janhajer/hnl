@@ -1,7 +1,7 @@
 #include "ThreeBodyWidth.hh"
 #include "Pythia8/ParticleData.h"
 
-namespace neutrino
+namespace hnl
 {
 
 // FunctionEncapsulator class.
@@ -372,7 +372,7 @@ double lambda(int id_from, int id_to, bool charged)
 
 double ThreeBodyWidth::K_form_factor(double q2, bool charged)
 {
-    return 0.970 * (1 + neutrino::lambda(id_from, id_to, charged) * q2 / sqr(particle_data->m0(211)));
+    return 0.970 * (1 + hnl::lambda(id_from, id_to, charged) * q2 / sqr(particle_data->m0(211)));
 }
 
 double FF_d_0(int id)
@@ -730,7 +730,7 @@ double Lambda(double x, double mr_to, double mr_1, double mr_2)
 
 double ThreeBodyWidth::Lambda(double xi)
 {
-    return neutrino::Lambda(xi, mr_h, mr_N, mr_l);
+    return hnl::Lambda(xi, mr_h, mr_N, mr_l);
 }
 
 double ThreeBodyWidth::Gm(double xi)
