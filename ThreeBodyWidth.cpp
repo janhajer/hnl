@@ -4,30 +4,26 @@
 namespace hnl
 {
 
-// FunctionEncapsulator class.
-// This class serves to encapsulate a function of an arbitrary number of
-// arguments, all given as doubles. The intended use is for numerical
-// integration (a Gaussian quadrature routine is implemented in
-// the base class), root finding, etc, without having to use function
-// pointers (so will probably become obsolete when moving to C++11.)
-
-//--------------------------------------------------------------------------
+// The intended use is for numerical integration (a Gaussian quadrature routine is implemented in the base class), root finding, etc, without having to use function pointers (so will probably become obsolete when moving to C++11.)
 
 // Definition of the function to be encapsulated; base class returns 0.
 
-double FunctionEncapsulator::f(std::vector<double>)
+double ThreeBodyWidth::function(std::vector<double> const& integrands) const
 {
-    return 0.0;
+    return function(integrands[0]);
 }
 
-//--------------------------------------------------------------------------
+bool ThreeBodyWidth::integrate(double& result, double from, double to, double tolerance) const
+{
+    std::vector<double> args(1);
+    return integrateGauss(result, 0, from, to, args, tolerance);
+}
 
-// Integrate the encapsulated function, f, over argument number iArg,
-// from xLo, to xHi, using Gaussian quadrature, with tolerance tol.
+// Integrate the encapsulated function, f, over argument number iArg, from xLo, to xHi, using Gaussian quadrature, with tolerance tol.
 // Return false if precision target could not be reached.
 // Adapted from the CERNLIB DGAUSS routine by K.S. Kolbig.
 
-bool FunctionEncapsulator::integrateGauss(double& result, int iArg, double xLo, double xHi, std::vector<double> args, double tol)
+bool ThreeBodyWidth::integrateGauss(double& result, int iArg, double xLo, double xHi, std::vector<double> args, double tol) const
 {
     result = 0.0;
     if (iArg >= int(args.size())) return false;
@@ -54,9 +50,9 @@ bool FunctionEncapsulator::integrateGauss(double& result, int iArg, double xLo, 
         for (int i = 0; i < 4; i++) {
             double dz = zDel * x8[i];
             args[iArg] = zMid + dz;
-            double f1 = f(args);
+            double f1 = function(args);
             args[iArg] = zMid - dz;
-            double f2 = f(args);
+            double f2 = function(args);
             s8 += w8[i] * (f1 + f2);
         }
         s8 *= zDel;
@@ -64,9 +60,9 @@ bool FunctionEncapsulator::integrateGauss(double& result, int iArg, double xLo, 
         for (int i = 0; i < 8; i++) {
             double dz = zDel * x16[i];
             args[iArg] = zMid + dz;
-            double f1 = f(args);
+            double f1 = function(args);
             args[iArg] = zMid - dz;
-            double f2 = f(args);
+            double f2 = function(args);
             s16 += w16[i] * (f1 + f2);
         }
         s16 *= zDel;
@@ -95,11 +91,10 @@ bool FunctionEncapsulator::integrateGauss(double& result, int iArg, double xLo, 
     return true;
 }
 
-// Solve f(args) = targetValue for argument iArg, on interval from xLo to xHi,
-// using Brent's method, with tolerance tol and a maximum number of iterations
-// maxIter. Return false if precision target could not be reached.
+// Solve f(args) = targetValue for argument iArg, on interval from xLo to xHi, using Brent's method, with tolerance tol and a maximum number of iterations maxIter.
+// Return false if precision target could not be reached.
 
-bool FunctionEncapsulator::brent(double& solution, double targetValue, int iArg, double xLo, double xHi, std::vector<double> argsIn, double tol, int maxIter)
+bool ThreeBodyWidth::brent(double& solution, double targetValue, int iArg, double xLo, double xHi, std::vector<double> argsIn, double tol, int maxIter) const
 {
 
     // Initialize.
@@ -112,14 +107,14 @@ bool FunctionEncapsulator::brent(double& solution, double targetValue, int iArg,
     std::vector<double> args(argsIn);
     // Evaluate function - targetValue at lower boundary.
     args[iArg] = xLo;
-    double f1 = f(args) - targetValue;
+    double f1 = function(args) - targetValue;
     if (std::abs(f1) < tol) {
         solution = xLo;
         return true;
     }
     // Evaluate function - targetValue at upper boundary.
     args[iArg] = xHi;
-    double f2 = f(args) - targetValue;
+    double f2 = function(args) - targetValue;
     if (std::abs(f2) < tol) {
         solution = xHi;
         return true;
@@ -137,7 +132,7 @@ bool FunctionEncapsulator::brent(double& solution, double targetValue, int iArg,
     while (++iter < maxIter) {
         // Now check at x = x3.
         args[iArg] = x3;
-        double f3 = f(args) - targetValue;
+        double f3 = function(args) - targetValue;
         // Check if tolerance on f has been reached.
         if (std::abs(f3) < tol) {
             solution = x3;
@@ -176,8 +171,7 @@ bool FunctionEncapsulator::brent(double& solution, double targetValue, int iArg,
         }
         x3 = x;
     }
-    // Maximum number of iterations exceeded.
-    return false;
+    return false; // Maximum number of iterations exceeded.
 }
 
 namespace
@@ -296,30 +290,13 @@ bool is_neutral_Kaon(int id)
 
 }
 
-// void ThreeBody::set_pointers(Pythia8::ParticleData* particle_data_)
-// {
-//     if (debug) print("set pointers");
-//     particle_data = particle_data_;
-// }
-//
-// double ThreeBody::f(std::vector<double> integrands)
-// {
-//     return function(integrands[0]);
-// }
-//
-// bool ThreeBody::integrate(double& result, double from, double to, double tolerance)
-// {
-//     std::vector<double> args(1);
-//     return integrateGauss(result, 0, from, to, args, tolerance);
-// }
-
-void ThreeBodyWidth::set_pointers(Pythia8::ParticleData* particle_data_)
+void MesonThreeBodyWidth::set_pointers(Pythia8::ParticleData* particle_data_)
 {
     if (debug) print("set pointers");
     particle_data = particle_data_;
 }
 
-double ThreeBodyWidth::get_width(int from_id_, int neutrino_id, int to_id_, int lepton_id_)
+double MesonThreeBodyWidth::get_width(int from_id_, int neutrino_id, int to_id_, int lepton_id_)
 {
     if (debug) print("get_width", from_id_, "to", to_id_, "with", lepton_id_, "and", neutrino_id);
 
@@ -351,17 +328,6 @@ double ThreeBodyWidth::get_width(int from_id_, int neutrino_id, int to_id_, int 
     return integrate(width, sqr(y_l + y_N), sqr(1. - y_h), 1e-3 * y_N) ? width : 0.;
 }
 
-double ThreeBodyWidth::f(std::vector<double> integrands)
-{
-    return function(integrands[0]);
-}
-
-bool ThreeBodyWidth::integrate(double& result, double from, double to, double tolerance)
-{
-    std::vector<double> args(1);
-    return integrateGauss(result, 0, from, to, args, tolerance);
-}
-
 double lambda(int id_from, int id_to, bool charged)
 {
     if (is_neutral_Kaon(id_from) && id_to == 211) return charged ? 0.0267 : 0.0117;
@@ -370,7 +336,7 @@ double lambda(int id_from, int id_to, bool charged)
     return 0;
 }
 
-double ThreeBodyWidth::K_form_factor(double q2, bool charged)
+double MesonThreeBodyWidth::K_form_factor(double q2, bool charged) const
 {
     return 0.970 * (1 + hnl::lambda(id_from, id_to, charged) * q2 / sqr(particle_data->m0(211)));
 }
@@ -383,7 +349,7 @@ double FF_d_0(int id)
     return 0;
 }
 
-double ThreeBodyWidth::z(double q2)
+double MesonThreeBodyWidth::z(double q2) const
 {
     double t_p = sqr(mHat + m_to);
     double t_0 = (mHat + m_to) * sqr(std::sqrt(mHat) - std::sqrt(m_to));
@@ -419,7 +385,7 @@ double D_s_form_factor(double q2, bool charged)
     return charged ? f_p_eta / (1 - q_r) / (1 - alpha_p_eta * q_r) :  f_0_eta / (1 - alpha_0_eta * q_r);
 }
 
-double ThreeBodyWidth::D_form_factor(double q2, bool charged)
+double MesonThreeBodyWidth::D_form_factor(double q2, bool charged) const
 {
     return (FF_d_0(id_to) - c(id_to, charged) * (z(q2) - z(0)) * (1. + (z(q2) + z(0)) / 2.)) / (1. - P(id_to, charged) * q2);
 }
@@ -484,7 +450,7 @@ double zq2n(int n, double zq2, double zq2N3)
     return 0.;
 }
 
-double ThreeBodyWidth::B_form_factor(double q2, bool charged)
+double MesonThreeBodyWidth::B_form_factor(double q2, bool charged) const
 {
     double zq2 = z(q2);
     int N = 2;
@@ -494,7 +460,7 @@ double ThreeBodyWidth::B_form_factor(double q2, bool charged)
     return m_pole_prefactor(q2, id_to, charged) * sum;
 }
 
-double ThreeBodyWidth::form_factor(double q2, bool charged)
+double MesonThreeBodyWidth::form_factor(double q2, bool charged) const
 {
     if (is_K(id_from)) return K_form_factor(q2, charged);
     if (is_D(id_from)) return D_form_factor(q2, charged);
@@ -504,12 +470,12 @@ double ThreeBodyWidth::form_factor(double q2, bool charged)
     return 0.;
 }
 
-double ThreeBodyWidth::form_factor_plus(double sqr_q)
+double MesonThreeBodyWidth::form_factor_plus(double sqr_q) const
 {
     return form_factor(sqr_q, true);
 }
 
-double ThreeBodyWidth::form_factor_0(double sqr_q)
+double MesonThreeBodyWidth::form_factor_0(double sqr_q) const
 {
     return form_factor(sqr_q, false);
 }
@@ -693,22 +659,22 @@ double A2(double q2, int id_from, int id_to)
     return fA2(id_from, id_to) / (1. - sigmaA2(id_from, id_to) * ratio - xiA2(id_from, id_to) * sqr(ratio));
 }
 
-double ThreeBodyWidth::g(double q2)
+double MesonThreeBodyWidth::g(double q2) const
 {
     return V(q2, id_from, id_to) / (mHat + m_to);
 }
 
-double ThreeBodyWidth::am(double q2)
+double MesonThreeBodyWidth::am(double q2) const
 {
     return (A2(q2, id_from, id_to) * (mHat - m_to) - A1(q2, id_from, id_to) * (mHat - m_to) + 2 * A0(q2, id_from, id_to) * m_to) / q2;
 }
 
-double ThreeBodyWidth::ff(double q2)
+double MesonThreeBodyWidth::ff(double q2) const
 {
     return A1(q2, id_from, id_to) * (mHat + m_to);
 }
 
-double ThreeBodyWidth::ap(double q2)
+double MesonThreeBodyWidth::ap(double q2) const
 {
     return - A2(q2, id_from, id_to) / (mHat + m_to);
 }
@@ -728,27 +694,27 @@ double Lambda(double x, double mr_to, double mr_1, double mr_2)
     return std::sqrt(lambda(1., mr_to, x) * lambda(x, mr_1, mr_2));
 }
 
-double ThreeBodyWidth::Lambda(double xi)
+double MesonThreeBodyWidth::Lambda(double xi) const
 {
     return hnl::Lambda(xi, mr_h, mr_N, mr_l);
 }
 
-double ThreeBodyWidth::Gm(double xi)
+double MesonThreeBodyWidth::Gm(double xi) const
 {
     return xi * (mr_N + mr_l) - sqr(mr_N - mr_l);
 }
 
-double ThreeBodyWidth::Gp(double xi)
+double MesonThreeBodyWidth::Gp(double xi) const
 {
     return xi * (mr_N + mr_l) + sqr(mr_N - mr_l);
 }
 
-double ThreeBodyWidth::F(double xi)
+double MesonThreeBodyWidth::F(double xi) const
 {
     return sqr(1 - xi) - 2 * mr_h * (1 + xi) + sqr(mr_h);
 }
 
-double ThreeBodyWidth::function(double xi)
+double MesonThreeBodyWidth::function(double xi) const
 {
     double mHat2 = sqr(mHat);
     double q2 = xi * mHat2;
@@ -779,30 +745,25 @@ double ThreeBodyWidth::function(double xi)
     }
 }
 
-
-////////////////////////////
-
-
-
-
-
-
-
-void NeutrinoThreeBodyWidth::set_pointers(Pythia8::ParticleData* particle_data_)
+void NeutrinoThreeBodyWidth::set_pointers(Pythia8::ParticleData* particle_data_, Pythia8::Settings* settings_)
 {
     if (debug) print("set pointers");
     particle_data = particle_data_;
+    settings = settings_;
 }
 
-double NeutrinoThreeBodyWidth::f(std::vector<double> integrands)
-{
-    return function(integrands[0]);
-}
 
-bool NeutrinoThreeBodyWidth::integrate(double& result, double from, double to, double tolerance)
+double NeutrinoThreeBodyWidth::get_mass(int id) const
 {
-    std::vector<double> args(1);
-    return integrateGauss(result, 0, from, to, args, tolerance);
+    switch (id) {
+    case 1 : return settings->parm("ParticleData:mdRun");
+    case 2 : return settings->parm("ParticleData:muRun");
+    case 3 : return settings->parm("ParticleData:msRun");
+    case 4 : return settings->parm("ParticleData:mcRun");
+    case 5 : return settings->parm("ParticleData:mbRun");
+    case 6 : return settings->parm("ParticleData:mtRun");
+    default : return particle_data->m0(id);
+    }
 }
 
 double NeutrinoThreeBodyWidth::get_width(int id_from, int id_lepton, int id_up, int id_down)
@@ -814,11 +775,11 @@ double NeutrinoThreeBodyWidth::get_width(int id_from, int id_lepton, int id_up, 
     if (id_down > 20) print("id down", id_down);
     if (id_up > 20) print("id up", id_up);
 
-    auto m_from = particle_data->m0(id_from);
+    auto m_from = get_mass(id_from);
 
-    auto y_l = particle_data->m0(id_lepton) / m_from;
-    auto y_u = particle_data->m0(id_up) / m_from;
-    auto y_d = particle_data->m0(id_down) / m_from;
+    auto y_l = get_mass(id_lepton) / m_from;
+    auto y_u = get_mass(id_up) / m_from;
+    auto y_d = get_mass(id_down) / m_from;
 
     mr1 = sqr(y_l);
     mr2 = sqr(y_d);
@@ -828,7 +789,7 @@ double NeutrinoThreeBodyWidth::get_width(int id_from, int id_lepton, int id_up, 
     return integrate(width, sqr(y_d + y_u), sqr(1. - y_l), 1e-3 * y_l) ? width : 0.;
 }
 
-double NeutrinoThreeBodyWidth::function(double x)
+double NeutrinoThreeBodyWidth::function(double x) const
 {
     return 12. / x * (x - mr2 - mr3) * (1 + mr1 - x) * Lambda(x, mr1, mr2, mr3);
 }

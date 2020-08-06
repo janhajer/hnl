@@ -559,11 +559,6 @@ void MesonResonance::calcWidth(bool test)
 
 
 
-
-
-
-
-
 NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from) :
     neutrino_coupling(neutrino_coupling_)
 {
@@ -631,7 +626,7 @@ bool NeutrinoResonance::allowCalc()
 void NeutrinoResonance::initConstants()
 {
     if (debug) print("initConstants");
-    three_body_width.set_pointers(particleDataPtr);
+    three_body_width.set_pointers(particleDataPtr, settingsPtr);
 }
 
 double NeutrinoResonance::CKM2(int meson)
@@ -682,6 +677,19 @@ void NeutrinoResonance::calcPreFac(bool)
     if (debug) print("calcPreFac");
 }
 
+double NeutrinoResonance::get_mass(int id)
+{
+    switch (id) {
+    case 1 : return settingsPtr->parm("ParticleData:mdRun");
+    case 2 : return settingsPtr->parm("ParticleData:muRun");
+    case 3 : return settingsPtr->parm("ParticleData:msRun");
+    case 4 : return settingsPtr->parm("ParticleData:mcRun");
+    case 5 : return settingsPtr->parm("ParticleData:mbRun");
+    case 6 : return settingsPtr->parm("ParticleData:mtRun");
+    default : return particleDataPtr->m0(id);
+    }
+}
+
 void NeutrinoResonance::calcWidth(bool)
 {
     if (debug) print("calcWidth", idRes, id1Abs, id2Abs, id3Abs);
@@ -708,8 +716,8 @@ void NeutrinoResonance::calcWidth(bool)
     auto id2Abs = std::abs(particlePtr->channel(iChannel).product(1));
     auto id3Abs = std::abs(particlePtr->channel(iChannel).product(2));
 
-    auto mf1 = particleDataPtr->m0(id1Abs);
-    auto mf2 = particleDataPtr->m0(id2Abs);
+    auto mf1 = get_mass(id1Abs);
+    auto mf2 = get_mass(id2Abs);
 
     auto mr1 = sqr(mf1 / mHat);
     auto mr2 = sqr(mf2 / mHat);
@@ -766,7 +774,7 @@ void NeutrinoResonance::calcWidth(bool)
     sum += widNow;
     if (debug) print("Calculated", widNow, "for", idRes, "to", id1Abs, "and", id2Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particlePtr->tau0()), particlePtr->mWidth(), sum);
     if (debug) print(minWidth, particlePtr->isResonance(), particlePtr->mayDecay(), particlePtr->doExternalDecay(), particlePtr->isVisible(), particlePtr->doForceWidth(), particlePtr->mWidth());
-    print(sum,Gamma_to_tau(sum));
+    if (debug) print(sum, Gamma_to_tau(sum));
 }
 
 }

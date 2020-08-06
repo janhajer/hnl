@@ -4,61 +4,44 @@
 
 namespace Pythia8{
     class ParticleData;
+    class Settings;
 }
 
 namespace hnl
 {
 
-// Base class to encapsulate a (double) function of an arbitrary number
-// of (double) arguments (to avoid using function pointers).
-class FunctionEncapsulator
+struct ThreeBodyWidth
 {
-public:
-    FunctionEncapsulator() {};
-    virtual ~FunctionEncapsulator() { };
-    virtual double f(std::vector<double> args);
-    // Integrate over function argument iArg, using Gaussian quadrature.
-    bool integrateGauss(double& result, int iArg, double xLo, double xHi, std::vector<double> args, double tol = 1e-6);
-    // Solve f(args) = target for argument iArg, using Brent's method
-    bool brent(double& solution, double target, int iArg, double xLo, double xHi, std::vector<double> argsIn, double tol = 1e-6, int maxIter = 10000);
+    virtual ~ThreeBodyWidth() = default;
+protected:
+    virtual double function(std::vector<double> const& integrands) const;
+    virtual double function(double integrand) const = 0;
+    virtual bool integrate(double& result, double from, double to, double tolerance) const;
+    bool integrateGauss(double& result, int iArg, double xLo, double xHi, std::vector<double> args, double tol = 1e-6) const;
+    bool brent(double& solution, double target, int iArg, double xLo, double xHi, std::vector<double> argsIn, double tol = 1e-6, int maxIter = 10000) const;
 };
 
-// struct ThreeBody : public Pythia8::FunctionEncapsulator
-// {
-//     void set_pointers(Pythia8::ParticleData* particleDataPtrIn);
-// protected:
-//     virtual double f(std::vector<double> integrands) override;
-//     virtual bool integrate(double& result, double from, double to, double tolerance);
-//     virtual double function(double integrand) = 0;
-//     Pythia8::ParticleData* particle_data;
-//     double mr1;
-//     double mr2;
-//     double mr3;
-// };
-
-struct ThreeBodyWidth : public FunctionEncapsulator {
+struct MesonThreeBodyWidth : public ThreeBodyWidth {
     void set_pointers(Pythia8::ParticleData* particleDataPtrIn);
     double get_width(int from_id_, int neutrino_id, int to_id_, int lepton_id_);
 protected:
-    virtual double f(std::vector<double> integrands) override;
+    double function(double integrand) const override;
 private:
-    bool integrate(double& result, double from, double to, double tolerance);
-    double function(double integrand);
-    double Lambda(double xi);
-    double F(double xi);
-    double Gp(double xi);
-    double Gm(double xi);
-    double form_factor_plus(double q2);
-    double form_factor_0(double q2);
-    double form_factor(double q2, bool charged);
-    double K_form_factor(double q2, bool charged);
-    double D_form_factor(double q2, bool charged);
-    double B_form_factor(double q2, bool charged);
-    double z(double q2);
-    double g(double q2);
-    double am(double q2);
-    double ff(double q2);
-    double ap(double q2);
+    double Lambda(double xi) const;
+    double F(double xi) const;
+    double Gp(double xi) const;
+    double Gm(double xi) const;
+    double form_factor_plus(double q2) const;
+    double form_factor_0(double q2) const;
+    double form_factor(double q2, bool charged) const;
+    double K_form_factor(double q2, bool charged) const;
+    double D_form_factor(double q2, bool charged) const;
+    double B_form_factor(double q2, bool charged) const;
+    double z(double q2) const;
+    double g(double q2) const;
+    double am(double q2) const;
+    double ff(double q2) const;
+    double ap(double q2) const;
 private:
     Pythia8::ParticleData* particle_data;
     int id_from;
@@ -70,16 +53,16 @@ private:
     double mr_N;
 };
 
-struct NeutrinoThreeBodyWidth : public FunctionEncapsulator {
-    void set_pointers(Pythia8::ParticleData* particleDataPtrIn);
+struct NeutrinoThreeBodyWidth : public ThreeBodyWidth {
+    void set_pointers(Pythia8::ParticleData* particle_data_, Pythia8::Settings* settings_);
     double get_width(int from_id_, int neutrino_id, int to_id_, int lepton_id_);
 protected:
-    virtual double f(std::vector<double> integrands) override;
+    double function(double integrand) const override;
 private:
-    bool integrate(double& result, double from, double to, double tolerance);
-    double function(double integrand);
+    double get_mass(int id) const;
 private:
     Pythia8::ParticleData* particle_data;
+    Pythia8::Settings* settings;
     double mr1;
     double mr2;
     double mr3;

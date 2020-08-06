@@ -7,7 +7,7 @@ include_directories("~/Development/HEPMC2/")
 LINK_DIRECTORIES("~/Development/pythia/lib")
 LINK_DIRECTORIES("~/Development/HEPMC2/build/lib/")
 
-set(graphic ON)
+set(graphic OFF)
 
 set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_CXX_STANDARD 17)

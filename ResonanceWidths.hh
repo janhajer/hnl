@@ -48,7 +48,7 @@ private:
     double CKM2(int id_1, int id_2);
 private:
     std::function<double (int id_heavy, int id_light)> neutrino_coupling;
-    ThreeBodyWidth three_body_width;
+    MesonThreeBodyWidth three_body_width;
 };
 
 struct NeutrinoResonance : public Pythia8::ResonanceWidths {
@@ -60,6 +60,7 @@ protected:
     virtual void calcPreFac(bool called_from_init = false) override;
     virtual void calcWidth(bool called_from_init = false) override;
 private:
+    double get_mass(int id);
     bool can_two_body(int meson);
     bool can_three_body();
     void add_three_body();
