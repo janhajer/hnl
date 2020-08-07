@@ -84,6 +84,7 @@ void set_pythia_production(Pythia8::Pythia& pythia)
     pythia.readString("Beams:idA = 2212");
     pythia.readString("Beams:idB = 2212");
     pythia.readString("Beams:eCM = 14000.");
+    pythia.readString("ResonanceWidths:minWidth = 1E-30");
 //     pythia.particleData.m0(1, 0.0048);
 //     pythia.particleData.m0(2, 0.0023);
 //     pythia.particleData.m0(3, 0.095);
@@ -116,8 +117,9 @@ auto has_neutrino = [](auto const& channel)
     return channel.product(0) == heavy_neutrino || channel.product(1) == heavy_neutrino || channel.product(2) == heavy_neutrino || channel.product(3) == heavy_neutrino || channel.product(4) == heavy_neutrino;
 };
 
-template<typename Data>
-void save_data(Data& result, hnl::Loop const& loop, double mass, int source)
+using Result = std::map<int, std::map<std::tuple<int, int, int, int, int>, std::map<int, double>>>;
+
+void save_data(Result& result, hnl::Loop const& loop, double mass, int source)
 {
     std::ofstream output_file(std::to_string(source) + ".dat");
     output_file << 0 << '\t' << 1 << '\t' << 2 << '\t' << 3 << '\t' << 4;
@@ -132,7 +134,6 @@ void save_data(Data& result, hnl::Loop const& loop, double mass, int source)
 
 int write_branching_fractions()
 {
-    using Result = std::map<int, std::map<std::tuple<int, int, int, int, int>, std::map<int, double>>>;
 
 //     std::vector<int> sources{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
 //     std::vector<int> sources{431, 411, 421};
@@ -187,7 +188,7 @@ void set_pythia_write_hepmc(Pythia8::Pythia& pythia, double mass)
 //     pythia.readString("HardQCD:qqbar2ccbar  = on");
 //     pythia.readString("HardQCD:gg2bbbar  = on");
 //     pythia.readString("PhaseSpace:pTHatMin = .1");
-    pythia.readString("Main:numberOfEvents = 1000");
+    pythia.readString("Main:numberOfEvents = 100000");
 }
 
 int write_hepmc(double mass)
@@ -223,7 +224,7 @@ int write_hepmc(double mass)
             }
             double eta = std::abs(particle.eta());
             if (!(1.4 < eta && eta < 3.5)) continue;
-            if (debug) print("Success event", successfull, "of", total, "in line", line, "from mother", pythia.event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs(), "and eta", particle.eta(), "and phi", particle.phi());
+            print("Success event", successfull, "of", total, "in line", line, "from mother", pythia.event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs(), "and eta", particle.eta(), "and phi", particle.phi());
             success = true;
         }
         if (found_one > 1) ++too_many;
@@ -365,7 +366,14 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.)
 {
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_read_hepmc(pythia);
-    auto mass = std::stod(find_mass(path));
+    double mass;
+    double sigma;
+    try {
+        mass = std::stod(find_mass(path));
+        sigma = std::stod(find_sigma(path));
+    } catch (...) {
+        return 0;
+    }
     pythia.particleData.m0(heavy_neutrino, mass);
 
     std::map<int, std::map<int, double>> couplings;
@@ -404,7 +412,6 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.)
         }
     });
     auto fraction = double(good) / total;
-    auto sigma = std::stod(find_sigma(path));
     print("mass", mass, "GeV", "factor", factor, "coupling", max(couplings) * factor, "sigma", sigma * fraction * factor, "mb");
     return sigma * fraction * factor;
 }
@@ -450,9 +457,9 @@ int main(int argc, char** argv)
 {
     std::vector<std::string> arguments(argv + 1, argv + argc);
     using namespace hnl;
+    return read_hepmcs(arguments.empty() ? "." : arguments.front());
     return write_hepmc(arguments.empty() ? 1. : std::stod(arguments.front()));
     return write_branching_fractions();
-    return read_hepmcs(arguments.empty() ? "." : arguments.front());
     return read_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
     return write_hepmcs();
 }

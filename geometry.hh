@@ -35,17 +35,20 @@ auto triangle_mesh_side(Polyhedron const& polyhedron)
 
 bool is_inside(Point const& point, TriangleMeshSide const& triangle_mesh_side)
 {
-//     print("check inside", point);
-//     print("go");
-    auto t = triangle_mesh_side(point) == CGAL::ON_BOUNDED_SIDE;
-//     print("is inside", t);
-    return t;
+    return triangle_mesh_side(point) == CGAL::ON_BOUNDED_SIDE;
 }
 
 bool is_inside(Point const& point, Polyhedron const& polyhedron)
 {
     return is_inside(point, triangle_mesh_side(polyhedron));
 }
+
+}
+
+namespace mapp
+{
+
+using namespace cgal;
 
 auto get_points()
 {
@@ -85,7 +88,6 @@ auto get_polyhedron()
     return get_polyhedron(poly_points);
 }
 
-
 Transformation rotation_z(double angle)
 {
     auto cosa = std::cos(angle);
@@ -119,13 +121,6 @@ auto get_polyhedrons()
     }
     return polyhedrons;
 }
-
-}
-
-namespace mapp
-{
-
-using namespace cgal;
 
 struct Analysis {
     Analysis(std::vector<cgal::Polyhedron> const& polyhedrons_) :
@@ -165,7 +160,5 @@ auto analysis() -> Analysis
 }
 
 }
-
-
 
 }
