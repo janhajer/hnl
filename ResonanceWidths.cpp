@@ -64,12 +64,12 @@ void print(Object const& object, Arguments ... arguments) noexcept
     print(arguments ...);
 }
 
-std::vector<int> heavy_neutrinos()
+std::vector<int> heavy_neutral_leptons()
 {
     return {9900012, 9900014, 9900016};
 }
 
-std::vector<int> light_neutrinos()
+std::vector<int> neutral_leptons()
 {
     return {12, 14, 16};
 }
@@ -81,7 +81,7 @@ std::vector<int> charge_leptons()
 
 std::vector<int> leptons()
 {
-    return light_neutrinos() + charge_leptons();
+    return neutral_leptons() + charge_leptons();
 }
 
 std::vector<int> down_type()
@@ -111,12 +111,12 @@ bool is_lepton(int id)
 
 bool is_charge_lepton(int id)
 {
-    return id > 10 && id < 20 && id % 2 == 1;
+    return is_lepton(id) && id % 2 == 1;
 }
 
 bool is_light_neutrino(int id)
 {
-    return id > 10 && id < 20 && id % 2 == 0;
+    return is_lepton(id) && id % 2 == 0;
 }
 
 bool is_quark(int id)
@@ -126,7 +126,12 @@ bool is_quark(int id)
 
 bool is_up_type(int id)
 {
-    return id % 2 == 0;
+    return is_quark(id) && id % 2 == 0;
+}
+
+bool is_down_type(int id)
+{
+    return is_quark(id) && id % 2 == 1;
 }
 
 bool is_meson(int id)
@@ -139,7 +144,7 @@ bool is_vector(int id)
     return id == 113 || id == 213 || id == 313 || id == 323 || id == 413 || id == 423 || id == 433;
 }
 
-bool is_neutrino(int id)
+bool is_heavy_neutral_lepton(int id)
 {
     return id == 9900012 || id == 9900014 || id == 9900016;
 }
@@ -290,13 +295,13 @@ bool MesonResonance::initBSM()
 void MesonResonance::add_two_body()
 {
     if (!can_two_body()) return;
-    for (auto neutrino : heavy_neutrinos()) for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, -lepton);
+    for (auto neutrino : heavy_neutral_leptons()) for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, -lepton);
 }
 
 void MesonResonance::add_three_body(int meson)
 {
     if (!can_three_body(meson)) return;
-    for (auto neutrino : heavy_neutrinos()) for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, particlePtr->chargeType() == 0 ? lepton : - lepton, meson);
+    for (auto neutrino : heavy_neutral_leptons()) for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, particlePtr->chargeType() == 0 ? lepton : - lepton, meson);
 }
 
 std::vector<int> MesonResonance::mesons()
@@ -491,7 +496,7 @@ void MesonResonance::calcWidth(bool test)
     if (debug) print("preFac", preFac);
     widNow = 0.;
     if (preFac <= 0.) return;
-    if (!is_neutrino(id1Abs)) {
+    if (!is_heavy_neutral_lepton(id1Abs)) {
         print(test, "The first particle should be a neutrino", idRes, id1Abs, id2Abs, id3Abs);
         return;
     }
@@ -509,7 +514,7 @@ void MesonResonance::calcWidth(bool test)
         preFac = alpEM * thetaWRat * mHat;
         print(alpEM, alpS, colQ);
         if (ps == 0.) return;
-        if (is_neutrino(id1Abs)) {
+        if (is_heavy_neutral_lepton(id1Abs)) {
             auto id_lep = mult == 2 ? id2Abs : id3Abs;
             auto bL = 1.18921 * particleDataPtr->m0(23) * std::sqrt(couplingsPtr->GF()) * neutrino_coupling(id1Abs, id_lep + 1);
             widNow = mRes * std::sqrt(lambda(1, mf1, mf2)) / 24. / M_PI / mRes * sqr(bL) * ((2. - sqr(mr1 - mr2) - mr1 - mr2) - 6. * mr1 * mr2);
@@ -522,7 +527,7 @@ void MesonResonance::calcWidth(bool test)
     }
 
     switch (mult) {
-    case 2 : if (is_neutrino(id1Abs) && id2Abs > 10 && id2Abs < 17) {
+    case 2 : if (is_heavy_neutral_lepton(id1Abs) && id2Abs > 10 && id2Abs < 17) {
             preFac *= (mr1 + mr2 - sqr(mr2 - mr1)) * std::sqrt(lambda(1., mr1, mr2));
             if (debug) print("preFac", preFac);
             if (idRes == 443 || idRes == 553) {
@@ -545,7 +550,7 @@ void MesonResonance::calcWidth(bool test)
             }
         } else print("Two-body for", id1Abs, "and", id2Abs, "not implemented");
         break;
-    case 3 : if (is_neutrino(id1Abs) && id3Abs > 10 && id3Abs < 17 && id2Abs > 20) {
+    case 3 : if (is_heavy_neutral_lepton(id1Abs) && id3Abs > 10 && id3Abs < 17 && id2Abs > 20) {
             preFac *= sqr(mHat) / 8. / sqr(M_PI) * clebsch_gordan_2(id2Abs) * CKM2(idRes, id2Abs);
             if (is_vector(id2Abs)) preFac *= sqr(mHat) / sqr(mf2);
             if (debug) print("preFac", preFac);
@@ -593,10 +598,10 @@ void NeutrinoResonance::add_three_body()
     if (!can_three_body()) return;
     for (auto lepton : charge_leptons()) {
         if (mHat >= 1) for (auto up : up_type()) for (auto down : down_type()) particlePtr->addChannel(1, 0., 0, lepton, up, -down);
-        for (auto neutrino : light_neutrinos()) for (auto lepton_2 : charge_leptons()) if (lepton_2 != lepton && lepton_2 + 1 == neutrino) particlePtr->addChannel(1, 0., 0, lepton, neutrino, -lepton_2);
+        for (auto neutrino : neutral_leptons()) for (auto lepton_2 : charge_leptons()) if (lepton_2 != lepton && lepton_2 + 1 == neutrino) particlePtr->addChannel(1, 0., 0, lepton, neutrino, -lepton_2);
     }
-    for (auto neutrino : light_neutrinos()) {
-        for (auto neutrino_2 : light_neutrinos()) particlePtr->addChannel(1, 0., 0, neutrino, neutrino_2, neutrino_2);
+    for (auto neutrino : neutral_leptons()) {
+        for (auto neutrino_2 : neutral_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, neutrino_2, neutrino_2);
         for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, lepton, -lepton);
         if (mHat >= 1) for (auto quark : quarks()) particlePtr->addChannel(1, 0., 0, neutrino, quark, -quark);
     }
@@ -605,7 +610,7 @@ void NeutrinoResonance::add_three_body()
 void NeutrinoResonance::add_two_body(int meson)
 {
     if (!can_two_body(meson)) return;
-    if (particleDataPtr->chargeType(meson) == 0) for (auto lepton : light_neutrinos()) particlePtr->addChannel(1, 1., 0, lepton, meson);
+    if (particleDataPtr->chargeType(meson) == 0) for (auto lepton : neutral_leptons()) particlePtr->addChannel(1, 1., 0, lepton, meson);
     else for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 1., 0, lepton, meson);
 }
 
