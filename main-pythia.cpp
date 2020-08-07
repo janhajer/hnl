@@ -312,6 +312,15 @@ auto read_file(boost::filesystem::path const& path, int pos, Predicate predicate
     return found == lines.end() ? "value not found"s : split_line(*found).at(pos);
 }
 
+double convert(std::string const& string)
+{
+    try {
+        return std::stod(string);
+    } catch (...) {
+        return 0.;
+    }
+}
+
 auto find_sigma(boost::filesystem::path const& path)
 {
     return read_file(path, 1, [](auto const & strings)  {
@@ -366,18 +375,13 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.)
 {
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_read_hepmc(pythia);
-    double mass;
-    double sigma;
-    try {
-        mass = std::stod(find_mass(path));
-        sigma = std::stod(find_sigma(path));
-    } catch (...) {
-        return 0;
-    }
+    auto mass = convert(find_mass(path));
+    auto sigma = convert(find_sigma(path));
+    if(sigma <= 0.) return 0.;
     pythia.particleData.m0(heavy_neutrino, mass);
 
     std::map<int, std::map<int, double>> couplings;
-    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) couplings[heavy][light] = std::stod(find_coupling(path, heavy, light));
+    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) couplings[heavy][light] = convert(find_coupling(path, heavy, light));
     auto coupling_function = [&couplings, factor](int heavy, int light) {
         return couplings[heavy][light] * factor;
     };
@@ -439,10 +443,11 @@ int read_hepmcs(std::string const& path)
     std::map<double, std::map<double, double>> result;
     for (auto const& file : boost::make_iterator_range(boost::filesystem::directory_iterator(path), {})) {
         if (file.path().extension().string() != ".hep") continue;
-        auto mass = std::stod(find_mass(file.path()));
+        auto mass = convert(find_mass(file.path()));
+        if(mass <= 0) continue;
         std::map<int, std::map<int, double>> couplings;
         for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) {
-                auto value = std::stod(find_coupling(file.path(), heavy, light));
+                auto value = convert(find_coupling(file.path(), heavy, light));
                 if (value > 0) couplings[heavy][light] = value;
             }
         for (auto factor : log_range(1e-6, 1, 6)) result[mass][max(couplings) * factor] = read_hepmc(file.path(), factor);
@@ -458,7 +463,7 @@ int main(int argc, char** argv)
     std::vector<std::string> arguments(argv + 1, argv + argc);
     using namespace hnl;
     return read_hepmcs(arguments.empty() ? "." : arguments.front());
-    return write_hepmc(arguments.empty() ? 1. : std::stod(arguments.front()));
+    return write_hepmc(arguments.empty() ? 1. : convert(arguments.front()));
     return write_branching_fractions();
     return read_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
     return write_hepmcs();
