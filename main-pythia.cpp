@@ -201,13 +201,8 @@ void set_pythia_branching_fractions(Pythia8::Pythia& pythia)
 {
     set_pythia_production(pythia);
     set_pythia_init(pythia);
-    pythia.readString("Bottomonium:all = on");
-// //     pythia.readString("Charmonium:all = on");
-//
-    pythia.readString("Init:showMultipartonInteractions = off");
-//     pythia.readString("PhaseSpace:showViolation = on");
-//     pythia.readString("PhaseSpace:increaseMaximum = on");
-//     pythia.readString("PhaseSpace:showSearch = on");
+    pythia.readString("ProcessLevel:all = off");
+    pythia.readString("ResonanceWidths:minWidth = 1E-30");
 }
 
 auto has_neutrino = [](auto const& channel)
@@ -347,7 +342,7 @@ auto get_point(Pythia8::Particle const& particle) -> cgal::Point
 
 void set_pythia_read_hepmc(Pythia8::Pythia& pythia)
 {
-    pythia.readString("ProcessLevel:all = off"); // switch off ProcessLevel, and thereby also PartonLevel.
+    pythia.readString("ProcessLevel:all = off");
     pythia.readString("ResonanceWidths:minWidth = 1E-30");
     set_pythia_init(pythia);
     set_pythia_next(pythia);
