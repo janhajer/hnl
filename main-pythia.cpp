@@ -430,9 +430,11 @@ double read_hepmc(boost::filesystem::path const& path, double factor = 1.) {
     return meta ? read_hepmc(path, *meta, factor) : 0.;
 }
 
-void save_result(std::map<double, std::map<double, double>> const& result) {
+using ScanResult = std::map<double, std::map<double, double>>;
+
+void save_result(ScanResult const& result, std::string const& name = "result") {
     std::ofstream file;
-    file.open("result.dat");
+    file.open(name + ".dat");
     bool first = true;
     for (auto const& line : result) {
         if (first) {
@@ -447,8 +449,6 @@ void save_result(std::map<double, std::map<double, double>> const& result) {
     }
 }
 
-using ScanResult = std::map<double, std::map<double, double>>;
-
 ScanResult scan_hepmc(boost::filesystem::path const& path) {
     ScanResult result;
     print("file", path);
@@ -457,8 +457,9 @@ ScanResult scan_hepmc(boost::filesystem::path const& path) {
     return result;
 }
 
-int scan_hepmcs(std::string const& path) {
-    save_result(scan_hepmc(path));
+int scan_hepmc(std::string const& path_name) {
+    boost::filesystem::path path("./"+path_name);
+    save_result(scan_hepmc(path), path.stem().string());
     return 1;
 }
 
@@ -481,7 +482,7 @@ int read_hepmcs(std::string const& path_name) {
 int main(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
     using namespace hnl;
-    return scan_hepmcs(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
+    return scan_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
     return read_hepmcs(arguments.empty() ? "." : arguments.front());
     return write_hepmc(arguments.empty() ? 1. : convert(arguments.front()));
     return write_branching_fractions();
