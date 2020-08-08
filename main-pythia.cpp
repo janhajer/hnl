@@ -345,6 +345,7 @@ void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
 
 void for_each(HepMC::IO_GenEvent& hepmc_file, std::function<bool(HepMC::GenEvent const* const)> const& function) {
     auto* hepmc_event = hepmc_file.read_next_event();
+    if(!hepmc_event) print("Hepmc event is empty");
     while (hepmc_event) {
         if (!function(hepmc_event)) break;
         delete hepmc_event;
@@ -377,7 +378,9 @@ double read_hepmc(boost::filesystem::path const& path, Comments const& comments,
     pythia.init();
 
     auto lifetime = pythia.particleData.tau0(heavy_neutrino);
-    HepMC::IO_GenEvent hepmc_file(path.filename().string(), std::ios::in);
+    print("trying to open",path.string());
+    HepMC::IO_GenEvent hepmc_file(path.string(), std::ios::in);
+    print("with result",hepmc_file.error_message());
     int total = 0;
     int good = 0;
     auto analysis = mapp::analysis();
