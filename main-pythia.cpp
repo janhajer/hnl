@@ -296,18 +296,21 @@ double convert(std::string const& string) {
 }
 
 auto find_sigma(boost::filesystem::path const& path) {
+    if(debug) print("find sigma");
     return read_file(path, 1, [](auto const & strings)  {
         return strings.size() == 3 && strings.at(0) == "sigma" && strings.at(2) == "mb";
     });
 }
 
 auto find_mass(boost::filesystem::path const& path) {
+    if(debug) print("find mass");
     return read_file(path, 1, [](auto const & strings)  {
         return strings.size() == 3 && strings.at(0) == "mass" && strings.at(2) == "GeV";
     });
 }
 
 auto find_coupling(boost::filesystem::path const& path, int heavy, int light) {
+    if(debug) print("find Coupling");
     return read_file(path, 3, [&](auto const & strings)  {
         return strings.size() == 4 && strings.at(0) == "Coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
     });
