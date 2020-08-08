@@ -12,7 +12,7 @@
 
 namespace {
 
-const bool debug = true;
+const bool debug = false;
 
 std::vector<int> heavy_neutral_leptons() {
     return {9900012, 9900014, 9900016};
@@ -378,16 +378,14 @@ double read_hepmc(boost::filesystem::path const& path, Comments const& comments,
     pythia.init();
 
     auto lifetime = pythia.particleData.tau0(heavy_neutrino);
-    print("trying to open",path.string());
+    if (debug) print("trying to open",path.string());
     HepMC::IO_GenEvent hepmc_file(path.string(), std::ios::in);
-    print("with result",hepmc_file.error_message());
+    if (debug) print("with result",hepmc_file.error_message());
     int total = 0;
     int good = 0;
     auto analysis = mapp::analysis();
-    print("lets go");
     for_each(hepmc_file, [&](HepMC::GenEvent const * const hepmc_event) -> bool {
         ++total;
-        print("total", total);
         pythia.event.reset();
         pythia.event.append(retrive_neutrino(hepmc_event, lifetime));
         if (!pythia.next()) {
@@ -395,9 +393,6 @@ double read_hepmc(boost::filesystem::path const& path, Comments const& comments,
             return true;
         }
         if (debug) pythia.event.list(true);
-
-        if (total > 10) return false;
-
         for (auto line = 0; line < pythia.event.size(); ++line) {
             auto const& particle = pythia.event[line];
             auto vertex = particle.vProd();
@@ -409,9 +404,8 @@ double read_hepmc(boost::filesystem::path const& path, Comments const& comments,
         }
         return true;
     });
-    print(total);
     auto fraction = double(good) / total;
-    print(good, total, fraction);
+    print(good, "of", total, "fraction", fraction);
     print("mass", comments.mass, "GeV", "factor", factor, "coupling", max(comments.couplings) * factor, "sigma", comments.sigma * fraction * factor, "mb");
     return comments.sigma * fraction * factor;
 }
