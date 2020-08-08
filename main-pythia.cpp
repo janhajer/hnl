@@ -9,53 +9,44 @@
 #include "geometry.hh"
 #include "ResonanceWidths.hh"
 
-namespace
-{
+namespace {
 
 const bool debug = false;
 
-std::vector<int> heavy_neutral_leptons()
-{
+std::vector<int> heavy_neutral_leptons() {
     return {9900012, 9900014, 9900016};
 }
 
-std::vector<int> light_neutrinos()
-{
+std::vector<int> light_neutrinos() {
     return {12, 14, 16};
 }
 
 
 const int heavy_neutrino = 9900012;
 
-bool is_heavy_neutral_lepton(int id)
-{
+bool is_heavy_neutral_lepton(int id) {
     return id == 9900012 || id == 9900014 || id == 9900016;
 }
 
 }
 
-namespace hnl
-{
+namespace hnl {
 
-auto lin_scale(double min, double max, int step, int steps)
-{
+auto lin_scale(double min, double max, int step, int steps) {
     return min + (max - min) * step / steps;
 }
 
-auto log_scale(double min, double max, int step, int steps)
-{
+auto log_scale(double min, double max, int step, int steps) {
     return std::pow(10, lin_scale(std::log10(min), std::log10(max), step, steps));
 }
 
-auto log_range(double min, double max, int steps)
-{
+auto log_range(double min, double max, int steps) {
     return transform(irange(steps + 1), [&](auto step)  {
         return log_scale(min, max, step, steps);
     });
 }
 
-auto neutrino_coupling = [](int id_heavy, int id_light) -> double
-{
+auto neutrino_coupling = [](int id_heavy, int id_light) -> double {
     if (id_light != 12 && id_light != 14 && id_light != 16) {
         print(id_light, "is not a light neutrino");
         return 0;
@@ -69,18 +60,7 @@ auto neutrino_coupling = [](int id_heavy, int id_light) -> double
     return id == 0 || std::abs(id) == 2 || std::abs(id) == 4 ? .1 : 0;
 };
 
-struct Loop {
-    Loop(double min, int steps_) : m_min(min), steps(steps_) {}
-    double m_min;
-    int steps;
-    double mass(double max, int step) const
-    {
-        return log_scale(m_min, max, step, steps);
-    }
-};
-
-void set_pythia_production(Pythia8::Pythia& pythia)
-{
+void set_pythia_production(Pythia8::Pythia& pythia) {
     pythia.readString("Beams:idA = 2212");
     pythia.readString("Beams:idB = 2212");
     pythia.readString("Beams:eCM = 14000.");
@@ -92,35 +72,39 @@ void set_pythia_production(Pythia8::Pythia& pythia)
 //     pythia.particleData.m0(5, 4.180);
 }
 
-void set_pythia_init(Pythia8::Pythia& pythia)
-{
+void set_pythia_init(Pythia8::Pythia& pythia) {
     pythia.readString("Init:showChangedParticleData = off");
     pythia.readString("Init:showProcesses = off");
     pythia.readString("Init:showChangedSettings = off");
 }
 
-void set_pythia_passive(Pythia8::Pythia& pythia)
-{
+void set_pythia_passive(Pythia8::Pythia& pythia) {
     pythia.readString("ProcessLevel:all = off");
     pythia.readString("ResonanceWidths:minWidth = 1E-30");
 }
 
-void set_pythia_branching_fractions(Pythia8::Pythia& pythia)
-{
+void set_pythia_branching_fractions(Pythia8::Pythia& pythia) {
     set_pythia_production(pythia);
     set_pythia_init(pythia);
     set_pythia_passive(pythia);
 }
 
-auto has_neutrino = [](auto const& channel)
-{
+auto has_neutrino = [](auto const& channel) {
     return channel.product(0) == heavy_neutrino || channel.product(1) == heavy_neutrino || channel.product(2) == heavy_neutrino || channel.product(3) == heavy_neutrino || channel.product(4) == heavy_neutrino;
+};
+
+struct Loop {
+    Loop(double min, int steps_) : m_min(min), steps(steps_) {}
+    double m_min;
+    int steps;
+    double mass(double max, int step) const {
+        return log_scale(m_min, max, step, steps);
+    }
 };
 
 using Result = std::map<int, std::map<std::tuple<int, int, int, int, int>, std::map<int, double>>>;
 
-void save_data(Result& result, hnl::Loop const& loop, double mass, int source)
-{
+void save_data(Result& result, hnl::Loop const& loop, double mass, int source) {
     std::ofstream output_file(std::to_string(source) + ".dat");
     output_file << 0 << '\t' << 1 << '\t' << 2 << '\t' << 3 << '\t' << 4;
     for (auto step = 0; step <= loop.steps; ++step) output_file << std::scientific << '\t' << loop.mass(mass, step);
@@ -132,8 +116,7 @@ void save_data(Result& result, hnl::Loop const& loop, double mass, int source)
     }
 }
 
-int write_branching_fractions()
-{
+int write_branching_fractions() {
 
 //     std::vector<int> sources{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
 //     std::vector<int> sources{431, 411, 421};
@@ -167,15 +150,13 @@ int write_branching_fractions()
     return 0;
 }
 
-void set_pythia_next(Pythia8::Pythia& pythia)
-{
+void set_pythia_next(Pythia8::Pythia& pythia) {
     pythia.readString("Next:numberShowEvent = 0");
     pythia.readString("Next:numberShowProcess = 0");
 //     pythia.readString("Next:numberShowInfo = 0");
 }
 
-void set_pythia_write_hepmc(Pythia8::Pythia& pythia, double mass)
-{
+void set_pythia_write_hepmc(Pythia8::Pythia& pythia, double mass) {
     pythia.particleData.m0(heavy_neutrino, mass);
     pythia.particleData.mMin(heavy_neutrino, 0.);
     set_pythia_production(pythia);
@@ -191,8 +172,7 @@ void set_pythia_write_hepmc(Pythia8::Pythia& pythia, double mass)
     pythia.readString("Main:numberOfEvents = 100000");
 }
 
-int write_hepmc(double mass)
-{
+int write_hepmc(double mass) {
     HepMC::IO_GenEvent hepmc_file("neutrino_" + std::to_string(mass) + ".hep", std::ios::out);
     hepmc_file.write_comment("mass " + std::to_string(mass) + " GeV");
 
@@ -245,8 +225,7 @@ int write_hepmc(double mass)
     return 0;
 }
 
-int write_hepmcs()
-{
+int write_hepmcs() {
     Loop loop(.1, 50);
     for (auto step = 0; step <= loop.steps; ++step) {
         auto mass = loop.mass(6., step);
@@ -259,8 +238,7 @@ int write_hepmcs()
     return 0;
 }
 
-auto retrive_neutrino(HepMC::GenEvent const* const gen_event, double lifetime) -> Pythia8::Particle
-{
+auto retrive_neutrino(HepMC::GenEvent const* const gen_event, double lifetime) -> Pythia8::Particle {
     for (auto iterator = gen_event->particles_begin(); iterator != gen_event->particles_end(); ++iterator) {
         auto const& particle = **iterator;
         if (!is_heavy_neutral_lepton(particle.pdg_id())) continue;
@@ -277,21 +255,18 @@ auto retrive_neutrino(HepMC::GenEvent const* const gen_event, double lifetime) -
 }
 
 struct Line {
-    friend std::istream& operator>>(std::istream& stream, Line& line) noexcept
-    {
+    friend std::istream& operator>>(std::istream& stream, Line& line) noexcept {
         std::getline(stream, line.string);
         return stream;
     }
-    operator std::string() const noexcept
-    {
+    operator std::string() const noexcept {
         return string;
     }
 private:
     std::string string;
 };
 
-auto split_line(std::string const& line) noexcept
-{
+auto split_line(std::string const& line) noexcept {
     std::vector<std::string> strings;
     boost::split(strings, line, [](char c) noexcept {
         return c == ' ';
@@ -300,8 +275,7 @@ auto split_line(std::string const& line) noexcept
 }
 
 template<typename Predicate>
-auto read_file(boost::filesystem::path const& path, int pos, Predicate predicate) noexcept
-{
+auto read_file(boost::filesystem::path const& path, int pos, Predicate predicate) noexcept {
     std::ifstream file(path.string());
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<Line>(file), std::istream_iterator<Line>(), std::back_inserter(lines));
@@ -312,8 +286,7 @@ auto read_file(boost::filesystem::path const& path, int pos, Predicate predicate
     return found == lines.end() ? "value not found"s : split_line(*found).at(pos);
 }
 
-double convert(std::string const& string)
-{
+double convert(std::string const& string) {
     try {
         return std::stod(string);
     } catch (...) {
@@ -321,42 +294,36 @@ double convert(std::string const& string)
     }
 }
 
-auto find_sigma(boost::filesystem::path const& path)
-{
+auto find_sigma(boost::filesystem::path const& path) {
     return read_file(path, 1, [](auto const & strings)  {
         return strings.size() == 3 && strings.at(0) == "sigma" && strings.at(2) == "mb";
     });
 }
 
-auto find_mass(boost::filesystem::path const& path)
-{
+auto find_mass(boost::filesystem::path const& path) {
     return read_file(path, 1, [](auto const & strings)  {
         return strings.size() == 3 && strings.at(0) == "mass" && strings.at(2) == "GeV";
     });
 }
 
-auto find_coupling(boost::filesystem::path const& path, int heavy, int light)
-{
+auto find_coupling(boost::filesystem::path const& path, int heavy, int light) {
     return read_file(path, 3, [&](auto const & strings)  {
         return strings.size() == 4 && strings.at(0) == "coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
     });
 }
 
-auto get_point(Pythia8::Particle const& particle) -> cgal::Point
-{
+auto get_point(Pythia8::Particle const& particle) -> cgal::Point {
     return {particle.xProd() / 1000, particle.yProd() / 1000, particle.zProd() / 1000}; // convert from mm to m
 }
 
-void set_pythia_read_hepmc(Pythia8::Pythia& pythia)
-{
+void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
     set_pythia_init(pythia);
     set_pythia_next(pythia);
     set_pythia_passive(pythia);
 }
 
-void for_each(HepMC::IO_GenEvent& hepmc_file, std::function<void(HepMC::GenEvent const* const)> const& function)
-{
-    auto * hepmc_event = hepmc_file.read_next_event();
+void for_each(HepMC::IO_GenEvent& hepmc_file, std::function<void(HepMC::GenEvent const* const)> const& function) {
+    auto* hepmc_event = hepmc_file.read_next_event();
     while (hepmc_event) {
         function(hepmc_event);
         delete hepmc_event;
@@ -364,20 +331,18 @@ void for_each(HepMC::IO_GenEvent& hepmc_file, std::function<void(HepMC::GenEvent
     }
 }
 
-auto max(std::map<int, std::map<int, double>> const& couplings)
-{
+auto max(std::map<int, std::map<int, double>> const& couplings) {
     double max = 0.;
     for (auto const& inner : couplings) for (auto const& pair : inner.second) if (pair.second > max) max = pair.second;
     return max;
 }
 
-double read_hepmc(boost::filesystem::path path, double factor = 1.)
-{
+double read_hepmc(boost::filesystem::path path, double factor = 1.) {
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_read_hepmc(pythia);
     auto mass = convert(find_mass(path));
     auto sigma = convert(find_sigma(path));
-    if(sigma <= 0.) return 0.;
+    if (sigma <= 0.) return 0.;
     pythia.particleData.m0(heavy_neutrino, mass);
 
     std::map<int, std::map<int, double>> couplings;
@@ -397,15 +362,13 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.)
         ++total;
         pythia.event.reset();
         pythia.event.append(retrive_neutrino(hepmc_event, lifetime));
-        if (!pythia.next())
-        {
+        if (!pythia.next()) {
             print("Pythia encountered a problem");
             return;
         }
         if (debug) pythia.event.list(true);
 
-        for (auto line = 0; line < pythia.event.size(); ++line)
-        {
+        for (auto line = 0; line < pythia.event.size(); ++line) {
             auto const& particle = pythia.event[line];
             auto vertex = particle.vProd();
             if (particle.chargeType() == 0) continue;
@@ -420,8 +383,7 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.)
     return sigma * fraction * factor;
 }
 
-void save_result(std::map<double, std::map<double, double>> const& result)
-{
+void save_result(std::map<double, std::map<double, double>> const& result) {
     std::ofstream file;
     file.open("result.dat");
     bool first = true;
@@ -438,13 +400,12 @@ void save_result(std::map<double, std::map<double, double>> const& result)
     }
 }
 
-int read_hepmcs(std::string const& path)
-{
+int read_hepmcs(std::string const& path) {
     std::map<double, std::map<double, double>> result;
     for (auto const& file : boost::make_iterator_range(boost::filesystem::directory_iterator(path), {})) {
         if (file.path().extension().string() != ".hep") continue;
         auto mass = convert(find_mass(file.path()));
-        if(mass <= 0) continue;
+        if (mass <= 0) continue;
         std::map<int, std::map<int, double>> couplings;
         for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) {
                 auto value = convert(find_coupling(file.path(), heavy, light));
@@ -458,14 +419,14 @@ int read_hepmcs(std::string const& path)
 
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
     using namespace hnl;
-    return write_hepmc(arguments.empty() ? 1. : convert(arguments.front()));
     return read_hepmcs(arguments.empty() ? "." : arguments.front());
+    return write_hepmc(arguments.empty() ? 1. : convert(arguments.front()));
     return write_branching_fractions();
     return read_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
     return write_hepmcs();
 }
+
 
