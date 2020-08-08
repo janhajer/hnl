@@ -312,7 +312,7 @@ auto find_mass(boost::filesystem::path const& path) {
 auto find_coupling(boost::filesystem::path const& path, int heavy, int light) {
     if(debug) print("find Coupling");
     return read_file(path, 3, [&](auto const & strings)  {
-        return strings.size() == 4 && strings.at(0) == "Coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
+        return strings.size() == 5 && strings.at(0) == "Coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
     });
 }
 
