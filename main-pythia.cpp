@@ -290,6 +290,7 @@ double convert(std::string const& string) {
     try {
         return std::stod(string);
     } catch (...) {
+        print(string, "is not a number");
         return 0.;
     }
 }
