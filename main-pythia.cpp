@@ -421,6 +421,8 @@ int read_hepmcs(std::string const& path) {
         if (file.path().extension().string() != ".hep") continue;
         auto mass = convert(find_mass(file.path()));
         if (mass <= 0) continue;
+        auto sigma = convert(find_sigma(file.path()));
+        if (sigma <= 0) continue;
         std::map<int, std::map<int, double>> couplings;
         for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) {
                 auto value = convert(find_coupling(file.path(), heavy, light));
