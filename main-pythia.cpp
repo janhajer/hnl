@@ -360,7 +360,7 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.) {
     auto analysis = mapp::analysis();
     for_each(hepmc_file, [&](HepMC::GenEvent const * const hepmc_event) -> void {
         ++total;
-        print(total)l
+        print(total);
         pythia.event.reset();
         pythia.event.append(retrive_neutrino(hepmc_event, lifetime));
         if (!pythia.next()) {
