@@ -11,7 +11,7 @@
 
 namespace {
 
-const bool debug = false;
+const bool debug = true;
 
 std::vector<int> heavy_neutral_leptons() {
     return {9900012, 9900014, 9900016};
