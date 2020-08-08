@@ -283,7 +283,7 @@ auto import_file(boost::filesystem::path const& path) noexcept {
 }
 
 template<typename Predicate>
-auto read_file(std::vector<std::string> & lines, int pos, Predicate predicate) noexcept {
+auto read_file(std::vector<std::string>& lines, int pos, Predicate predicate) noexcept {
     auto found = boost::range::find_if(lines, [&predicate](auto & line) noexcept {
         boost::trim_if(line, boost::is_any_of("\t "));
         return predicate(split_line(line));
@@ -312,21 +312,21 @@ double convert(std::string const& string) {
     }
 }
 
-auto find_sigma(std::vector<std::string> & path) {
+auto find_sigma(std::vector<std::string>& path) {
     if (debug) print("find sigma");
     return read_file(path, 1, [](auto const & strings)  {
         return strings.size() == 3 && strings.at(0) == "sigma" && strings.at(2) == "mb";
     });
 }
 
-auto find_mass(std::vector<std::string> & path) {
+auto find_mass(std::vector<std::string>& path) {
     if (debug) print("find mass");
     return read_file(path, 1, [](auto const & strings)  {
         return strings.size() == 3 && strings.at(0) == "mass" && strings.at(2) == "GeV";
     });
 }
 
-auto find_coupling(std::vector<std::string> & path, int heavy, int light) {
+auto find_coupling(std::vector<std::string>& path, int heavy, int light) {
     if (debug) print("find Coupling");
     return read_file(path, 3, [&](auto const & strings)  {
         return strings.size() == 5 && strings.at(0) == "Coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
@@ -345,7 +345,7 @@ void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
 
 void for_each(HepMC::IO_GenEvent& hepmc_file, std::function<bool(HepMC::GenEvent const* const)> const& function) {
     auto* hepmc_event = hepmc_file.read_next_event();
-    if(!hepmc_event) print("Hepmc event is empty");
+    if (!hepmc_event) print("Hepmc file is empty");
     while (hepmc_event) {
         if (!function(hepmc_event)) break;
         delete hepmc_event;
@@ -378,9 +378,9 @@ double read_hepmc(boost::filesystem::path const& path, Comments const& comments,
     pythia.init();
 
     auto lifetime = pythia.particleData.tau0(heavy_neutrino);
-    if (debug) print("trying to open",path.string());
+    if (debug) print("trying to open", path.string());
     HepMC::IO_GenEvent hepmc_file(path.string(), std::ios::in);
-    if (debug) print("with result",hepmc_file.error_message());
+    if (debug) print("with result", hepmc_file.error_message());
     int total = 0;
     int good = 0;
     auto analysis = mapp::analysis();
@@ -447,16 +447,31 @@ void save_result(std::map<double, std::map<double, double>> const& result) {
     }
 }
 
-int read_hepmcs(std::string const& path) {
-    if (debug) print("read hep mcs", path);
-    std::map<double, std::map<double, double>> result;
-    for (auto const& directory_entry : boost::make_iterator_range(boost::filesystem::directory_iterator(path), {})) {
-        if (directory_entry.path().extension().string() != ".hep") continue;
-        if(debug) print("next file", directory_entry.path());
-        auto meta = extract_comments(directory_entry.path());
-        if (!meta) continue;
-        for (auto factor : log_range(1e-6, 1, 6)) result[meta->mass][max(meta->couplings) * factor] = read_hepmc(directory_entry.path(), *meta, factor);
-    }
+using ScanResult = std::map<double, std::map<double, double>>;
+
+ScanResult scan_hepmc(boost::filesystem::path const& path) {
+    ScanResult result;
+    print("file", path);
+    auto meta = extract_comments(path);
+    if (meta) for (auto factor : log_range(1e-6, 1, 6)) result[meta->mass][max(meta->couplings) * factor] = read_hepmc(path, *meta, factor);
+    return result;
+}
+
+int scan_hepmcs(std::string const& path) {
+    save_result(scan_hepmc(path));
+    return 1;
+}
+
+template<typename First, typename Second>
+std::map<First, Second>& operator+=(std::map<First, Second>& left, std::map<First, Second> const& right) {
+    for (auto const& pair : right) left[pair.first] += pair.second;
+    return left;
+}
+
+int read_hepmcs(std::string const& path_name) {
+    if (debug) print("read hep mcs in", path_name);
+    ScanResult result;
+    for (auto const& directory_entry : boost::make_iterator_range(boost::filesystem::directory_iterator(path_name), {})) if (directory_entry.path().extension().string() == ".hep") result += scan_hepmc(directory_entry.path());
     save_result(result);
     return 0;
 }
@@ -466,6 +481,7 @@ int read_hepmcs(std::string const& path) {
 int main(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
     using namespace hnl;
+    return scan_hepmcs(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
     return read_hepmcs(arguments.empty() ? "." : arguments.front());
     return write_hepmc(arguments.empty() ? 1. : convert(arguments.front()));
     return write_branching_fractions();
