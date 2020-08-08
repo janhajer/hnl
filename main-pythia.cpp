@@ -339,10 +339,13 @@ auto max(std::map<int, std::map<int, double>> const& couplings) {
 }
 
 double read_hepmc(boost::filesystem::path path, double factor = 1.) {
+    if(debug) print("read hep mc", path.string(), "with", factor);
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_read_hepmc(pythia);
+    print("get values");
     auto mass = convert(find_mass(path));
     auto sigma = convert(find_sigma(path));
+    print("got values");
     if (sigma <= 0.) return 0.;
     pythia.particleData.m0(heavy_neutrino, mass);
 
@@ -409,6 +412,7 @@ void save_result(std::map<double, std::map<double, double>> const& result) {
 }
 
 int read_hepmcs(std::string const& path) {
+    if(debug) print("read hep mcs", path);
     std::map<double, std::map<double, double>> result;
     for (auto const& file : boost::make_iterator_range(boost::filesystem::directory_iterator(path), {})) {
         if (file.path().extension().string() != ".hep") continue;
