@@ -1,6 +1,7 @@
 #include <boost/range/algorithm/max_element.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/optional.hpp>
 
 #include "Pythia8/Pythia.h"
 #include "Pythia8Plugins/HepMC2.h"
@@ -274,6 +275,22 @@ auto split_line(std::string const& line) noexcept {
     return strings;
 }
 
+auto import_file(boost::filesystem::path const& path) noexcept {
+    std::ifstream file(path.string());
+    std::vector<std::string> lines;
+    std::copy(std::istream_iterator<Line>(file), std::istream_iterator<Line>(), std::back_inserter(lines));
+    return lines;
+}
+
+template<typename Predicate>
+auto read_file(std::vector<std::string> & lines, int pos, Predicate predicate) noexcept {
+    auto found = boost::range::find_if(lines, [&predicate](auto & line) noexcept {
+        boost::trim_if(line, boost::is_any_of("\t "));
+        return predicate(split_line(line));
+    });
+    return found == lines.end() ? "value not found"s : split_line(*found).at(pos);
+}
+
 template<typename Predicate>
 auto read_file(boost::filesystem::path const& path, int pos, Predicate predicate) noexcept {
     std::ifstream file(path.string());
@@ -295,22 +312,22 @@ double convert(std::string const& string) {
     }
 }
 
-auto find_sigma(boost::filesystem::path const& path) {
-    if(debug) print("find sigma");
+auto find_sigma(std::vector<std::string> & path) {
+    if (debug) print("find sigma");
     return read_file(path, 1, [](auto const & strings)  {
         return strings.size() == 3 && strings.at(0) == "sigma" && strings.at(2) == "mb";
     });
 }
 
-auto find_mass(boost::filesystem::path const& path) {
-    if(debug) print("find mass");
+auto find_mass(std::vector<std::string> & path) {
+    if (debug) print("find mass");
     return read_file(path, 1, [](auto const & strings)  {
         return strings.size() == 3 && strings.at(0) == "mass" && strings.at(2) == "GeV";
     });
 }
 
-auto find_coupling(boost::filesystem::path const& path, int heavy, int light) {
-    if(debug) print("find Coupling");
+auto find_coupling(std::vector<std::string> & path, int heavy, int light) {
+    if (debug) print("find Coupling");
     return read_file(path, 3, [&](auto const & strings)  {
         return strings.size() == 5 && strings.at(0) == "Coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
     });
@@ -335,27 +352,26 @@ void for_each(HepMC::IO_GenEvent& hepmc_file, std::function<bool(HepMC::GenEvent
     }
 }
 
+struct Comments {
+    double mass = 0;
+    double sigma = 0;
+    std::map<int, std::map<int, double>> couplings;
+};
+
 auto max(std::map<int, std::map<int, double>> const& couplings) {
     double max = 0.;
     for (auto const& inner : couplings) for (auto const& pair : inner.second) if (pair.second > max) max = pair.second;
     return max;
 }
 
-double read_hepmc(boost::filesystem::path path, double factor = 1.) {
-    if(debug) print("read hep mc", path.string(), "with", factor);
+double read_hepmc(boost::filesystem::path const& path, Comments const& comments, double factor = 1.) {
+    if (debug) print("read hep mc", path.string(), "with", factor);
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_read_hepmc(pythia);
-    print("get values");
-    auto mass = convert(find_mass(path));
-    auto sigma = convert(find_sigma(path));
-    print("got values");
-    if (sigma <= 0.) return 0.;
-    pythia.particleData.m0(heavy_neutrino, mass);
+    pythia.particleData.m0(heavy_neutrino, comments.mass);
 
-    std::map<int, std::map<int, double>> couplings;
-    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) couplings[heavy][light] = convert(find_coupling(path, heavy, light));
-    auto coupling_function = [&couplings, factor](int heavy, int light) {
-        return couplings[heavy][light] * factor;
+    auto coupling_function = [&comments, factor](int heavy, int light) {
+        return comments.couplings.at(heavy).at(light) * factor;
     };
     pythia.setResonancePtr(new NeutrinoResonance(pythia, coupling_function, heavy_neutrino));
     pythia.init();
@@ -368,6 +384,7 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.) {
     print("lets go");
     for_each(hepmc_file, [&](HepMC::GenEvent const * const hepmc_event) -> bool {
         ++total;
+        print("total", total);
         pythia.event.reset();
         pythia.event.append(retrive_neutrino(hepmc_event, lifetime));
         if (!pythia.next()) {
@@ -376,7 +393,6 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.) {
         }
         if (debug) pythia.event.list(true);
 
-        print("total",total);
         if (total > 10) return false;
 
         for (auto line = 0; line < pythia.event.size(); ++line) {
@@ -393,8 +409,28 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.) {
     print(total);
     auto fraction = double(good) / total;
     print(good, total, fraction);
-    print("mass", mass, "GeV", "factor", factor, "coupling", max(couplings) * factor, "sigma", sigma * fraction * factor, "mb");
-    return sigma * fraction * factor;
+    print("mass", comments.mass, "GeV", "factor", factor, "coupling", max(comments.couplings) * factor, "sigma", comments.sigma * fraction * factor, "mb");
+    return comments.sigma * fraction * factor;
+}
+
+boost::optional<Comments> extract_comments(boost::filesystem::path const& path) {
+    auto file = import_file(path);
+    Comments comments;
+    comments.mass = convert(find_mass(file));
+    if (comments.mass <= 0) return boost::none;
+    comments.sigma = convert(find_sigma(file));
+    if (comments.sigma <= 0) return boost::none;
+    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) {
+            auto value = convert(find_coupling(file, heavy, light));
+            if (value > 0) comments.couplings[heavy][light] = value;
+        }
+    if (comments.couplings.empty()) return boost::none;
+    return comments;
+}
+
+double read_hepmc(boost::filesystem::path const& path, double factor = 1.) {
+    auto meta = extract_comments(path);
+    return meta ? read_hepmc(path, *meta, factor) : 0.;
 }
 
 void save_result(std::map<double, std::map<double, double>> const& result) {
@@ -415,20 +451,13 @@ void save_result(std::map<double, std::map<double, double>> const& result) {
 }
 
 int read_hepmcs(std::string const& path) {
-    if(debug) print("read hep mcs", path);
+    if (debug) print("read hep mcs", path);
     std::map<double, std::map<double, double>> result;
-    for (auto const& file : boost::make_iterator_range(boost::filesystem::directory_iterator(path), {})) {
-        if (file.path().extension().string() != ".hep") continue;
-        auto mass = convert(find_mass(file.path()));
-        if (mass <= 0) continue;
-        auto sigma = convert(find_sigma(file.path()));
-        if (sigma <= 0) continue;
-        std::map<int, std::map<int, double>> couplings;
-        for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) {
-                auto value = convert(find_coupling(file.path(), heavy, light));
-                if (value > 0) couplings[heavy][light] = value;
-            }
-        for (auto factor : log_range(1e-6, 1, 6)) result[mass][max(couplings) * factor] = read_hepmc(file.path(), factor);
+    for (auto const& directory_entry : boost::make_iterator_range(boost::filesystem::directory_iterator(path), {})) {
+        if (directory_entry.path().extension().string() != ".hep") continue;
+        auto meta = extract_comments(path);
+        if (!meta) continue;
+        for (auto factor : log_range(1e-6, 1, 6)) result[meta->mass][max(meta->couplings) * factor] = read_hepmc(directory_entry.path(), *meta, factor);
     }
     save_result(result);
     return 0;
