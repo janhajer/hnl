@@ -322,10 +322,10 @@ void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
     set_pythia_passive(pythia);
 }
 
-void for_each(HepMC::IO_GenEvent& hepmc_file, std::function<void(HepMC::GenEvent const* const)> const& function) {
+void for_each(HepMC::IO_GenEvent& hepmc_file, std::function<bool(HepMC::GenEvent const* const)> const& function) {
     auto* hepmc_event = hepmc_file.read_next_event();
     while (hepmc_event) {
-        function(hepmc_event);
+        if (!function(hepmc_event)) break;
         delete hepmc_event;
         hepmc_file >> hepmc_event;
     }
@@ -358,16 +358,19 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.) {
     int total = 0;
     int good = 0;
     auto analysis = mapp::analysis();
-    for_each(hepmc_file, [&](HepMC::GenEvent const * const hepmc_event) -> void {
+    print("lets go");
+    for_each(hepmc_file, [&](HepMC::GenEvent const * const hepmc_event) -> bool {
         ++total;
-        print(total);
         pythia.event.reset();
         pythia.event.append(retrive_neutrino(hepmc_event, lifetime));
         if (!pythia.next()) {
             print("Pythia encountered a problem");
-            return;
+            return true;
         }
         if (debug) pythia.event.list(true);
+
+        print("total",total);
+        if (total > 10) return false;
 
         for (auto line = 0; line < pythia.event.size(); ++line) {
             auto const& particle = pythia.event[line];
@@ -378,7 +381,9 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.) {
             ++good;
             break;
         }
+        return true;
     });
+    print(total);
     auto fraction = double(good) / total;
     print(good, total, fraction);
     print("mass", mass, "GeV", "factor", factor, "coupling", max(couplings) * factor, "sigma", sigma * fraction * factor, "mb");
