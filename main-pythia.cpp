@@ -422,7 +422,7 @@ boost::optional<Comments> extract_comments(boost::filesystem::path const& path) 
     if (comments.sigma <= 0) return boost::none;
     for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) {
             auto value = convert(find_coupling(file, heavy, light));
-            if (value > 0) comments.couplings[heavy][light] = value;
+            comments.couplings[heavy][light] = value;
         }
     if (comments.couplings.empty()) return boost::none;
     return comments;
@@ -455,6 +455,7 @@ int read_hepmcs(std::string const& path) {
     std::map<double, std::map<double, double>> result;
     for (auto const& directory_entry : boost::make_iterator_range(boost::filesystem::directory_iterator(path), {})) {
         if (directory_entry.path().extension().string() != ".hep") continue;
+        if(debug) print("next file", directory_entry.path());
         auto meta = extract_comments(directory_entry.path());
         if (!meta) continue;
         for (auto factor : log_range(1e-6, 1, 6)) result[meta->mass][max(meta->couplings) * factor] = read_hepmc(directory_entry.path(), *meta, factor);
