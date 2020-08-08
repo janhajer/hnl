@@ -379,6 +379,7 @@ double read_hepmc(boost::filesystem::path path, double factor = 1.) {
         }
     });
     auto fraction = double(good) / total;
+    print(good, total, fraction);
     print("mass", mass, "GeV", "factor", factor, "coupling", max(couplings) * factor, "sigma", sigma * fraction * factor, "mb");
     return sigma * fraction * factor;
 }
