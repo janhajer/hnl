@@ -65,7 +65,7 @@ auto neutrino_coupling = [](int id_heavy, int id_light) -> double
         return 0;
     }
     auto id = id_heavy - 9900000 - id_light;
-    return id == 0 ? 1e-2 : 0;
+    return id == 0 ? 1e-1 : 0;
     return id == 0 || std::abs(id) == 2 || std::abs(id) == 4 ? .1 : 0;
 };
 
@@ -356,7 +356,7 @@ void set_pythia_read_hepmc(Pythia8::Pythia& pythia)
 
 void for_each(HepMC::IO_GenEvent& hepmc_file, std::function<void(HepMC::GenEvent const* const)> const& function)
 {
-    auto* hepmc_event = hepmc_file.read_next_event();
+    auto * hepmc_event = hepmc_file.read_next_event();
     while (hepmc_event) {
         function(hepmc_event);
         delete hepmc_event;
@@ -462,8 +462,8 @@ int main(int argc, char** argv)
 {
     std::vector<std::string> arguments(argv + 1, argv + argc);
     using namespace hnl;
-    return read_hepmcs(arguments.empty() ? "." : arguments.front());
     return write_hepmc(arguments.empty() ? 1. : convert(arguments.front()));
+    return read_hepmcs(arguments.empty() ? "." : arguments.front());
     return write_branching_fractions();
     return read_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
     return write_hepmcs();
