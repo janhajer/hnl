@@ -486,8 +486,8 @@ int read_hepmcs(std::string const& path_name) {
 int main(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
     using namespace hnl;
-    return write_hepmcs();
     return write_hepmc(arguments.empty() ? .5 : convert(arguments.front()));
+    return write_hepmcs();
     return scan_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
     return read_hepmcs(arguments.empty() ? "." : arguments.front());
     return write_branching_fractions();
