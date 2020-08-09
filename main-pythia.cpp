@@ -170,14 +170,20 @@ void set_pythia_write_hepmc(Pythia8::Pythia& pythia, double mass) {
 //     pythia.readString("HardQCD:qqbar2ccbar  = on");
 //     pythia.readString("HardQCD:gg2bbbar  = on");
 //     pythia.readString("PhaseSpace:pTHatMin = .1");
-    pythia.readString("Main:numberOfEvents = 100000");
+    pythia.readString("Main:numberOfEvents = 1000");
+}
+
+std::string to_string(double value) {
+    std::stringstream string_stream;
+    string_stream << std::scientific << value;
+    return string_stream.str();
 }
 
 int write_hepmc(double mass) {
     HepMC::IO_GenEvent hepmc_file("neutrino_" + std::to_string(mass) + ".hep", std::ios::out);
     hepmc_file.write_comment("mass " + std::to_string(mass) + " GeV");
 
-    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) hepmc_file.write_comment("Coupling " + std::to_string(heavy) + " " + std::to_string(light) + " " + std::to_string(neutrino_coupling(heavy, light)) + " GeV");
+    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) hepmc_file.write_comment("coupling " + std::to_string(heavy) + " " + std::to_string(light) + " " + std::to_string(neutrino_coupling(heavy, light)));
 
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_write_hepmc(pythia, mass);
@@ -218,16 +224,17 @@ int write_hepmc(double mass) {
 
     pythia.stat();
 
-    print("\nwritten", successfull, "events of", total, "that is a fraction of", double(successfull) / total);
-    print("\ntherefore from", pythia.info.sigmaGen(), "mb we save", pythia.info.sigmaGen() * successfull / total, "mb");
-    print("\nfound", too_many, "events with more than one neutrino. that is a fraction of", double(too_many) / total, "and", double(too_many) / successfull);
+    print("stored", successfull, "events");
+    print(successfull + too_many, "events of", total, "had at least one HNL. that is a fraction of", double(successfull + too_many) / total);
+    print("therefore from", pythia.info.sigmaGen(), "mb we save", pythia.info.sigmaGen() * (successfull + too_many) / total, "mb");
+    print("found", too_many, "events with more than one neutrino. that is a fraction of", double(too_many) / total, "and", double(too_many) / successfull);
 
-    hepmc_file.write_comment("sigma " + std::to_string(pythia.info.sigmaGen() * successfull / total) + " mb");
+    hepmc_file.write_comment("sigma " + to_string(pythia.info.sigmaGen() * successfull / total) + " mb");
     return 0;
 }
 
 int write_hepmcs() {
-    Loop loop(.1, 50);
+    Loop loop(.1, 10);
     for (auto step = 0; step <= loop.steps; ++step) {
         auto mass = loop.mass(6., step);
         std::ofstream ofstream("neutrino_" + std::to_string(mass) + ".txt");
@@ -329,7 +336,7 @@ auto find_mass(std::vector<std::string>& path) {
 auto find_coupling(std::vector<std::string>& path, int heavy, int light) {
     if (debug) print("find Coupling");
     return read_file(path, 3, [&](auto const & strings)  {
-        return strings.size() == 5 && strings.at(0) == "Coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
+        return strings.size() == 4 && strings.at(0) == "coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
     });
 }
 
@@ -353,7 +360,7 @@ void for_each(HepMC::IO_GenEvent& hepmc_file, std::function<bool(HepMC::GenEvent
     }
 }
 
-struct Comments {
+struct Meta {
     double mass = 0;
     double sigma = 0;
     std::map<int, std::map<int, double>> couplings;
@@ -365,7 +372,7 @@ auto max(std::map<int, std::map<int, double>> const& couplings) {
     return max;
 }
 
-double read_hepmc(boost::filesystem::path const& path, Comments const& comments, double factor = 1.) {
+double read_hepmc(boost::filesystem::path const& path, Meta const& comments, double factor = 1.) {
     if (debug) print("read hep mc", path.string(), "with", factor);
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_read_hepmc(pythia);
@@ -410,19 +417,16 @@ double read_hepmc(boost::filesystem::path const& path, Comments const& comments,
     return comments.sigma * fraction * factor;
 }
 
-boost::optional<Comments> extract_comments(boost::filesystem::path const& path) {
+boost::optional<Meta> extract_comments(boost::filesystem::path const& path) {
     auto file = import_file(path);
-    Comments comments;
-    comments.mass = convert(find_mass(file));
-    if (comments.mass <= 0) return boost::none;
-    comments.sigma = convert(find_sigma(file));
-    if (comments.sigma <= 0) return boost::none;
-    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) {
-            auto value = convert(find_coupling(file, heavy, light));
-            comments.couplings[heavy][light] = value;
-        }
-    if (comments.couplings.empty()) return boost::none;
-    return comments;
+    Meta meta;
+    meta.mass = convert(find_mass(file));
+    if (meta.mass <= 0) return boost::none;
+    meta.sigma = convert(find_sigma(file));
+    if (meta.sigma <= 0) return boost::none;
+    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) meta.couplings[heavy][light] = convert(find_coupling(file, heavy, light));
+    if (meta.couplings.empty()) return boost::none;
+    return meta;
 }
 
 double read_hepmc(boost::filesystem::path const& path, double factor = 1.) {
@@ -458,7 +462,7 @@ ScanResult scan_hepmc(boost::filesystem::path const& path) {
 }
 
 int scan_hepmc(std::string const& path_name) {
-    boost::filesystem::path path("./"+path_name);
+    boost::filesystem::path path("./" + path_name);
     save_result(scan_hepmc(path), path.stem().string());
     return 1;
 }
@@ -482,12 +486,12 @@ int read_hepmcs(std::string const& path_name) {
 int main(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
     using namespace hnl;
+    return write_hepmcs();
+    return write_hepmc(arguments.empty() ? .5 : convert(arguments.front()));
     return scan_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
     return read_hepmcs(arguments.empty() ? "." : arguments.front());
-    return write_hepmc(arguments.empty() ? 1. : convert(arguments.front()));
     return write_branching_fractions();
     return read_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
-    return write_hepmcs();
 }
 
 
