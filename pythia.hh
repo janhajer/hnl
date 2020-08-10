@@ -426,7 +426,7 @@ auto find_coupling(std::vector<std::string>& path, int heavy, int light) {
     });
 }
 
-auto get_point(Pythia8::Particle const& particle) -> cgal::Point {
+auto to_cgal(Pythia8::Particle const& particle) -> cgal::Point {
     return {particle.xProd() / 1000, particle.yProd() / 1000, particle.zProd() / 1000}; // convert from mm to m
 }
 
@@ -458,14 +458,14 @@ auto max(std::map<int, std::map<int, double>> const& couplings) {
     return max;
 }
 
-double read_hepmc(boost::filesystem::path const& path, Meta const& comments, double factor = 1.) {
-    if (debug) print("read hep mc", path.string(), "with", factor);
+double read_hepmc(boost::filesystem::path const& path, Meta const& meta, double coupling) {
+    if (debug) print("read hep mc", path.string(), "with", coupling);
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_read_hepmc(pythia);
-    pythia.particleData.m0(heavy_neutrino, comments.mass);
+    pythia.particleData.m0(heavy_neutrino, meta.mass);
 
-    auto coupling_function = [&comments, factor](int heavy, int light) {
-        return comments.couplings.at(heavy).at(light) * factor;
+    auto coupling_function = [&meta, coupling](int heavy, int light) {
+        return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
     };
     pythia.setResonancePtr(new NeutrinoResonance(pythia, coupling_function, heavy_neutrino));
     pythia.init();
@@ -490,7 +490,7 @@ double read_hepmc(boost::filesystem::path const& path, Meta const& comments, dou
             auto const& particle = pythia.event[line];
             auto vertex = particle.vProd();
             if (particle.chargeType() == 0) continue;
-            if (!analysis.is_inside(get_point(particle))) continue;
+            if (!analysis.is_inside(to_cgal(particle))) continue;
             if (debug) print("Hooray!", vertex.pAbs());
             ++good;
             break;
@@ -498,10 +498,20 @@ double read_hepmc(boost::filesystem::path const& path, Meta const& comments, dou
         return true;
         if (total > 100) return false;
     });
+    print("HNLs with m =", meta.mass, "GeV");
+    auto result = meta.sigma;
+    print("The production cross section is", result, "mb.");
+    auto rescaling = coupling / max(meta.couplings);
+    print("Events were generated with U^2 =", max(meta.couplings), "Decays are porformed for U^2 =", coupling, "Hence the cross section is rescaled by", rescaling);
+    result = meta.sigma * rescaling;
+    print("The rescaled cross section is", result, "mb");
     auto fraction = double(good) / total;
-    print(good, "of", total, "fraction", fraction);
-    print("mass", comments.mass, "GeV", "factor", factor, "coupling", max(comments.couplings) * factor, "sigma", comments.sigma * fraction * factor, "mb");
-    return comments.sigma * fraction * factor;
+    print(good, "of", total, "events accepted, that is a fraction", fraction);
+    result *= fraction;
+    print("In super MAPP", result, "mb");
+    result /= 16.;
+    print("In MAPP", result, "mb");
+    return result;
 }
 
 boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
@@ -516,9 +526,9 @@ boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
     return meta;
 }
 
-double read_hepmc(boost::filesystem::path const& path, double factor = 1.) {
+double read_hepmc(boost::filesystem::path const& path, double coupling) {
     auto meta = meta_info(path);
-    return meta ? read_hepmc(path, *meta, factor) : 0.;
+    return meta ? read_hepmc(path, *meta, coupling) : 0.;
 }
 
 using ScanResult = std::map<double, std::map<double, double>>;
@@ -544,7 +554,7 @@ ScanResult scan_hepmc(boost::filesystem::path const& path) {
     ScanResult result;
     print("file", path);
     auto meta = meta_info(path);
-    if (meta) for (auto factor : log_range(1e-6, 1, 6)) result[meta->mass][max(meta->couplings) * factor] = read_hepmc(path, *meta, factor);
+    if (meta) for (auto coupling : log_range(1e-6, 1, 6)) result[meta->mass][max(meta->couplings) * coupling] = read_hepmc(path, *meta, coupling);
     return result;
 }
 
