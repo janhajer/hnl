@@ -96,7 +96,10 @@ void set_pythia_branching_fractions(Pythia8::Pythia& pythia) {
 }
 
 auto has_neutrino = [](auto const& channel) {
-    return channel.product(0) == heavy_neutrino || channel.product(1) == heavy_neutrino || channel.product(2) == heavy_neutrino || channel.product(3) == heavy_neutrino || channel.product(4) == heavy_neutrino;
+    for (auto heavy : heavy_neutral_leptons()) {
+        if (channel.product(0) == heavy || channel.product(1) == heavy || channel.product(2) == heavy || channel.product(3) == heavy || channel.product(4) == heavy) return true;
+    }
+    return false;
 };
 
 struct Loop {
@@ -165,6 +168,7 @@ void set_pythia_next(Pythia8::Pythia& pythia) {
 void set_pythia_write_hepmc(Pythia8::Pythia& pythia, double mass) {
     pythia.particleData.m0(heavy_neutrino, mass);
     pythia.particleData.mMin(heavy_neutrino, 0.);
+    pythia.particleData.particleDataEntryPtr(heavy_neutrino)->clearChannels();
     set_pythia_production(pythia);
     set_pythia_next(pythia);
     pythia.readString("Bottomonium:all = on");
@@ -175,7 +179,7 @@ void set_pythia_write_hepmc(Pythia8::Pythia& pythia, double mass) {
 //     pythia.readString("HardQCD:qqbar2ccbar  = on");
 //     pythia.readString("HardQCD:gg2bbbar  = on");
 //     pythia.readString("PhaseSpace:pTHatMin = .1");
-    pythia.readString("Main:numberOfEvents = 10");
+    pythia.readString("Main:numberOfEvents = 1000");
 }
 
 std::string to_string(double value) {
@@ -205,12 +209,10 @@ std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> c
         auto& particle = *pythia.particleData.particleDataEntryPtr(meson);
         for (auto number : irange(particle.sizeChannels())) {
             auto& channel = particle.channel(number);
-            for (auto heavy : heavy_neutral_leptons()) if (channel.product(0) == heavy || channel.product(1) == heavy || channel.product(2) == heavy) {
-                    if (channel.bRatio() > 0.) {
-                        partial_width += channel.bRatio();
-                        if (debug) print(meson, channel.product(0), channel.product(1), channel.product(2));
-                    }
-                }
+            if (has_neutrino(channel) && channel.bRatio() > 0.) {
+                partial_width += channel.bRatio();
+                if (debug) print(meson, channel.product(0), channel.product(1), channel.product(2));
+            }
         }
         if (max_width < partial_width) {
             max_width = partial_width;
@@ -275,13 +277,13 @@ void write_hepmc(double mass) {
             if (!is_heavy_neutral_lepton(std::abs(particle.id()))) continue;
             ++found_one;
             if (found_one > 1) {
-                print("More than one neutrino in event", total);
+                print("More than one neutrino in event", total, "in line", line, "from mother", event[particle.mother1()].id());
                 success = false;
                 break;
             }
             double eta = std::abs(particle.eta());
             if (!(1.4 < eta && eta < 3.5)) continue;
-            print("Success event", successfull, "of", total, "in line", line, "from mother", event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs(), "and eta", particle.eta(), "and phi", particle.phi());
+            print("Success event", successfull + 1, "of", total, "in line", line, "from mother", event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs(), "and eta", particle.eta(), "and phi", particle.phi());
             success = true;
         }
         if (found_one > 1) ++too_many;
@@ -398,7 +400,7 @@ double convert(std::string const& string) {
     try {
         return std::stod(string);
     } catch (...) {
-        print(string, "is not a number");
+        print("The string:", string, ", is not a number");
         return 0.;
     }
 }
@@ -494,7 +496,7 @@ double read_hepmc(boost::filesystem::path const& path, Meta const& comments, dou
             break;
         }
         return true;
-        if(total > 100) return false;
+        if (total > 100) return false;
     });
     auto fraction = double(good) / total;
     print(good, "of", total, "fraction", fraction);
