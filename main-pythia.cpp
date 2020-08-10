@@ -180,6 +180,7 @@ std::string to_string(double value) {
 }
 
 int write_hepmc(double mass) {
+    print("Generating events for mass", mass);
     HepMC::IO_GenEvent hepmc_file("neutrino_" + std::to_string(mass) + ".hep", std::ios::out);
     hepmc_file.write_comment("mass " + std::to_string(mass) + " GeV");
 
@@ -486,9 +487,9 @@ int read_hepmcs(std::string const& path_name) {
 int main(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
     using namespace hnl;
+    return scan_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
     return write_hepmc(arguments.empty() ? .5 : convert(arguments.front()));
     return write_hepmcs();
-    return scan_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
     return read_hepmcs(arguments.empty() ? "." : arguments.front());
     return write_branching_fractions();
     return read_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
