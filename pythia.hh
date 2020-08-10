@@ -1,3 +1,5 @@
+#pragma once
+
 #include <boost/range/algorithm/max_element.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -47,18 +49,20 @@ auto log_range(double min, double max, int steps) {
     });
 }
 
-auto neutrino_coupling = [](int id_heavy, int id_light) -> double {
-    if (id_light != 12 && id_light != 14 && id_light != 16) {
-        print(id_light, "is not a light neutrino");
-        return 0;
-    }
-    if (id_heavy != 9900012 && id_heavy != 9900014 && id_heavy != 9900016) {
-        print(id_heavy, "is not a heavy neutrino");
-        return 0;
-    }
-    auto id = id_heavy - 9900000 - id_light;
-    return id == 0 ? 1e-1 : 0;
-    return id == 0 || std::abs(id) == 2 || std::abs(id) == 4 ? .1 : 0;
+auto neutrino_coupling = [](double factor) {
+    return [factor](int id_heavy, int id_light) -> double {
+        if (id_light != 12 && id_light != 14 && id_light != 16) {
+            print(id_light, "is not a light neutrino");
+            return 0;
+        }
+        if (id_heavy != 9900012 && id_heavy != 9900014 && id_heavy != 9900016) {
+            print(id_heavy, "is not a heavy neutrino");
+            return 0;
+        }
+        auto id = id_heavy - 9900000 - id_light;
+        return id == 0 ? factor : 0;
+        return id == 0 || std::abs(id) == 2 || std::abs(id) == 4 ? factor : 0;
+    };
 };
 
 void set_pythia_production(Pythia8::Pythia& pythia) {
@@ -77,6 +81,7 @@ void set_pythia_init(Pythia8::Pythia& pythia) {
     pythia.readString("Init:showChangedParticleData = off");
     pythia.readString("Init:showProcesses = off");
     pythia.readString("Init:showChangedSettings = off");
+    pythia.readString("Init:showMultipartonInteractions = off");
 }
 
 void set_pythia_passive(Pythia8::Pythia& pythia) {
@@ -135,7 +140,7 @@ int write_branching_fractions() {
             set_pythia_branching_fractions(pythia);
             if (!is_heavy_neutral_lepton(source)) mass_max = pythia.particleData.m0(source);
             pythia.particleData.m0(heavy_neutrino, loop.mass(mass_max, step));
-            is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling, source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling, source));
+            is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(1), source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(1), source));
             pythia.particleData.particleDataEntryPtr(source)->rescaleBR();
             pythia.init();
             auto const& particle = *pythia.particleData.particleDataEntryPtr(source);
@@ -163,14 +168,14 @@ void set_pythia_write_hepmc(Pythia8::Pythia& pythia, double mass) {
     set_pythia_production(pythia);
     set_pythia_next(pythia);
     pythia.readString("Bottomonium:all = on");
-    if (mass < 1.86962) pythia.readString("Charmonium:all = on");
+    if (mass < 1.96849) pythia.readString("Charmonium:all = on");
     if (mass < .493677) pythia.readString("HardQCD:all = on");
 //     pythia.readString("Onia:all(3S1) = on");
 //     pythia.readString("SoftQCD:nonDiffractive = on");
 //     pythia.readString("HardQCD:qqbar2ccbar  = on");
 //     pythia.readString("HardQCD:gg2bbbar  = on");
 //     pythia.readString("PhaseSpace:pTHatMin = .1");
-    pythia.readString("Main:numberOfEvents = 1000");
+    pythia.readString("Main:numberOfEvents = 10");
 }
 
 std::string to_string(double value) {
@@ -179,30 +184,94 @@ std::string to_string(double value) {
     return string_stream.str();
 }
 
-int write_hepmc(double mass) {
-    print("Generating events for mass", mass);
-    HepMC::IO_GenEvent hepmc_file("neutrino_" + std::to_string(mass) + ".hep", std::ios::out);
+void for_each_if(Pythia8::Pythia& pythia, HepMC::IO_GenEvent& hepmc_file, std::function<bool(Pythia8::Event const& event)> const& function) {
+    HepMC::Pythia8ToHepMC converter;
+    int event_number = 0;
+    while (event_number < pythia.mode("Main:numberOfEvents")) {
+        if (!pythia.next()) continue;
+        if (!function(pythia.event)) continue;
+        ++event_number;
+        HepMC::GenEvent gen_event;
+        converter.fill_next_event(pythia, &gen_event);
+        hepmc_file.write_event(&gen_event);
+    }
+}
+
+std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> const& mesons) {
+    double max_width = 0;
+    int id;
+    for (auto meson : mesons) {
+        double partial_width = 0.;
+        auto& particle = *pythia.particleData.particleDataEntryPtr(meson);
+        for (auto number : irange(particle.sizeChannels())) {
+            auto& channel = particle.channel(number);
+            for (auto heavy : heavy_neutral_leptons()) if (channel.product(0) == heavy || channel.product(1) == heavy || channel.product(2) == heavy) {
+                    if (channel.bRatio() > 0.) {
+                        partial_width += channel.bRatio();
+                        if (debug) print(meson, channel.product(0), channel.product(1), channel.product(2));
+                    }
+                }
+        }
+        if (max_width < partial_width) {
+            max_width = partial_width;
+            id = meson;
+        }
+    }
+    return {id, max_width};
+}
+
+auto get_optimal_coupling(double mass, std::vector<int> const& mesons) {
+    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    set_pythia_write_hepmc(pythia, mass);
+    set_pythia_init(pythia);
+    for (auto meson : mesons) pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(1), meson));
+    pythia.init();
+
+    auto [id, max_width] = get_max_width(pythia, mesons);
+
+    print("The maximal BR into HNLs with U^2 = 1 is", max_width, "from", id);
+    if (mass < 0.13957) return 1. / max_width / 10000;
+    if (mass < 0.49761) return 1. / max_width / 100;
+    if (mass > 5) return 1. / max_width * 10000;
+    if (mass > 4) return 1. / max_width * 1000;
+    if (mass > 3) return 1. / max_width * 100;
+    if (mass > 2.55) return 1. / max_width * 10;
+    return 1. / max_width;
+}
+
+void write_hepmc(double mass) {
+    print("Generating events for HNLs with mass", mass, "GeV");
+
+    std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
+    auto coupling = get_optimal_coupling(mass, mesons);
+
+    print("Use U^2 =", coupling);
+
+    HepMC::IO_GenEvent hepmc_file(std::to_string(mass) + ".hep", std::ios::out);
     hepmc_file.write_comment("mass " + std::to_string(mass) + " GeV");
 
-    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) hepmc_file.write_comment("coupling " + std::to_string(heavy) + " " + std::to_string(light) + " " + std::to_string(neutrino_coupling(heavy, light)));
 
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_write_hepmc(pythia, mass);
-    std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541};
-    for (auto meson : mesons) pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling, meson));
+    for (auto meson : mesons) pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), meson));
+
     pythia.init();
 
-    HepMC::Pythia8ToHepMC converter;
-    int too_many = 0;
+    auto [id, max_width] = get_max_width(pythia, mesons);
+    print("The maximal BR into HNLs with U^2 =", coupling, "is", max_width, "from", id);
+
+    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) hepmc_file.write_comment("coupling " + std::to_string(heavy) + " " + std::to_string(light) + " " + std::to_string(neutrino_coupling(coupling)(heavy, light)));
+
     int total = 0;
     int successfull = 0;
-    while (successfull < pythia.mode("Main:numberOfEvents")) {
-        if (!pythia.next()) continue;
+    int too_many = 0;
+
+    for_each_if(pythia, hepmc_file, [&too_many, &total, &successfull](Pythia8::Event const & event) -> bool {
         ++total;
         int found_one = 0;
         bool success = false;
-        for (auto line = 0; line < pythia.event.size(); ++line) {
-            auto const& particle = pythia.event[line];
+        for (auto line = 0; line < event.size(); ++line) {
+            auto const& particle = event[line];
             if (!is_heavy_neutral_lepton(std::abs(particle.id()))) continue;
             ++found_one;
             if (found_one > 1) {
@@ -212,52 +281,66 @@ int write_hepmc(double mass) {
             }
             double eta = std::abs(particle.eta());
             if (!(1.4 < eta && eta < 3.5)) continue;
-            print("Success event", successfull, "of", total, "in line", line, "from mother", pythia.event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs(), "and eta", particle.eta(), "and phi", particle.phi());
+            print("Success event", successfull, "of", total, "in line", line, "from mother", event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs(), "and eta", particle.eta(), "and phi", particle.phi());
             success = true;
         }
         if (found_one > 1) ++too_many;
-        if (!success) continue;
-        ++successfull;
-        HepMC::GenEvent gen_event;
-        converter.fill_next_event(pythia, &gen_event);
-        hepmc_file.write_event(&gen_event);
-    }
+        if (success) ++successfull;
+        return success;
+    });
 
     pythia.stat();
 
-    print("stored", successfull, "events");
-    print(successfull + too_many, "events of", total, "had at least one HNL. that is a fraction of", double(successfull + too_many) / total);
-    print("therefore from", pythia.info.sigmaGen(), "mb we save", pythia.info.sigmaGen() * (successfull + too_many) / total, "mb");
-    print("found", too_many, "events with more than one neutrino. that is a fraction of", double(too_many) / total, "and", double(too_many) / successfull);
+    print("Successfully saved", successfull, "events");
+    print(successfull + too_many, "of", total, "events had at least one HNL. That is a fraction of", double(successfull + too_many) / total);
+    print("Therefore of", pythia.info.sigmaGen(), "mb we save", pythia.info.sigmaGen() * (successfull + too_many) / total, "mb");
 
     hepmc_file.write_comment("sigma " + to_string(pythia.info.sigmaGen() * successfull / total) + " mb");
-    return 0;
 }
 
-int write_hepmcs() {
-    Loop loop(.1, 10);
+void write_hepmcs() {
+    Loop loop(.1, 100);
     for (auto step = 0; step <= loop.steps; ++step) {
         auto mass = loop.mass(6., step);
-        std::ofstream ofstream("neutrino_" + std::to_string(mass) + ".txt");
+        std::ofstream ofstream(std::to_string(mass) + ".txt");
         std::streambuf* streambuf = std::cout.rdbuf();
         std::cout.rdbuf(ofstream.rdbuf());
         write_hepmc(mass);
         std::cout.rdbuf(streambuf);
     }
-    return 0;
 }
 
-auto retrive_neutrino(HepMC::GenEvent const* const gen_event, double lifetime) -> Pythia8::Particle {
-    for (auto iterator = gen_event->particles_begin(); iterator != gen_event->particles_end(); ++iterator) {
-        auto const& particle = **iterator;
-        if (!is_heavy_neutral_lepton(particle.pdg_id())) continue;
-        Pythia8::Particle part(particle.pdg_id(), particle.status(), 0, 0, 0, 0, 0, 0, particle.momentum().px(), particle.momentum().py(), particle.momentum().pz(), particle.momentum().e(), particle.momentum().m(), particle.momentum().m(), 9.);
-        part.xProd(particle.production_vertex()->position().x());
-        part.yProd(particle.production_vertex()->position().y());
-        part.zProd(particle.production_vertex()->position().z());
-        part.tProd(particle.production_vertex()->position().t());
-        part.tau(lifetime);
-        return part;
+Pythia8::Vec4 to_pythia(HepMC::FourVector const& vector) {
+    return {vector.x(), vector.y(), vector.z(), vector.t()};
+}
+
+void for_each_until(HepMC::GenEvent const& gen_event, std::function<bool(HepMC::GenParticle const&)> const& function) {
+    for (auto iterator = gen_event.particles_begin(); iterator != gen_event.particles_end(); ++iterator) if (function(**iterator)) return;
+    print("no neutrino found");
+}
+
+auto retrive_neutrino(HepMC::GenEvent const& gen_event, double lifetime) -> Pythia8::Particle {
+    Pythia8::Particle pythia_particle;
+    for_each_until(gen_event, [&pythia_particle, &lifetime](HepMC::GenParticle const & hep_particle) {
+        if (!is_heavy_neutral_lepton(hep_particle.pdg_id())) return false;
+        auto& momentum = hep_particle.momentum();
+        pythia_particle = Pythia8::Particle(hep_particle.pdg_id(), hep_particle.status(), 0, 0, 0, 0, 0, 0, to_pythia(momentum), momentum.m(), momentum.m(), 9.);
+        pythia_particle.vProd(to_pythia(hep_particle.production_vertex()->position()));
+        pythia_particle.tau(lifetime);
+        return true;
+    });
+    return pythia_particle;
+}
+
+auto retrive_neutrino_old(HepMC::GenEvent const& gen_event, double lifetime) -> Pythia8::Particle {
+    for (auto iterator = gen_event.particles_begin(); iterator != gen_event.particles_end(); ++iterator) {
+        auto const& hep_particle = **iterator;
+        if (!is_heavy_neutral_lepton(hep_particle.pdg_id())) continue;
+        auto& momentum = hep_particle.momentum();
+        Pythia8::Particle pythia_particle(hep_particle.pdg_id(), hep_particle.status(), 0, 0, 0, 0, 0, 0, to_pythia(momentum), momentum.m(), momentum.m(), 9.);
+        pythia_particle.vProd(to_pythia(hep_particle.production_vertex()->position()));
+        pythia_particle.tau(lifetime);
+        return pythia_particle;
     }
     print("no neutrino found");
     return {};
@@ -351,11 +434,11 @@ void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
     set_pythia_passive(pythia);
 }
 
-void for_each(HepMC::IO_GenEvent& hepmc_file, std::function<bool(HepMC::GenEvent const* const)> const& function) {
+void for_each_until(HepMC::IO_GenEvent& hepmc_file, std::function<bool(HepMC::GenEvent const&)> const& function) {
     auto* hepmc_event = hepmc_file.read_next_event();
     if (!hepmc_event) print("Hepmc file is empty");
     while (hepmc_event) {
-        if (!function(hepmc_event)) break;
+        if (!function(*hepmc_event)) break;
         delete hepmc_event;
         hepmc_file >> hepmc_event;
     }
@@ -392,7 +475,7 @@ double read_hepmc(boost::filesystem::path const& path, Meta const& comments, dou
     int total = 0;
     int good = 0;
     auto analysis = mapp::analysis();
-    for_each(hepmc_file, [&](HepMC::GenEvent const * const hepmc_event) -> bool {
+    for_each_until(hepmc_file, [&](HepMC::GenEvent const & hepmc_event) -> bool {
         ++total;
         pythia.event.reset();
         pythia.event.append(retrive_neutrino(hepmc_event, lifetime));
@@ -411,6 +494,7 @@ double read_hepmc(boost::filesystem::path const& path, Meta const& comments, dou
             break;
         }
         return true;
+        if(total > 100) return false;
     });
     auto fraction = double(good) / total;
     print(good, "of", total, "fraction", fraction);
@@ -418,7 +502,7 @@ double read_hepmc(boost::filesystem::path const& path, Meta const& comments, dou
     return comments.sigma * fraction * factor;
 }
 
-boost::optional<Meta> extract_comments(boost::filesystem::path const& path) {
+boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
     auto file = import_file(path);
     Meta meta;
     meta.mass = convert(find_mass(file));
@@ -431,7 +515,7 @@ boost::optional<Meta> extract_comments(boost::filesystem::path const& path) {
 }
 
 double read_hepmc(boost::filesystem::path const& path, double factor = 1.) {
-    auto meta = extract_comments(path);
+    auto meta = meta_info(path);
     return meta ? read_hepmc(path, *meta, factor) : 0.;
 }
 
@@ -457,15 +541,14 @@ void save_result(ScanResult const& result, std::string const& name = "result") {
 ScanResult scan_hepmc(boost::filesystem::path const& path) {
     ScanResult result;
     print("file", path);
-    auto meta = extract_comments(path);
+    auto meta = meta_info(path);
     if (meta) for (auto factor : log_range(1e-6, 1, 6)) result[meta->mass][max(meta->couplings) * factor] = read_hepmc(path, *meta, factor);
     return result;
 }
 
-int scan_hepmc(std::string const& path_name) {
+void scan_hepmc(std::string const& path_name) {
     boost::filesystem::path path("./" + path_name);
     save_result(scan_hepmc(path), path.stem().string());
-    return 1;
 }
 
 template<typename First, typename Second>
@@ -474,25 +557,11 @@ std::map<First, Second>& operator+=(std::map<First, Second>& left, std::map<Firs
     return left;
 }
 
-int read_hepmcs(std::string const& path_name) {
+void scan_hepmcs(std::string const& path_name) {
     if (debug) print("read hep mcs in", path_name);
     ScanResult result;
     for (auto const& directory_entry : boost::make_iterator_range(boost::filesystem::directory_iterator(path_name), {})) if (directory_entry.path().extension().string() == ".hep") result += scan_hepmc(directory_entry.path());
     save_result(result);
-    return 0;
 }
 
 }
-
-int main(int argc, char** argv) {
-    std::vector<std::string> arguments(argv + 1, argv + argc);
-    using namespace hnl;
-    return scan_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
-    return write_hepmc(arguments.empty() ? .5 : convert(arguments.front()));
-    return write_hepmcs();
-    return read_hepmcs(arguments.empty() ? "." : arguments.front());
-    return write_branching_fractions();
-    return read_hepmc(arguments.empty() ? "neutrino_0.500000.hep" : arguments.front());
-}
-
-

@@ -495,13 +495,18 @@ void MesonResonance::calcWidth(bool test)
     preFac = neutrino_coupling(id1Abs, id_lep + 1) * sqr(couplingsPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
     if (debug) print("preFac", preFac);
     widNow = 0.;
-    if (preFac <= 0.) return;
+    if (preFac <= 0.) {
+        particlePtr->setHasChanged(sum > 0.);
+        return;
+    }
     if (!is_heavy_neutral_lepton(id1Abs)) {
         print(test, "The first particle should be a neutrino", idRes, id1Abs, id2Abs, id3Abs);
+        particlePtr->setHasChanged(sum > 0.);
         return;
     }
     if (mHat < mf1 + mf2 + (mult == 2 ? 0 : mf3)) {
         if (debug) print("no phase space", idRes, "to", id1Abs, id2Abs, id3Abs, "mass", mHat, "sum", mf1 + mf2 + mf3, mf1 + mf2);
+        particlePtr->setHasChanged(sum > 0.);
         return;
     }
 
@@ -559,6 +564,8 @@ void MesonResonance::calcWidth(bool test)
         break;
     default : print("multiplicity", mult, "not implemented");
     }
+    sum += widNow;
+    particlePtr->setHasChanged(sum > 0.);
     if (debug) print("Calculated", widNow, "for", idRes, "to", id2Abs, "and", id1Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particlePtr->tau0()), particlePtr->mWidth());
 }
 

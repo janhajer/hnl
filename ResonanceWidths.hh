@@ -49,6 +49,7 @@ private:
 private:
     std::function<double (int id_heavy, int id_light)> neutrino_coupling;
     MesonThreeBodyWidth three_body_width;
+    double sum = 0.;
 };
 
 struct NeutrinoResonance : public Pythia8::ResonanceWidths {
@@ -76,7 +77,7 @@ private:
 private:
     std::function<double (int id_heavy, int id_light)> neutrino_coupling;
     NeutrinoThreeBodyWidth three_body_width;
-    double sum = 0;
+    double sum = 0.;
 };
 
 }
