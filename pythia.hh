@@ -500,7 +500,7 @@ double read_hepmc(boost::filesystem::path const& path, Meta const& meta, double 
     });
     print("HNLs with m =", meta.mass, "GeV");
     auto result = meta.sigma;
-    print("The production cross section is", result, "mb.");
+    print("The production cross section is", result, "mb");
     auto rescaling = coupling / max(meta.couplings);
     print("Events were generated with U^2 =", max(meta.couplings), "Decays are porformed for U^2 =", coupling, "Hence the cross section is rescaled by", rescaling);
     result = meta.sigma * rescaling;
@@ -554,7 +554,7 @@ ScanResult scan_hepmc(boost::filesystem::path const& path) {
     ScanResult result;
     print("file", path);
     auto meta = meta_info(path);
-    if (meta) for (auto coupling : log_range(1e-6, 1, 6)) result[meta->mass][max(meta->couplings) * coupling] = read_hepmc(path, *meta, coupling);
+    if (meta) for (auto coupling : log_range(1e-6, 1, 6)) result[meta->mass][coupling] = read_hepmc(path, *meta, coupling);
     return result;
 }
 
