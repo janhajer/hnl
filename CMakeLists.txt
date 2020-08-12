@@ -77,6 +77,9 @@ set(plot-libs ${hepmc-libs} ${root-libs})
 
 # add_library(pythia-test ResonanceWidths.cpp ThreeBodyWidth.cpp)
 
+add_executable(sigma main-sigma.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
+target_link_libraries(sigma pythia8 HepMC ${boost-libs})
+
 add_executable(write-BRs main-write-BRs.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp)
 target_link_libraries(write-BRs pythia8 HepMC ${boost-libs})
 
