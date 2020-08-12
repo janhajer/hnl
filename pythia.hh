@@ -44,7 +44,7 @@ auto log_scale(double min, double max, int step, int steps) {
 }
 
 auto log_range(double min, double max, int steps) {
-    return transform(irange(steps + 1), [&](auto step)  {
+    return transform(irange(steps + 1), [&](auto step) {
         return log_scale(min, max, step, steps);
     });
 }
@@ -179,7 +179,7 @@ void set_pythia_write_hepmc(Pythia8::Pythia& pythia, double mass) {
 //     pythia.readString("HardQCD:qqbar2ccbar  = on");
 //     pythia.readString("HardQCD:gg2bbbar  = on");
 //     pythia.readString("PhaseSpace:pTHatMin = .1");
-    pythia.readString("Main:numberOfEvents = 1000");
+    pythia.readString("Main:numberOfEvents = 100000");
 }
 
 std::string to_string(double value) {
@@ -396,7 +396,7 @@ auto read_file(boost::filesystem::path const& path, int pos, Predicate predicate
     return found == lines.end() ? "value not found"s : split_line(*found).at(pos);
 }
 
-double convert(std::string const& string) {
+double to_double(std::string const& string) {
     try {
         return std::stod(string);
     } catch (...) {
@@ -420,7 +420,7 @@ auto find_mass(std::vector<std::string>& path) {
 }
 
 auto find_coupling(std::vector<std::string>& path, int heavy, int light) {
-    if (debug) print("find Coupling");
+    if (debug) print("find coupling");
     return read_file(path, 3, [&](auto const & strings)  {
         return strings.size() == 4 && strings.at(0) == "coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
     });
@@ -517,11 +517,11 @@ double read_hepmc(boost::filesystem::path const& path, Meta const& meta, double 
 boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
     auto file = import_file(path);
     Meta meta;
-    meta.mass = convert(find_mass(file));
+    meta.mass = to_double(find_mass(file));
     if (meta.mass <= 0) return boost::none;
-    meta.sigma = convert(find_sigma(file));
+    meta.sigma = to_double(find_sigma(file));
     if (meta.sigma <= 0) return boost::none;
-    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) meta.couplings[heavy][light] = convert(find_coupling(file, heavy, light));
+    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) meta.couplings[heavy][light] = to_double(find_coupling(file, heavy, light));
     if (meta.couplings.empty()) return boost::none;
     return meta;
 }
