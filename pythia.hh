@@ -567,7 +567,7 @@ void scan_hepmcs(std::string const& path_name) {
     save_result(result);
 }
 
-double calculate_sigma(double mass) {
+void calculate_sigma(double mass) {
     if (debug) print("calculate_sigma");
     auto coupling = 1;
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
@@ -580,20 +580,20 @@ double calculate_sigma(double mass) {
     for (auto event_number = 0; event_number < pythia.mode("Main:numberOfEvents"); ++event_number) if (!pythia.next()) print("Error in event", event_number);
     pythia.stat();
     delete sigma;
-    return pythia.info.sigmaGen() / coupling;
+    print("sigma", pythia.info.sigmaGen() / coupling);
 }
 
 void write_sigma_hepmc(double mass) {
     print("Generating events for HNLs with mass", mass, "GeV");
-    auto coupling = .01;
+    auto coupling = 1;
     print("Use U^2 =", coupling);
 
-    HepMC::IO_GenEvent hepmc_file("sigma_" + std::to_string(mass) + ".hep", std::ios::out);
+    HepMC::IO_GenEvent hepmc_file(std::to_string(mass) + ".hep", std::ios::out);
     hepmc_file.write_comment("mass " + std::to_string(mass) + " GeV");
 
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_sigma(pythia);
-    pythia.readString("Main:numberOfEvents = 100");
+    pythia.readString("Main:numberOfEvents = 100000");
 
     pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), mass, heavy_neutrino));
     Pythia8::SigmaProcess* sigma = new Sigma(heavy_neutrino, coupling);
@@ -614,15 +614,15 @@ void write_sigma_hepmc(double mass) {
         for (auto line = 0; line < event.size(); ++line) {
             auto const& particle = event[line];
             if (!is_heavy_neutral_lepton(std::abs(particle.id()))) continue;
-            ++found_one;
-            if (found_one > 1 && !is_heavy_neutral_lepton(event[particle.mother1()].id())) {
+            if(!is_heavy_neutral_lepton(event[particle.mother1()].id())) ++found_one;
+            if (found_one > 1) {
                 print("More than one neutrino in event", total, "in line", line, "from mother", event[particle.mother1()].id());
                 success = false;
                 break;
             }
             double eta = std::abs(particle.eta());
             if (!(1.4 < eta && eta < 3.5)) continue;
-            print("Success event", successfull + 1, "of", total, "in line", line, "from mother", event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs(), "and eta", particle.eta(), "and phi", particle.phi());
+            if(!is_heavy_neutral_lepton(event[particle.mother1()].id())) print("Success event", successfull + 1, "of", total, "in line", line, "from mother", event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs(), "and eta", particle.eta(), "and phi", particle.phi());
             success = true;
         }
         if (found_one > 1) ++too_many;

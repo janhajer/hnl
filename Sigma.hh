@@ -20,8 +20,8 @@ protected:
     virtual std::string name() const override;
 //     virtual bool isSChannel() const override;
 
-  virtual int    id3Mass()         const override {return id;}
-  virtual int    id4Mass()         const override {return 12;}
+  virtual int id3Mass() const override;
+  virtual int id4Mass() const override;
 private:
     int id;
     double coupling;

@@ -94,5 +94,15 @@ std::string Sigma::name() const {
     return "qbar q' -> HNL lep";
 }
 
+
+int Sigma::id3Mass() const {
+    return id;
+}
+
+
+int Sigma::id4Mass() const {
+    return 12;
+}
+
 }
 
