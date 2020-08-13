@@ -53,7 +53,7 @@ private:
 };
 
 struct NeutrinoResonance : public Pythia8::ResonanceWidths {
-    NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from);
+    NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id);
 protected:
     virtual bool initBSM() override;
     virtual bool allowCalc() override;

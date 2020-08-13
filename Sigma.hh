@@ -13,16 +13,20 @@ protected:
 //     virtual int resonanceA() const override;
 //     virtual int resonanceB() const override;
     virtual void sigmaKin() override;
+    virtual bool convertM2() const override {return true;}
     virtual double sigmaHat() override;
     virtual void setIdColAcol() override;
-    virtual double weightDecay(Pythia8::Event& event, int iResBeg, int iResEnd) override;
+    virtual double weightDecay(Pythia8::Event& , int , int ) override;
     virtual std::string name() const override;
-    virtual bool isSChannel() const override;
+//     virtual bool isSChannel() const override;
+
+  virtual int    id3Mass()         const override {return id;}
+  virtual int    id4Mass()         const override {return 12;}
 private:
     int id;
     double coupling;
     double mass2;
-    double sigma;
+    double M2;
 };
 
 }

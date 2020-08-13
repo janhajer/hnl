@@ -21,11 +21,6 @@ auto sqr(Object const& object) noexcept {
     return object * object;
 }
 
-template<typename Object>
-auto cube(Object const& object) noexcept {
-    return object * object * object;
-}
-
 void print() noexcept {
     std::cout << std::endl;
 }
@@ -50,7 +45,7 @@ int Sigma::code() const {
 }
 
 std::string Sigma::inFlux() const {
-    if (debug > 1) print("inFlux");
+    if (debug > 0) print("inFlux");
     return "qqbar";
 }
 
@@ -59,37 +54,25 @@ void Sigma::initProc() {
     mass2 = sqr(particleDataPtr->m0(id));
 }
 
-// int Sigma::resonanceA() const {
-//     if (debug > 1) print("resonance A");
-//     return 24;
-// }
-
-// int Sigma::resonanceB() const {
-//     if (debug > 1) print("resonance B");
-//     return 23;
-// }
-
 void Sigma::sigmaKin() { // should use Mandelstam and squares squared transvrse moemtum and nominal BreitWigner factors tH, uH, tH2, uH2, pT2, runBW3, runBW4;
     if (debug > 1) print("sigmaKin", sH, tH, uH, tH2, uH2, pT2);
     double ratio = mass2 / sH;
+    int Nc = 3;
     if (ratio > 1) {
-        if(debug > 1) print("too large mass");
-        sigma = 0;
-        return;
+        if (debug > 0) print("too large mass");
+        M2 = 0;
     } else {
-        double kin = 1. - (3 * ratio - cube(ratio)) / 2;
-        sigma = sH * sqr(couplingsPtr->GF()) * coupling / 6 / 3 / 4 / sqr(M_PI) * kin;
-        if (debug > 1) print(sigma);
+        M2 = 8. * Nc * sqr(couplingsPtr->GF()) * coupling * (uH - mass2);
+        if (debug > 1) print(M2);
     }
 }
 
 double Sigma::sigmaHat() { // should use m3, s3, m4, s4;
     if (debug > 1) print("sigmaHat", id1, id2);
-//     auto charge = particleDataPtr->chargeType(id1) + particleDataPtr->chargeType(id2);
-//     auto lep = charge == 0 ? 12 : - sgn(charge) * 11;
-//     auto openFracPair = particleDataPtr->resOpenFrac(id, lep);
-//     print(openFracPair);
-    return sigma * (id1 == -id2 ? 1. : couplingsPtr->V2CKMid(id1, id2));
+    auto charge = particleDataPtr->chargeType(id1) + particleDataPtr->chargeType(id2);
+    auto lep = charge == 0 ? 12 : - sgn(charge) * 11;
+    auto resOpenFrac = particleDataPtr->resOpenFrac(id, lep);
+    return M2 * (uH - sqr(particleDataPtr->m0(lep))) * (id1 == -id2 ? 1. : couplingsPtr->V2CKMid(id1, id2)) * resOpenFrac; // ?
 }
 
 void Sigma::setIdColAcol() {
@@ -97,22 +80,18 @@ void Sigma::setIdColAcol() {
     auto charge = particleDataPtr->chargeType(id1) + particleDataPtr->chargeType(id2);
     auto lep = charge == 0 ? 12 : - sgn(charge) * 11;
     setId(id1, id2, id, lep);
-    setColAcol(1, 0, 0, 1, 0, 0, 0, 0); // Colour flow topologies.
-    if (id1 < 0) swapColAcol(); // Swap when antiquarks.
+    setColAcol(1, 0, 0, 1, 0, 0, 0, 0);
+    if (id1 < 0) swapColAcol();
 }
 
-double Sigma::weightDecay(Pythia8::Event& event, int iResBeg, int iResEnd) { // Evaluate weight for Theta -> g g g.
-    return 1.;
+double Sigma::weightDecay(Pythia8::Event& process, int iResBeg, int iResEnd) {
+    if (debug > 0) print("weightDecay", iResBeg, iResEnd);
+    return 1;
 }
 
-std::string Sigma::name() const { // Info on the subprocess.
+std::string Sigma::name() const {
     if (debug > 1) print("name");
     return "qbar q' -> HNL lep";
-}
-
-
-bool Sigma::isSChannel() const {
-    return true;
 }
 
 }

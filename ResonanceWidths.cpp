@@ -571,12 +571,15 @@ void MesonResonance::calcWidth(bool test)
 
 
 
-NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from) :
-    neutrino_coupling(neutrino_coupling_)
+NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id) :
+    neutrino_coupling(coupling)
 {
-    if (debug) print("NeutrinoResonance", id_from);
-    initBasic(id_from);
+    if (debug) print("NeutrinoResonance", id);
+    initBasic(id);
     particlePtr = pythia.particleData.particleDataEntryPtr(idRes);
+    particlePtr->setM0(mass);
+    particlePtr->setMMin(mass / 2);
+    particlePtr->setMMax(mass * 2);
     init(&pythia.info, &pythia.settings, &pythia.particleData, pythia.couplingsPtr);
     if (debug) print("Particle", idRes, particlePtr->name(), "mass", particlePtr->m0(), "tau", particlePtr->tau0(), particlePtr->mWidth());
 }
@@ -769,7 +772,7 @@ void NeutrinoResonance::calcWidth(bool)
                 widNow = preFac * (1. + (id1Abs == id2Abs ? 1. : 0.));
             } else {
                 preFac *= NZ(id2Abs);
-                if (mr2 <= 1E-8) print("bad mass", mr2, idRes, id1Abs, id2Abs, id3Abs);
+//                 if (mr2 <= 1E-8) print("bad mass", mr2, idRes, id1Abs, id2Abs, id3Abs);
                 auto term_1 = (1. - 14. * mr2 - 2. * sqr(mr2) - 12. * cube(mr2)) * std::sqrt(1. - 4. * mr2) + 12. * sqr(mr2) * (sqr(mr2) - 1.) * L(mr2);
                 auto term_2 = mr2 * (2. + 10. * mr2 - 12 * sqr(mr2)) * std::sqrt(1. - 4. * mr2) + 6 * sqr(mr2) * (1. - 2. * mr2 + 2 * sqr(mr2)) * L(mr2);
                 widNow = preFac * (Cf1(id1Abs, id2Abs) * term_1 + 4. * Cf2(id1Abs, id2Abs) * term_2);

@@ -80,22 +80,22 @@ set(plot-libs ${hepmc-libs} ${root-libs})
 add_executable(sigma main-sigma.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
 target_link_libraries(sigma pythia8 HepMC ${boost-libs})
 
-add_executable(write-BRs main-write-BRs.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp)
+add_executable(write-BRs main-write-BRs.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
 target_link_libraries(write-BRs pythia8 HepMC ${boost-libs})
 
-add_executable(write-hepmc main-write-hepmc.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp)
+add_executable(write-hepmc main-write-hepmc.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
 target_link_libraries(write-hepmc pythia8 HepMC ${boost-libs})
 
-add_executable(write-hepmcs main-write-hepmcs.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp)
+add_executable(write-hepmcs main-write-hepmcs.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
 target_link_libraries(write-hepmcs pythia8 HepMC ${boost-libs})
 
-add_executable(read-hepmc main-read-hepmc.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp)
+add_executable(read-hepmc main-read-hepmc.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
 target_link_libraries(read-hepmc pythia8 HepMC ${boost-libs})
 
-add_executable(scan-hepmc main-scan-hepmc.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp)
+add_executable(scan-hepmc main-scan-hepmc.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
 target_link_libraries(scan-hepmc pythia8 HepMC ${boost-libs})
 
-add_executable(scan-hepmcs main-scan-hepmcs.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp)
+add_executable(scan-hepmcs main-scan-hepmcs.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
 target_link_libraries(scan-hepmcs pythia8 HepMC ${boost-libs})
 
 # add_executable(Mapp main-mapp-pythia.cpp)
