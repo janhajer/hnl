@@ -70,7 +70,8 @@ std::vector<std::string> tail(FILE* file, int n) {
         if (std::fseek(file, --pos, SEEK_SET)) return lines;
         if (std::fgetc(file) == '\n') if (count++ == n) break;
     }
-    while (std::fgets(string, sizeof(string)-1, file)) lines.emplace_back(string);
+    while (std::fgets(string, sizeof(string), file)) lines.emplace_back(string);
+    for (auto line : lines) line.pop_back();
     return lines;
 }
 
