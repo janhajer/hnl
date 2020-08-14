@@ -144,7 +144,8 @@ Result branching_fraction(Loop const& loop, double& mass_max, int source, int st
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_branching_fractions(pythia);
     if (!is_heavy_neutral_lepton(source)) mass_max = pythia.particleData.m0(source);
-    is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(1), loop.mass(mass_max, step), source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(1), source));
+    double coupling = 1;
+    is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), loop.mass(mass_max, step), source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
     pythia.particleData.particleDataEntryPtr(source)->rescaleBR();
     pythia.init();
     Result result;
@@ -574,7 +575,7 @@ void calculate_sigma(double mass) {
     set_pythia_sigma(pythia);
     pythia.readString("Main:numberOfEvents = 100");
     pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), mass, heavy_neutrino));
-    Pythia8::SigmaProcess* sigma = new Sigma(heavy_neutrino, coupling);
+    Pythia8::SigmaProcess* sigma = new Sigma(neutrino_coupling(coupling), heavy_neutrino, 12);
     pythia.setSigmaPtr(sigma);
     pythia.init();
     for (auto event_number = 0; event_number < pythia.mode("Main:numberOfEvents"); ++event_number) if (!pythia.next()) print("Error in event", event_number);
@@ -596,7 +597,7 @@ void write_sigma_hepmc(double mass) {
     pythia.readString("Main:numberOfEvents = 100000");
 
     pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), mass, heavy_neutrino));
-    Pythia8::SigmaProcess* sigma = new Sigma(heavy_neutrino, coupling);
+    Pythia8::SigmaProcess* sigma = new Sigma(neutrino_coupling(coupling), heavy_neutrino, 12);
     pythia.setSigmaPtr(sigma);
 
     pythia.init();
