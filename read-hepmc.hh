@@ -9,24 +9,6 @@
 
 namespace hnl {
 
-struct Meta {
-    double mass = 0;
-    double sigma = 0;
-    std::map<int, std::map<int, double>> couplings;
-};
-
-boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
-    auto file = import_file(path);
-    Meta meta;
-    meta.mass = to_double(find_mass(file));
-    if (meta.mass <= 0) return boost::none;
-    meta.sigma = to_double(find_sigma(file));
-    if (meta.sigma <= 0) return boost::none;
-    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) meta.couplings[heavy][light] = to_double(find_coupling(file, heavy, light));
-    if (meta.couplings.empty()) return boost::none;
-    return meta;
-}
-
 void for_each_until(HepMC::GenEvent const& gen_event, std::function<bool(HepMC::GenParticle const&)> const& function) {
     for (auto iterator = gen_event.particles_begin(); iterator != gen_event.particles_end(); ++iterator) if (function(**iterator)) return;
     print("no neutrino found");
