@@ -7,7 +7,7 @@ include_directories("~/Development/HEPMC2/")
 LINK_DIRECTORIES("~/Development/pythia/lib")
 LINK_DIRECTORIES("~/Development/HEPMC2/build/lib/")
 
-set(graphic OFF)
+set(graphic ON)
 
 set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_CXX_STANDARD 17)
@@ -71,123 +71,38 @@ set(boost-libs ${Boost_LIBRARIES})
 
 set(hepmc-libs ${boost-libs} ${HepMC3_LIBRARIES} ${cgal-libs})
 
-# message(${hepmc-libs})
-#
 set(plot-libs ${hepmc-libs} ${root-libs})
 
-# add_library(pythia-test ResonanceWidths.cpp ThreeBodyWidth.cpp)
+add_library(pythia ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
 
-add_executable(calculate-sigma main-calculate-sigma.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
-target_link_libraries(calculate-sigma pythia8 HepMC ${boost-libs})
+add_executable(calculate-sigma main-calculate-sigma.cpp)
+target_link_libraries(calculate-sigma pythia8 HepMC ${boost-libs} pythia)
 
-add_executable(write-sigma-hepmc main-write-sigma-hepmc.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
-target_link_libraries(write-sigma-hepmc pythia8 HepMC ${boost-libs})
+add_executable(write-sigma-hepmc main-write-sigma-hepmc.cpp )
+target_link_libraries(write-sigma-hepmc pythia8 HepMC ${boost-libs} pythia)
 
-add_executable(write-sigma-hepmcs main-write-sigma-hepmcs.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
-target_link_libraries(write-sigma-hepmcs pythia8 HepMC ${boost-libs})
+add_executable(write-sigma-hepmcs main-write-sigma-hepmcs.cpp )
+target_link_libraries(write-sigma-hepmcs pythia8 HepMC ${boost-libs} pythia)
 
-add_executable(write-BRs main-write-BRs.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
-target_link_libraries(write-BRs pythia8 HepMC ${boost-libs})
+add_executable(write-BRs main-write-BRs.cpp )
+target_link_libraries(write-BRs pythia8 HepMC ${boost-libs} pythia)
 
-add_executable(write-hepmc main-write-hepmc.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
-target_link_libraries(write-hepmc pythia8 HepMC ${boost-libs})
+add_executable(write-hepmc main-write-hepmc.cpp )
+target_link_libraries(write-hepmc pythia8 HepMC ${boost-libs} pythia)
 
-add_executable(write-hepmcs main-write-hepmcs.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
-target_link_libraries(write-hepmcs pythia8 HepMC ${boost-libs})
+add_executable(write-hepmcs main-write-hepmcs.cpp )
+target_link_libraries(write-hepmcs pythia8 HepMC ${boost-libs} pythia)
 
-add_executable(read-hepmc main-read-hepmc.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
-target_link_libraries(read-hepmc pythia8 HepMC ${boost-libs})
+add_executable(read-hepmc main-read-hepmc.cpp )
+target_link_libraries(read-hepmc pythia8 HepMC ${boost-libs} pythia)
 
-add_executable(scan-hepmc main-scan-hepmc.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
-target_link_libraries(scan-hepmc pythia8 HepMC ${boost-libs})
+add_executable(scan-hepmc main-scan-hepmc.cpp )
+target_link_libraries(scan-hepmc pythia8 HepMC ${boost-libs} pythia)
 
-add_executable(scan-hepmcs main-scan-hepmcs.cpp ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
-target_link_libraries(scan-hepmcs pythia8 HepMC ${boost-libs})
-
-# add_executable(Mapp main-mapp-pythia.cpp)
-# target_link_libraries(Mapp ${hepmc-libs})
-#
-# add_executable(MappPlot main-mapp-plot.cpp)
-# target_link_libraries(MappPlot ${plot-libs})
+add_executable(scan-hepmcs main-scan-hepmcs.cpp )
+target_link_libraries(scan-hepmcs pythia8 HepMC ${boost-libs} pythia)
 
 if(graphic)
   add_executable(Geometry geometry.cpp)
   target_link_libraries(Geometry HepMC ${hepmc-libs} ${qt-libs})
 endif(graphic)
-
-# add_executable(CMS13 main-cms-13.cpp)
-# target_link_libraries(CMS13 ${delphes-libs})
-#
-# add_executable(CMS14 main-cms-14.cpp)
-# target_link_libraries(CMS14 ${delphes-libs})
-#
-# add_executable(ATLAS main-atlas.cpp)
-# target_link_libraries(ATLAS ${delphes-libs})
-#
-# add_executable(LHCb main-lhcb.cpp)
-# target_link_libraries(LHCb ${delphes-libs})
-#
-# add_executable(Distance main-distance.cpp)
-# target_link_libraries(Distance ${delphes-libs})
-
-# add_executable(Test main-test.cpp)
-# target_link_libraries(Test ${libs})
-
-# add_executable(Test-Eff main-eff.cpp)
-# target_link_libraries(Test-Eff ${plot-libs})
-
-# add_executable(Test2 main-ray.cpp)
-# target_link_libraries(Test2 ${delphes-libs})
-#
-# add_executable(Wboson main-W.cpp)
-# target_link_libraries(Wboson ${plot-libs})
-#
-# add_executable(PhaseSpace main-PS.cpp)
-# target_link_libraries(PhaseSpace ${plot-libs})
-#
-# add_executable(Leading main-lead.cpp)
-# target_link_libraries(Leading ${delphes-libs})
-#
-# add_executable(HNL main-HNL.cpp)
-# target_link_libraries(HNL ${delphes-libs})
-
-# add_executable(Tau main-tau.cpp)
-# target_link_libraries(Tau ${plot-libs})
-
-# add_executable(CMS13-Pythia main-cms-13-pythia.cpp)
-# target_link_libraries(CMS13-Pythia ${hepmc-libs})
-#
-# add_executable(CMS14-Pythia main-cms-14-pythia.cpp)
-# target_link_libraries(CMS14-Pythia ${hepmc-libs})
-#
-# add_executable(ATLAS-Pythia main-atlas-pythia.cpp)
-# target_link_libraries(ATLAS-Pythia ${hepmc-libs})
-#
-# add_executable(LHCb-Pythia main-lhcb-pythia.cpp)
-# target_link_libraries(LHCb-Pythia ${hepmc-libs})
-#
-# add_executable(MAPP-Pythia main-mapp-pythia.cpp)
-# target_link_libraries(MAPP-Pythia ${hepmc-libs})
-
-# add_executable(SimpleTest maintest.cpp)
-# target_link_libraries(SimpleTest ${libs})
-#
-# add_executable(VerticesATLAS main-vertices-atlas.cpp)
-# target_link_libraries(VerticesATLAS ${plot-libs})
-#
-# add_executable(VerticesCMS main-vertices-cms.cpp)
-# target_link_libraries(VerticesCMS ${plot-libs})
-#
-# add_executable(VerticesLHCb main-vertices-lhcb.cpp)
-# target_link_libraries(VerticesLHCb ${plot-libs})
-#
-# add_executable(Conservation main-conservation.cpp)
-# target_link_libraries(Conservation ${hepmc-libs})
-
-# macro(test name file)
-# add_executable(${name} ${file})
-# target_link_libraries(${name} ${hepmc-libs})
-# add_test(NAME ${name} COMMAND ${name})
-# endmacro()
-
-# test(detector test.cpp)

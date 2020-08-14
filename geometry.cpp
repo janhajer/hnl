@@ -8,10 +8,8 @@
 
 #include "ui_ImageInterface.h"
 
-// #include "hepmc.hh"
 #include "HepMC/SimpleVector.h"
 #include "HepMC/GenParticle.h"
-#include "units.hh"
 
 namespace hnl
 {
@@ -64,7 +62,7 @@ hep::FourVector four_vector(Point const& point)
 
 void print_max_eta_phi()
 {
-    auto poly_points = get_points();
+    auto poly_points = mapp::get_points();
     auto min_eta = four_vector(poly_points.front()).eta();
     auto max_eta = four_vector(poly_points.front()).eta();
     auto min_phi = four_vector(poly_points.front()).phi();
@@ -111,28 +109,28 @@ void print_max_eta_phi()
 }
 
 
-auto x(hep::FourVector const& vector) noexcept
-{
-    return vector.x() * 1_mm;
-}
-
-auto y(hep::FourVector const& vector) noexcept
-{
-    return vector.y() * 1_mm;
-}
-
-auto z(hep::FourVector const& vector) noexcept
-{
-    return vector.z() * 1_mm;
-}
-
-auto get_point(hep::Particle const& particle)
-{
-    print("get point", particle);
-    auto t = cgal::Point(x(particle) / 1_m, y(particle) / 1_m, z(particle) / 1_m);
-    print("got point", t);
-    return t;
-}
+// auto x(hep::FourVector const& vector) noexcept
+// {
+//     return vector.x() * 1_mm;
+// }
+//
+// auto y(hep::FourVector const& vector) noexcept
+// {
+//     return vector.y() * 1_mm;
+// }
+//
+// auto z(hep::FourVector const& vector) noexcept
+// {
+//     return vector.z() * 1_mm;
+// }
+//
+// auto get_point(hep::Particle const& particle)
+// {
+//     print("get point", particle);
+//     auto t = cgal::Point(x(particle) / 1_m, y(particle) / 1_m, z(particle) / 1_m);
+//     print("got point", t);
+//     return t;
+// }
 
 }
 
