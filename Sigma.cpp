@@ -1,30 +1,12 @@
 #include "Sigma.hh"
+#include "math.hh"
+#include "io.hh"
 
 namespace hnl {
 
 namespace {
 
 const int debug = 1;
-
-template <typename Value>
-int sgn(Value value) {
-    return (Value(0) < value) - (value < Value(0));
-}
-
-template<typename Object>
-auto sqr(Object const& object) noexcept {
-    return object * object;
-}
-
-void print() noexcept {
-    std::cout << std::endl;
-}
-
-template<typename Object, typename ... Arguments>
-void print(Object const& object, Arguments ... arguments) noexcept {
-    std::cout << std::boolalpha << std::scientific << object << ' ';
-    print(arguments ...);
-}
 
 }
 

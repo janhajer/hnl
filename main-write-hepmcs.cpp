@@ -1,5 +1,5 @@
-#include "pythia.hh"
+#include "write-hepmc.hh"
 
-int main(int argc, char** argv) {
+int main() {
     hnl::write_hepmcs();
 }

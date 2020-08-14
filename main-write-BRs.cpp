@@ -1,5 +1,5 @@
-#include "pythia.hh"
+#include "branching_ratios.hh"
 
-int main(int argc, char** argv) {
-    hnl::write_branching_fractions();
+int main() {
+    hnl::write_branching_ratios();
 }

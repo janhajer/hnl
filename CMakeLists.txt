@@ -1,21 +1,19 @@
 cmake_minimum_required(VERSION 3.4)
 
-project(Neutrino)
+project(HeavyNeutralLeptons)
 
 include_directories("~/Development/pythia/include")
 include_directories("~/Development/HEPMC2/")
 LINK_DIRECTORIES("~/Development/pythia/lib")
 LINK_DIRECTORIES("~/Development/HEPMC2/build/lib/")
 
-set(graphic ON)
+set(graphic OFF)
 
 set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token -pthread -fPIC -ldl")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token -pthread -fPIC -ldl")
-
-
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb")
 
@@ -45,36 +43,15 @@ elseif(graphic)
   set(qt-libs )
 endif(graphic)
 
-# hepmc
-# set(HepMC3_DIR ${PROJECT_SOURCE_DIR})
-# find_package(HepMC3)
-
-# root
-# find_package(ROOT)
-# include_directories("${ROOT_INCLUDE_DIRS}")
-# set(root-libs ${ROOT_LIBRARIES})
-
-# delphes
-# link_directories(~/local/lib/)
-# add_library(libDelphes SHARED IMPORTED)
-
-
-# set(libs ${boost-libs} ${ROOT_LIBRARIES})
-#
-# set(delphes-libs ${libs} Delphes ${HepMC3_LIBRARIES})
-#
-
 # boost
 find_package(Boost COMPONENTS system filesystem iostreams REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 set(boost-libs ${Boost_LIBRARIES})
 
-set(hepmc-libs ${boost-libs} ${HepMC3_LIBRARIES} ${cgal-libs})
-
-set(plot-libs ${hepmc-libs} ${root-libs})
-
+# lib
 add_library(pythia ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
 
+# executables
 add_executable(calculate-sigma main-calculate-sigma.cpp)
 target_link_libraries(calculate-sigma pythia8 HepMC ${boost-libs} pythia)
 
