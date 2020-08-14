@@ -72,7 +72,7 @@ std::vector<std::string> tail(FILE* file, int n) {
     }
     while (std::fgets(string, sizeof(string), file)) {
         std::string  sstring;
-        std::getline(string,sstring)
+        std::getline(string,sstring);
         lines.emplace_back(sstring);
     }
     return lines;
