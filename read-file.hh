@@ -90,11 +90,11 @@ auto import_lines(boost::filesystem::path const& path) noexcept {
     std::ifstream file(path.string());
     std::vector<std::string> lines;
     std::copy_n(std::istream_iterator<Line> (file), 100, std::back_inserter(lines));
-    print(lines.size());
+    print(lines);
     FILE* fp = std::fopen(path.string().c_str(), "r");
     auto back = tail(fp, 100);
     fclose(fp); ;
-    print(back.size());
+    print(back);
     return lines + back;
 }
 
