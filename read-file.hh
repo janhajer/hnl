@@ -41,7 +41,7 @@ auto find_in_file_copy(std::vector<std::string>& lines, int pos, Predicate predi
 auto find_sigma(std::vector<std::string>& lines) {
     if (debug) print("find sigma");
     return find_in_file_copy(lines, 1, [](auto const & strings)  {
-        return strings.size() == 3 && strings.at(0) == "sigma" && strings.at(2) == "mb";
+        return /*strings.size() == 3 &&*/ strings.at(0) == "sigma" && strings.at(2) == "mb";
     });
 }
 
@@ -70,11 +70,7 @@ std::vector<std::string> tail(FILE* file, int n) {
         if (std::fseek(file, --pos, SEEK_SET)) return lines;
         if (std::fgetc(file) == '\n') if (count++ == n) break;
     }
-    while (std::fgets(string, sizeof(string), file)) {
-        std::string  sstring;
-        std::getline(string,sstring);
-        lines.emplace_back(sstring);
-    }
+    while (std::fgets(string, sizeof(string), file)) lines.emplace_back(string, sizeof(string));
     return lines;
 }
 
