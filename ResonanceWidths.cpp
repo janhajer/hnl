@@ -12,7 +12,7 @@ const bool debug = false;
 
 enum class quark {up, down, strange, charm, bottom, top};
 
-auto& operator<<(std::ostream& stream, quark id) noexcept {
+auto& operator<<(std::ostream& stream, quark id) {
     switch (id) {
     case quark::up : return stream << "u";
     case quark::down : return stream << "d";

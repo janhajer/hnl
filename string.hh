@@ -24,7 +24,7 @@ inline double to_double(std::string const& string) {
     }
 }
 
-inline auto filter(std::string string, std::string const& pattern) noexcept {
+inline auto filter(std::string string, std::string const& pattern) {
     auto position = string.find(pattern);
     while (position != std::string::npos) {
         string.erase(position, pattern.length());
@@ -42,12 +42,12 @@ auto get_while_do(Get get_check, Condition condition, Second do_work) {
     }
 }
 
-inline auto wfilter(std::string string, std::string const& pattern) noexcept {
-    get_while_do([&]() noexcept {
+inline auto wfilter(std::string string, std::string const& pattern) {
+    get_while_do([&]() {
         return string.find(pattern);
-    }, [](auto position) noexcept {
+    }, [](auto position) {
         return position != std::string::npos;
-    }, [&](auto position) noexcept {
+    }, [&](auto position) {
         return string.erase(position, pattern.length());
     });
     return string;

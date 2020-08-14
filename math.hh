@@ -11,17 +11,17 @@ int sgn(T val) {
 }
 
 template<typename Object>
-auto sqr(Object const& object) noexcept {
+auto sqr(Object const& object) {
     return object * object;
 }
 
 template<typename Object>
-auto cube(Object const& object) noexcept {
+auto cube(Object const& object) {
     return object * object * object;
 }
 
 template<typename Object>
-auto norm(Object const& one) noexcept {
+auto norm(Object const& one) {
     return sqrt(sqr(one));
 }
 

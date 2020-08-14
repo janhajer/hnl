@@ -9,17 +9,17 @@
 
 namespace hnl {
 
-auto split_line(std::string const& line) noexcept {
+auto split_line(std::string const& line) {
     std::vector<std::string> strings;
-    boost::split(strings, line, [](char c) noexcept {
+    boost::split(strings, line, [](char c) {
         return c == ' ';
     }, boost::token_compress_on);
     return strings;
 }
 
 template<typename Predicate>
-auto find_in_file_copy(std::vector<std::string>& lines, int pos, Predicate predicate) noexcept {
-    auto found = boost::range::find_if(lines, [&predicate](auto & line) noexcept {
+auto find_in_file_copy(std::vector<std::string>& lines, int pos, Predicate predicate) {
+    auto found = boost::range::find_if(lines, [&predicate](auto & line) {
         boost::trim_if(line, boost::is_any_of("\t "));
         return predicate(split_line(line));
     });
@@ -27,11 +27,11 @@ auto find_in_file_copy(std::vector<std::string>& lines, int pos, Predicate predi
 }
 
 // template<typename Predicate>
-// auto read_file(boost::filesystem::path const& path, int pos, Predicate predicate) noexcept {
+// auto read_file(boost::filesystem::path const& path, int pos, Predicate predicate) {
 //     std::ifstream file(path.string());
 //     std::vector<std::string> lines;
 //     std::copy(std::istream_iterator<Line>(file), std::istream_iterator<Line>(), std::back_inserter(lines));
-//     auto found = boost::range::find_if(lines, [&predicate](auto & line) noexcept {
+//     auto found = boost::range::find_if(lines, [&predicate](auto & line) {
 //         boost::trim_if(line, boost::is_any_of("\t "));
 //         return predicate(split_line(line));
 //     });
@@ -70,23 +70,23 @@ std::vector<std::string> tail(FILE* file, int n) {
         if (std::fseek(file, --pos, SEEK_SET)) return lines;
         if (std::fgetc(file) == '\n') if (count++ == n) break;
     }
-    while (std::fgets(string, sizeof(string), file)) lines.emplace_back(string, sizeof(string));
+    while (std::fgets(string, sizeof(string)-1, file)) lines.emplace_back(string);
     return lines;
 }
 
 struct Line {
-    friend std::istream& operator>> (std::istream& stream, Line& line) noexcept {
+    friend std::istream& operator>> (std::istream& stream, Line& line) {
         std::getline(stream, line.string);
         return stream;
     }
-    operator std::string() const noexcept {
+    operator std::string() const {
         return string;
     }
 private:
     std::string string;
 };
 
-auto import_lines(boost::filesystem::path const& path) noexcept {
+auto import_lines(boost::filesystem::path const& path) {
     std::ifstream file(path.string());
     std::vector<std::string> lines;
     std::copy_n(std::istream_iterator<Line> (file), 100, std::back_inserter(lines));

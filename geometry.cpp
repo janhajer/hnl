@@ -109,17 +109,17 @@ void print_max_eta_phi()
 }
 
 
-// auto x(hep::FourVector const& vector) noexcept
+// auto x(hep::FourVector const& vector)
 // {
 //     return vector.x() * 1_mm;
 // }
 //
-// auto y(hep::FourVector const& vector) noexcept
+// auto y(hep::FourVector const& vector)
 // {
 //     return vector.y() * 1_mm;
 // }
 //
-// auto z(hep::FourVector const& vector) noexcept
+// auto z(hep::FourVector const& vector)
 // {
 //     return vector.z() * 1_mm;
 // }
