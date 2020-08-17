@@ -77,7 +77,7 @@ double read_hepmc(boost::filesystem::path const& path, Meta const& meta, double 
         if (debug) pythia.event.list(true);
         for (auto line = 0; line < pythia.event.size(); ++line) {
             auto const& particle = pythia.event[line];
-            if (particle.chargeType() == 0) continue;
+            if (!particle.isFinal() || !particle.isCharged()) continue;
             if (!analysis.is_inside(to_cgal(particle))) continue;
             if (debug) print("Hooray!", particle.vProd().pAbs());
             ++good;
