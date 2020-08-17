@@ -63,7 +63,8 @@ void Sigma::setIdColAcol() {
 }
 
 double Sigma::weightDecay(Pythia8::Event&, int iResBeg, int iResEnd) {
-    if (debug > 0) print("weightDecay", iResBeg, iResEnd);
+//     if (debug > 0)
+        print("weightDecay", iResBeg, iResEnd);
     return 1;
 }
 

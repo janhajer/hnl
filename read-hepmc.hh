@@ -9,42 +9,42 @@
 
 namespace hnl {
 
-void for_each_until(HepMC::GenEvent const& gen_event, std::function<bool(HepMC::GenParticle const&)> const& function) {
-    for (auto iterator = gen_event.particles_begin(); iterator != gen_event.particles_end(); ++iterator) if (function(**iterator)) return;
-    print("no neutrino found");
-}
-
-auto retrive_neutrino(HepMC::GenEvent const& gen_event, double lifetime) -> Pythia8::Particle {
-    Pythia8::Particle pythia_particle;
-    for_each_until(gen_event, [&pythia_particle, &lifetime](HepMC::GenParticle const & hep_particle) {
-        if (!is_heavy_neutral_lepton(hep_particle.pdg_id())) return false;
-        auto& momentum = hep_particle.momentum();
-        pythia_particle = Pythia8::Particle(hep_particle.pdg_id(), hep_particle.status(), 0, 0, 0, 0, 0, 0, to_pythia(momentum), momentum.m(), momentum.m(), 9.);
-        pythia_particle.vProd(to_pythia(hep_particle.production_vertex()->position()));
-        pythia_particle.tau(lifetime);
-        return true;
-    });
-    return pythia_particle;
+auto max(std::map<int, std::map<int, double>> const& couplings) {
+    double max = 0.;
+    for (auto const& inner : couplings) for (auto const& pair : inner.second) if (pair.second > max) max = pair.second;
+    return max;
 }
 
 auto to_cgal(Pythia8::Particle const& particle) -> cgal::Point {
     return {particle.xProd() / 1000, particle.yProd() / 1000, particle.zProd() / 1000}; // convert from mm to m
 }
 
-void for_each_until(HepMC::IO_GenEvent& hepmc_file, std::function<bool(HepMC::GenEvent const&)> const& function) {
-    auto* hepmc_event = hepmc_file.read_next_event();
-    if (!hepmc_event) print("Hepmc file is empty");
-    while (hepmc_event) {
-        if (!function(*hepmc_event)) break;
-        delete hepmc_event;
-        hepmc_file >> hepmc_event;
-    }
+void for_each_until(HepMC::GenEvent const& event, std::function<bool(HepMC::GenParticle const&)> const& function) {
+    for (auto particle = event.particles_begin(); particle != event.particles_end(); ++particle) if (function(**particle)) return;
+    print("no neutrino found");
 }
 
-auto max(std::map<int, std::map<int, double>> const& couplings) {
-    double max = 0.;
-    for (auto const& inner : couplings) for (auto const& pair : inner.second) if (pair.second > max) max = pair.second;
-    return max;
+Pythia8::Particle retrive_neutrino(HepMC::GenEvent const& event, double lifetime) {
+    Pythia8::Particle pythia_particle;
+    for_each_until(event, [&pythia_particle](HepMC::GenParticle const & hep_particle) {
+        if (!is_heavy_neutral_lepton(hep_particle.pdg_id())) return false;
+        auto& momentum = hep_particle.momentum();
+        pythia_particle = Pythia8::Particle(hep_particle.pdg_id(), hep_particle.status(), 0, 0, 0, 0, 0, 0, to_pythia(momentum), momentum.m(), momentum.m(), 9.);
+        pythia_particle.vProd(to_pythia(hep_particle.production_vertex()->position()));
+        return true;
+    });
+    pythia_particle.tau(lifetime);
+    return pythia_particle;
+}
+
+void for_each_until(HepMC::IO_GenEvent& events, std::function<bool(HepMC::GenEvent const&)> const& function) {
+    auto* event = events.read_next_event();
+    if (!event) print("Hepmc file is empty");
+    while (event) {
+        if (function(*event)) break;
+        delete event;
+        events >> event;
+    }
 }
 
 double read_hepmc(boost::filesystem::path const& path, Meta const& meta, double coupling) {
@@ -52,39 +52,38 @@ double read_hepmc(boost::filesystem::path const& path, Meta const& meta, double 
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_read_hepmc(pythia);
 
-    auto coupling_function = [&meta, coupling](int heavy, int light) {
+    auto couplings = [&meta, coupling](int heavy, int light) {
         return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
     };
-    pythia.setResonancePtr(new NeutrinoResonance(pythia, coupling_function, meta.mass, heavy_neutrino));
+    pythia.setResonancePtr(new NeutrinoResonance(pythia, couplings, meta.mass, heavy_neutrino));
     pythia.init();
 
     auto lifetime = pythia.particleData.tau0(heavy_neutrino);
     if (debug) print("trying to open", path.string());
-    HepMC::IO_GenEvent hepmc_file(path.string(), std::ios::in);
-    if (debug) print("with result", hepmc_file.error_message());
+    HepMC::IO_GenEvent events(path.string(), std::ios::in);
+    if (debug) print("with result", events.error_message());
     int total = 0;
     int good = 0;
+    int events_max = 1e6;
     auto analysis = mapp::analysis();
-    for_each_until(hepmc_file, [&](HepMC::GenEvent const & hepmc_event) -> bool {
+    for_each_until(events, [&](HepMC::GenEvent const & event) -> bool {
         ++total;
         pythia.event.reset();
-        pythia.event.append(retrive_neutrino(hepmc_event, lifetime));
+        pythia.event.append(retrive_neutrino(event, lifetime));
         if (!pythia.next()) {
             print("Pythia encountered a problem");
-            return true;
+            return false;
         }
         if (debug) pythia.event.list(true);
         for (auto line = 0; line < pythia.event.size(); ++line) {
             auto const& particle = pythia.event[line];
-            auto vertex = particle.vProd();
             if (particle.chargeType() == 0) continue;
             if (!analysis.is_inside(to_cgal(particle))) continue;
-            if (debug) print("Hooray!", vertex.pAbs());
+            if (debug) print("Hooray!", particle.vProd().pAbs());
             ++good;
             break;
         }
-        return true;
-        if (total > 100) return false;
+        return total > events_max;
     });
     print("HNLs with m =", meta.mass, "GeV");
     auto result = meta.sigma;
@@ -121,11 +120,16 @@ void save_result(ScanResult const& result, std::string const& name = "result") {
     }
 }
 
+double read_hepmc(boost::filesystem::path const& path, double coupling) {
+    auto meta = meta_info(path);
+    return meta ? read_hepmc(path, *meta, coupling) : 0.;
+}
+
 ScanResult scan_hepmc(boost::filesystem::path const& path) {
     ScanResult result;
     print("file", path);
     auto meta = meta_info(path);
-    if (meta) for (auto coupling : log_range(1e-6, 1, 6)) result[meta->mass][coupling] = read_hepmc(path, *meta, coupling);
+    if (meta) for (auto coupling : log_range(1e-8, 1, 80)) result[meta->mass][coupling] = read_hepmc(path, *meta, coupling);
     return result;
 }
 
@@ -137,13 +141,8 @@ void scan_hepmc(std::string const& path_name) {
 void scan_hepmcs(std::string const& path_name) {
     if (debug) print("read hep mcs in", path_name);
     ScanResult result;
-    for (auto const& directory_entry : boost::make_iterator_range(boost::filesystem::directory_iterator(path_name), {})) if (directory_entry.path().extension().string() == ".hep") result += scan_hepmc(directory_entry.path());
+    for (auto const& file : boost::make_iterator_range(boost::filesystem::directory_iterator(path_name), {})) if (file.path().extension().string() == ".hep") result += scan_hepmc(file.path());
     save_result(result);
-}
-
-double read_hepmc(boost::filesystem::path const& path, double coupling) {
-    auto meta = meta_info(path);
-    return meta ? read_hepmc(path, *meta, coupling) : 0.;
 }
 
 }

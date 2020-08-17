@@ -7,35 +7,18 @@
 
 namespace hnl {
 
-
-auto neutrino_coupling = [](double factor) {
-    return [factor](int id_heavy, int id_light) -> double {
-        if (id_light != 12 && id_light != 14 && id_light != 16) {
-            print(id_light, "is not a light neutrino");
-            return 0;
-        }
-        if (id_heavy != 9900012 && id_heavy != 9900014 && id_heavy != 9900016) {
-            print(id_heavy, "is not a heavy neutrino");
-            return 0;
-        }
-        auto id = id_heavy - 9900000 - id_light;
-        return id == 0 ? factor : 0;
-        return id == 0 || std::abs(id) == 2 || std::abs(id) == 4 ? factor : 0;
-    };
-};
-
 const int heavy_neutrino = 9900012;
 
 inline std::vector<int> heavy_neutral_leptons() {
     return {9900012, 9900014, 9900016};
 }
 
-inline std::vector<int> light_neutrinos() {
-    return {12, 14, 16};
-}
-
 inline bool is_heavy_neutral_lepton(int id) {
     return id == 9900012 || id == 9900014 || id == 9900016;
+}
+
+inline std::vector<int> light_neutrinos() {
+    return {12, 14, 16};
 }
 
 inline std::vector<int> neutral_leptons() {
@@ -161,5 +144,21 @@ inline bool is_eta(int id) {
 inline bool is_neutral_Kaon(int id) {
     return id == 130 || id == 310 || id == 311;
 }
+
+auto neutrino_coupling = [](double factor) {
+    return [factor](int id_heavy, int id_light) -> double {
+        if (!is_heavy_neutral_lepton(id_heavy)) {
+            print(id_heavy, "is not a heavy neutrino");
+            return 0;
+        }
+        if (!is_light_neutrino(id_light)) {
+            print(id_light, "is not a light neutrino");
+            return 0;
+        }
+        auto id = id_heavy - 9900000 - id_light;
+        return id == 0 ? factor : 0;
+        return id == 0 || std::abs(id) == 2 || std::abs(id) == 4 ? factor : 0;
+    };
+};
 
 }
