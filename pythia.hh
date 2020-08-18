@@ -46,6 +46,11 @@ void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
     set_pythia_passive(pythia);
 }
 
+void set_pythia_read_lhe(Pythia8::Pythia& pythia) {
+    set_pythia_init(pythia);
+    set_pythia_next(pythia);
+}
+
 void set_pythia_branching_ratios(Pythia8::Pythia& pythia) {
     set_pythia_production(pythia);
     set_pythia_init(pythia);

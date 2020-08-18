@@ -20,7 +20,9 @@ auto max(std::map<int, std::map<int, double>> const& couplings) {
 
 
 double read_lhe(boost::filesystem::path const& path, Meta const& meta, double coupling) {
+    print(path.string(),"with",coupling);
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    set_pythia_read_lhe(pythia);
 
     pythia.readString("Beams:frameType = 4");
     pythia.readString("Beams:LHEF = " + path.string());
@@ -35,7 +37,7 @@ double read_lhe(boost::filesystem::path const& path, Meta const& meta, double co
 
     int total = 0;
     int good = 0;
-//     int events_max = 1e6;
+    int events_max = 1e3;
     auto analysis = mapp::analysis();
     for (auto event_number = 0; ; ++event_number) {
         ++total;
@@ -50,10 +52,12 @@ double read_lhe(boost::filesystem::path const& path, Meta const& meta, double co
             auto const& particle = pythia.event[line];
             if (!particle.isFinal() || !particle.isCharged()) continue;
             if (!analysis.is_inside(to_cgal(particle))) continue;
-            if (debug) print("Hooray!", particle.vProd().pAbs());
+//             if (debug)
+            print("Hooray!", particle.vProd().pAbs());
             ++good;
             break;
         }
+        if(event_number > events_max) break;
     }
     pythia.stat();
     print("HNLs with m =", meta.mass, "GeV");
