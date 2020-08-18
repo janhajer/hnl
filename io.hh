@@ -11,13 +11,13 @@ inline void print() {
 template<typename Object, typename ... Arguments>
 void print(Object const& object, Arguments ... arguments) {
     std::cout << std::boolalpha << std::scientific << object << ' ';
-                                 print(arguments ...);
+    print(arguments ...);
 }
 
 template<typename Container>
 void print_line(Container const& container) {
     for (auto const& element : container) std::cout << element << ", ";
-            std::cout << std::endl;
+    std::cout << std::endl;
 }
 
 }

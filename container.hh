@@ -2,6 +2,7 @@
 
 #include <map>
 #include <vector>
+#include <sstream>
 
 #include <boost/optional/optional_io.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
@@ -110,6 +111,12 @@ auto& operator<<(std::ostream& stream, std::pair<Key_, Value_> const& pair) {
     return stream << '(' << pair.first << ", " << pair.second << ')';
 }
 
+template<typename Key, typename Value>
+auto & operator<<(std::ostream& stream, std::map<Key, Value> const& map) {
+    for (auto const& pair : map) stream << '\n' << pair.first << ": " << pair.second;
+    return stream;
+}
+
 template<typename Element, template <typename, typename = std::allocator<Element>> class Container>
 auto & operator<<(std::ostream& stream, Container<Element> const& container) {
     for (auto const& element : boost::adaptors::index(container)) stream << '\n' << element.index() << ": " << element.value();
@@ -119,7 +126,7 @@ auto & operator<<(std::ostream& stream, Container<Element> const& container) {
 template<typename Element, size_t size>
 auto& operator<<(std::ostream& stream, std::array<Element, size> const& container) {
     for (auto const& element : boost::adaptors::index(container)) stream << '\n' << element.index() << ": " << element.value();
-            return stream;
+    return stream;
 }
 
 template<typename Container, typename Predicate>
@@ -142,3 +149,4 @@ inline auto log_range(double min, double max, int steps) {
 }
 
 }
+

@@ -6,8 +6,13 @@
 #include <boost/algorithm/string.hpp>
 
 #include "string.hh"
+#include "id.hh"
 
 namespace hnl {
+
+namespace{
+    bool const debug_2 = false;
+}
 
 auto split_line(std::string const& line) {
     std::vector<std::string> strings;
@@ -39,21 +44,21 @@ auto find_in_file_copy(std::vector<std::string>& lines, int pos, Predicate predi
 // }
 
 auto find_sigma(std::vector<std::string>& lines) {
-    if (debug) print("find sigma");
+    if (debug_2) print("find sigma");
     return find_in_file_copy(lines, 1, [](auto const & strings)  {
         return /*strings.size() == 3 &&*/ strings.at(0) == "sigma" && strings.at(2) == "mb";
     });
 }
 
 auto find_mass(std::vector<std::string>& lines) {
-    if (debug) print("find mass");
+    if (debug_2) print("find mass");
     return find_in_file_copy(lines, 1, [](auto const & strings)  {
         return strings.size() == 3 && strings.at(0) == "mass" && strings.at(2) == "GeV";
     });
 }
 
 auto find_coupling(std::vector<std::string>& lines, int heavy, int light) {
-    if (debug) print("find coupling");
+    if (debug_2) print("find coupling");
     return find_in_file_copy(lines, 3, [&](auto const & strings)  {
         return strings.size() == 4 && strings.at(0) == "coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
     });
@@ -87,16 +92,17 @@ private:
     std::string string;
 };
 
-auto import_lines(boost::filesystem::path const& path) {
+auto import_head(boost::filesystem::path const& path, int number) {
     std::ifstream file(path.string());
     std::vector<std::string> lines;
-    std::copy_n(std::istream_iterator<Line> (file), 100, std::back_inserter(lines));
-    print(lines);
+    std::copy_n(std::istream_iterator<Line> (file), number, std::back_inserter(lines));
+    return lines;
+}
+auto import_tail(boost::filesystem::path const& path, int number) {
     FILE* fp = std::fopen(path.string().c_str(), "r");
-    auto back = tail(fp, 100);
+    auto back = tail(fp, number);
     fclose(fp); ;
-    print(back);
-    return lines + back;
+    return back;
 }
 
 
@@ -107,13 +113,70 @@ struct Meta {
 };
 
 boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
-    auto lines = import_lines(path);
+    auto lines = import_head(path, 100) + import_tail(path, 100);
     Meta meta;
     meta.mass = to_double(find_mass(lines));
     if (meta.mass <= 0) return boost::none;
     meta.sigma = to_double(find_sigma(lines));
     if (meta.sigma <= 0) return boost::none;
     for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) meta.couplings[heavy][light] = to_double(find_coupling(lines, heavy, light));
+    if (meta.couplings.empty()) return boost::none;
+    print("Meta info",meta.mass, meta.sigma);
+    return meta;
+}
+
+auto find_mass_lhe(std::vector<std::string>& lines) {
+    return find_in_file_copy(lines, 1, [](auto const & strings) {
+        return strings.size() > 2 && strings.at(0) == std::to_string(heavy_neutrino) && strings.at(2) == "#" && strings.at(3) == "mn1";
+    });
+}
+
+auto find_sigma_lhe(std::vector<std::string>& lines) {
+    return find_in_file_copy(lines, 5, [](auto const & strings) {
+        return strings.size() > 4 && strings.at(0) == "#" && strings.at(1) == "Integrated" && strings.at(2) == "weight" && strings.at(3) == "(pb)" && strings.at(4) == ":";
+    });
+}
+
+std::string get_param_heavy(int heavy){
+    switch (heavy){
+        case 9900012 : return "n1";
+        case 9900014 : return "n2";
+        case 9900016 : return "n3";
+        default : print("not a heavy neutrino");
+    }
+    return "";
+}
+
+std::string get_param_light(int light){
+    switch (light){
+        case 12 : return "e";
+        case 14 : return "mu";
+        case 16 : return "ta";
+        default : print("not a heavy neutrino");
+    }
+    return "";
+}
+
+std::string get_param(int heavy, int light){
+    return "v" + get_param_light(light) + get_param_heavy(heavy);
+}
+
+std::string find_coupling_lhe(std::vector<std::string>& lines, int heavy, int light, int pos) {
+    std::string name = get_param(heavy, light);
+    return find_in_file_copy(lines, 1, [&name, pos](auto const & strings) noexcept {
+        return strings.size() > 3 && strings.at(0) == std::to_string(pos) && strings.at(2) == "#" && strings.at(3) == name;
+    });
+}
+
+boost::optional<Meta> meta_info_lhe(boost::filesystem::path const& path) {
+    auto lines = import_head(path, 500);
+    Meta meta;
+    meta.mass = to_double(find_mass_lhe(lines));
+    if (meta.mass <= 0) return boost::none;
+    meta.sigma = to_double(find_sigma_lhe(lines));
+    if (meta.sigma <= 0) return boost::none;
+    int pos = 0;
+    for (auto light : light_neutrinos()) for (auto heavy : heavy_neutral_leptons()) meta.couplings[heavy][light] = to_double(find_coupling_lhe(lines, heavy, light, ++pos));
     if (meta.couplings.empty()) return boost::none;
     print("Meta info",meta.mass, meta.sigma);
     return meta;
