@@ -5,6 +5,9 @@
 #include "geometry.hh"
 #include "ResonanceWidths.hh"
 
+#define GZIPSUPPORT
+
+
 namespace hnl {
 
 auto to_cgal(Pythia8::Particle const& particle) -> cgal::Point {
