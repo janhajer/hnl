@@ -2,9 +2,14 @@
 
 #include <bits/stdc++.h>
 
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include "container.hh"
 #include "string.hh"
 #include "id.hh"
 
@@ -93,9 +98,17 @@ private:
 };
 
 auto import_head(boost::filesystem::path const& path, int number) {
-    std::ifstream file(path.string());
+    std::ifstream file(path.string(), std::ios_base::in | std::ios_base::binary);
+
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> buffer;
+    buffer.push(boost::iostreams::gzip_decompressor());
+    buffer.push(file);
+    std::istream instream(&buffer);
+
+
     std::vector<std::string> lines;
-    std::copy_n(std::istream_iterator<Line> (file), number, std::back_inserter(lines));
+//     std::copy_n(std::istream_iterator<Line>(file), number, std::back_inserter(lines));
+    std::copy_n(std::istream_iterator<Line>(instream), number, std::back_inserter(lines));
     return lines;
 }
 auto import_tail(boost::filesystem::path const& path, int number) {
