@@ -52,6 +52,9 @@ set(boost-libs ${Boost_LIBRARIES})
 add_library(pythia ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp)
 
 # executables
+add_executable(resonance main-resonance.cpp)
+target_link_libraries(resonance pythia8 HepMC ${boost-libs} pythia)
+
 add_executable(calculate-sigma main-calculate-sigma.cpp)
 target_link_libraries(calculate-sigma pythia8 HepMC ${boost-libs} pythia)
 

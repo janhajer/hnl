@@ -26,6 +26,8 @@ double read_lhe(boost::filesystem::path const& path, Meta const& meta, double co
 
     pythia.readString("Beams:frameType = 4");
     pythia.readString("Beams:LHEF = " + path.string());
+    pythia.readString("PartonLevel:all = on");
+    pythia.readString("ProcessLevel:all = on");
 
     auto couplings = [&meta, coupling](int heavy, int light) {
         return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
