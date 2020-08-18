@@ -174,6 +174,7 @@ std::string find_coupling_lhe(std::vector<std::string>& lines, int heavy, int li
 boost::optional<Meta> meta_info_lhe(boost::filesystem::path const& path) {
     auto lines = import_head(path, 500);
     Meta meta;
+    print(lines);
     meta.mass = to_double(find_mass_lhe(lines));
     if (meta.mass <= 0) return boost::none;
     meta.sigma = to_double(find_sigma_lhe(lines));
