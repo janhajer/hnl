@@ -35,7 +35,10 @@ double read_lhe(boost::filesystem::path const& path, Meta const& meta, double co
     pythia.setResonancePtr(new NeutrinoResonance(pythia, couplings, meta.mass, heavy_neutrino));
     pythia.init();
 
-//     auto lifetime = pythia.particleData.tau0(heavy_neutrino);
+
+
+    auto lifetime = pythia.particleData.tau0(heavy_neutrino);
+    print(lifetime);
 
     int total = 0;
     int good = 0;
