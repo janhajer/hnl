@@ -126,12 +126,14 @@ boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
 }
 
 auto find_mass_lhe(std::vector<std::string>& lines) {
+    print("mass");
     return find_in_file_copy(lines, 1, [](auto const & strings) {
         return strings.size() > 2 && strings.at(0) == std::to_string(heavy_neutrino) && strings.at(2) == "#" && strings.at(3) == "mn1";
     });
 }
 
 auto find_sigma_lhe(std::vector<std::string>& lines) {
+    print("sigma");
     return find_in_file_copy(lines, 5, [](auto const & strings) {
         return strings.size() > 4 && strings.at(0) == "#" && strings.at(1) == "Integrated" && strings.at(2) == "weight" && strings.at(3) == "(pb)" && strings.at(4) == ":";
     });
@@ -162,6 +164,7 @@ std::string get_param(int heavy, int light){
 }
 
 std::string find_coupling_lhe(std::vector<std::string>& lines, int heavy, int light, int pos) {
+    print("coupling", heavy, light, pos);
     std::string name = get_param(heavy, light);
     return find_in_file_copy(lines, 1, [&name, pos](auto const & strings) noexcept {
         return strings.size() > 3 && strings.at(0) == std::to_string(pos) && strings.at(2) == "#" && strings.at(3) == name;
