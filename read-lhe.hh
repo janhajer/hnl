@@ -5,9 +5,6 @@
 #include "geometry.hh"
 #include "ResonanceWidths.hh"
 
-#define GZIPSUPPORT
-
-
 namespace hnl {
 
 auto to_cgal(Pythia8::Particle const& particle) -> cgal::Point {
@@ -95,14 +92,14 @@ void save_result(ScanResult const& result, std::string const& name = "result") {
 }
 
 double read_lhe(boost::filesystem::path const& path, double coupling) {
-    auto meta = meta_info(path);
+    auto meta = meta_info_lhe(path);
     return meta ? read_lhe(path, *meta, coupling) : 0.;
 }
 
 ScanResult scan_lhe(boost::filesystem::path const& path) {
     ScanResult result;
     print("file", path);
-    auto meta = meta_info(path);
+    auto meta = meta_info_lhe(path);
     if (meta) for (auto coupling : log_range(1e-8, 1, 8)) result[meta->mass][coupling] = read_lhe(path, *meta, coupling);
     return result;
 }
@@ -117,7 +114,7 @@ auto get_range(boost::filesystem::path const& path){
 }
 
 void scan_lhes(std::string const& path_name) {
-    if (debug) print("read lhe in", path_name);
+    print("read lhe in", path_name);
     ScanResult result;
     for (auto const& folder : get_range(path_name)) if(boost::filesystem::is_directory(folder)) for (auto const& file : get_range(folder.path())) if (file.path().extension().string() == ".lhe" || file.path().extension().string() == ".gz") result += scan_lhe(file.path());
     save_result(result);
