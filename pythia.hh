@@ -1,51 +1,44 @@
 #pragma once
 
 #include "Pythia8/Pythia.h"
+#include "ResonanceWidths.hh"
 
-#include "math.hh"
 #include "id.hh"
-#include "io.hh"
 
 namespace hnl {
 
-namespace {
-
-const bool debug = false;
-
-}
-
-void set_pythia_init(Pythia8::Pythia& pythia) {
+inline void set_pythia_init(Pythia8::Pythia& pythia) {
     pythia.readString("Init:showChangedParticleData = off");
     pythia.readString("Init:showProcesses = off");
     pythia.readString("Init:showChangedSettings = off");
     pythia.readString("Init:showMultipartonInteractions = off");
 }
 
-void set_pythia_next(Pythia8::Pythia& pythia) {
+inline void set_pythia_next(Pythia8::Pythia& pythia) {
     pythia.readString("Next:numberShowEvent = 0");
     pythia.readString("Next:numberShowProcess = 0");
     pythia.readString("Next:numberShowInfo = 0");
 }
 
-void set_pythia_production(Pythia8::Pythia& pythia) {
+inline void set_pythia_production(Pythia8::Pythia& pythia) {
     pythia.readString("Beams:idA = 2212");
     pythia.readString("Beams:idB = 2212");
     pythia.readString("Beams:eCM = 14000.");
     pythia.readString("ResonanceWidths:minWidth = 1E-30");
 }
 
-void set_pythia_passive(Pythia8::Pythia& pythia) {
+inline void set_pythia_passive(Pythia8::Pythia& pythia) {
     pythia.readString("ProcessLevel:all = off");
     pythia.readString("ResonanceWidths:minWidth = 1E-30");
 }
 
-void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
+inline void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
     set_pythia_init(pythia);
     set_pythia_next(pythia);
     set_pythia_passive(pythia);
 }
 
-void set_pythia_read_lhe(Pythia8::Pythia& pythia, std::string const& path) {
+inline void set_pythia_read_lhe(Pythia8::Pythia& pythia, std::string const& path) {
     set_pythia_init(pythia);
     set_pythia_next(pythia);
     pythia.readString("Next:numberShowLHA = 0");
@@ -56,38 +49,27 @@ void set_pythia_read_lhe(Pythia8::Pythia& pythia, std::string const& path) {
     pythia.readString("Beams:LHEF = " + path);
 }
 
-void set_pythia_branching_ratios(Pythia8::Pythia& pythia) {
+inline void set_pythia_branching_ratios(Pythia8::Pythia& pythia) {
     set_pythia_production(pythia);
     set_pythia_init(pythia);
     set_pythia_passive(pythia);
 }
 
-void set_pythia_sigma(Pythia8::Pythia& pythia) {
+inline void set_pythia_sigma(Pythia8::Pythia& pythia) {
     set_pythia_production(pythia);
     set_pythia_init(pythia);
     set_pythia_next(pythia);
 }
 
-auto has_neutrino = [](Pythia8::DecayChannel const& channel) {
-    for (auto heavy : heavy_neutral_leptons()) {
-        if (channel.product(0) == heavy || channel.product(1) == heavy || channel.product(2) == heavy || channel.product(3) == heavy || channel.product(4) == heavy) return true;
-    }
-    return false;
-};
+inline void set_pythia_stable(Pythia8::Pythia& pythia, int id, double mass) {
+    pythia.particleData.m0(id, mass);
+    pythia.particleData.mMin(id, mass / 2);
+    pythia.particleData.mMax(id, mass * 2);
+    pythia.particleData.particleDataEntryPtr(id)->clearChannels();
+}
 
-struct Loop {
-    Loop(double min, int steps_) : m_min(min), steps(steps_) {}
-    double m_min;
-    int steps;
-    double mass(double max, int step) const {
-        return log_scale(m_min, max, step, steps);
-    }
-};
-
-void set_pythia_write_hepmc(Pythia8::Pythia& pythia, double mass) {
-    pythia.particleData.m0(heavy_neutrino, mass);
-    pythia.particleData.mMin(heavy_neutrino, 0.);
-    pythia.particleData.particleDataEntryPtr(heavy_neutrino)->clearChannels();
+inline void set_pythia_write_hepmc(Pythia8::Pythia& pythia, int id, double mass) {
+    set_pythia_stable(pythia, id, mass);
     set_pythia_production(pythia);
     set_pythia_next(pythia);
     pythia.readString("Bottomonium:all = on");
@@ -99,6 +81,34 @@ void set_pythia_write_hepmc(Pythia8::Pythia& pythia, double mass) {
 //     pythia.readString("HardQCD:gg2bbbar  = on");
 //     pythia.readString("PhaseSpace:pTHatMin = .1");
     pythia.readString("Main:numberOfEvents = 100000");
+}
+
+inline auto for_each(Pythia8::ParticleDataEntry const& particle, std::function<void(Pythia8::DecayChannel const&)> const& function) {
+    for (auto channel_number : irange(particle.sizeChannels())) function(particle.channel(channel_number));
+}
+
+inline auto for_each(Pythia8::ParticleDataEntry& particle, std::function<void(Pythia8::DecayChannel&)> const& function) {
+    for (auto channel_number : irange(particle.sizeChannels())) function(particle.channel(channel_number));
+}
+
+inline auto for_each(Pythia8::DecayChannel const& channel, std::function<void(int product)> const& function) {
+    for (auto pos : irange(channel.multiplicity())) function(channel.product(pos));
+}
+
+inline bool has_neutrino(Pythia8::DecayChannel const& channel) {
+//     for (auto heavy : heavy_neutral_leptons()) for_each(channel, [heavy](int product) {
+//         if (product == heavy) return true;
+//     });
+    for (auto heavy : heavy_neutral_leptons()) for(auto mult : irange(channel.multiplicity())) if(channel.product(mult) == heavy) return true;
+    return false;
+};
+
+inline double tau_to_Gamma(double tau) { //mm/c->GeV
+    return 1.97327E-13 / tau;
+}
+
+inline double Gamma_to_tau(double Gamma) { //GeV -> mm/c
+    return 1.97327E-13 / Gamma;
 }
 
 }

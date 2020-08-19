@@ -46,4 +46,13 @@ inline auto log_scale(double min, double max, int step, int steps) {
     return std::pow(10, lin_scale(std::log10(min), std::log10(max), step, steps));
 }
 
+struct Loop {
+    Loop(double min, int steps_) : m_min(min), steps(steps_) {}
+    double m_min;
+    int steps;
+    double mass(double max, int step) const {
+        return log_scale(m_min, max, step, steps);
+    }
+};
+
 }

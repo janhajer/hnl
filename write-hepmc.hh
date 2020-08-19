@@ -8,11 +8,11 @@
 
 namespace hnl {
 
-// namespace {
-//
-// const bool debug = false;
-//
-// }
+namespace {
+
+const bool debug = false;
+
+}
 
 std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> const& mesons) {
     double max_width = 0;
@@ -20,13 +20,19 @@ std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> c
     for (auto meson : mesons) {
         double partial_width = 0.;
         auto& particle = *pythia.particleData.particleDataEntryPtr(meson);
-        for (auto number : irange(particle.sizeChannels())) {
-            auto& channel = particle.channel(number);
+       for_each(particle, [&partial_width, meson](Pythia8::DecayChannel const& channel){
             if (has_neutrino(channel) && channel.bRatio() > 0.) {
                 partial_width += channel.bRatio();
                 if (debug) print(meson, channel.product(0), channel.product(1), channel.product(2));
             }
-        }
+        });
+//         for (auto number : irange(particle.sizeChannels())) {
+//             auto& channel = particle.channel(number);
+//             if (has_neutrino(channel) && channel.bRatio() > 0.) {
+//                 partial_width += channel.bRatio();
+//                 if (debug) print(meson, channel.product(0), channel.product(1), channel.product(2));
+//             }
+//         }
         if (max_width < partial_width) {
             max_width = partial_width;
             id = meson;
@@ -37,7 +43,7 @@ std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> c
 
 auto get_optimal_coupling(double mass, std::vector<int> const& mesons) {
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
-    set_pythia_write_hepmc(pythia, mass);
+    set_pythia_write_hepmc(pythia,heavy_neutrino, mass);
     set_pythia_init(pythia);
     for (auto meson : mesons) pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(1), meson));
     pythia.init();
@@ -117,7 +123,7 @@ void write_hepmc(double mass) {
     print("Use U^2 =", coupling);
 
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
-    set_pythia_write_hepmc(pythia, mass);
+    set_pythia_write_hepmc(pythia,heavy_neutrino, mass);
     for (auto meson : mesons) pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), meson));
 
     pythia.init();

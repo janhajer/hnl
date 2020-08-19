@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "cgal.hh"
 #include "container.hh"
 

@@ -52,6 +52,8 @@ private:
     double sum = 0.;
 };
 
+std::vector<std::string> decay_table(std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id, int meson_id);
+
 struct NeutrinoResonance : public Pythia8::ResonanceWidths {
     NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id);
 protected:
@@ -79,5 +81,7 @@ private:
     NeutrinoThreeBodyWidth three_body_width;
     double sum = 0.;
 };
+
+std::vector<std::string> decay_table(std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id);
 
 }

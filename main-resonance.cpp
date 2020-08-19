@@ -16,10 +16,14 @@ std::vector<std::string> get_table(std::function<double (int id_heavy, int id_li
     pythia.init();
     auto& particle = *pythia.particleData.particleDataEntryPtr(id);
     std::vector<std::string> vector({std::to_string(id) + ":all = nu void " + std::to_string(2) + " " + std::to_string(0) + " " + std::to_string(0) + " " + std::to_string(mass) + " " + std::to_string(particle.mWidth()) + " " + std::to_string(mass / 2) + " " + std::to_string(mass * 2) + " " + std::to_string(particle.tau0())});
-    for (auto i : irange(particle.sizeChannels())) {
-        auto c = particle.channel(i);
+    for_each(particle, [&vector, id](Pythia8::DecayChannel const& c){
         vector.emplace_back(std::to_string(id) + ":addChannel = " + std::to_string(1) + " " + std::to_string(c.bRatio()) + " " + std::to_string(101) + " " + std::to_string(c.product(0)) + " " + std::to_string(c.product(1)) + " " + std::to_string(c.product(2)));
-    }
+
+    });
+//     for (auto i : irange(particle.sizeChannels())) {
+//         auto c = particle.channel(i);
+//         vector.emplace_back(std::to_string(id) + ":addChannel = " + std::to_string(1) + " " + std::to_string(c.bRatio()) + " " + std::to_string(101) + " " + std::to_string(c.product(0)) + " " + std::to_string(c.product(1)) + " " + std::to_string(c.product(2)));
+//     }
     return vector;
 }
 

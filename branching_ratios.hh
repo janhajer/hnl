@@ -36,12 +36,15 @@ Result branching_ratio(Loop const& loop, double& mass_max, int source, int step)
     pythia.init();
     Result result;
     auto const& particle = *pythia.particleData.particleDataEntryPtr(source);
-    for (auto pos = 0; pos < particle.sizeChannels(); ++pos) {
-        auto channel = particle.channel(pos);
-        auto ratio = channel.bRatio();
-        if (ratio > 0. && (has_neutrino(channel) || is_heavy_neutral_lepton(source)))
-            result[source][ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}][step] = ratio;
-    }
+    for_each(particle, [&result, source, step](Pythia8::DecayChannel const& channel){
+        if (channel.bRatio() > 0. && (has_neutrino(channel) || is_heavy_neutral_lepton(source))) result[source][ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}][step] = channel.bRatio();
+    });
+//     for (auto pos = 0; pos < particle.sizeChannels(); ++pos) {
+//         auto channel = particle.channel(pos);
+//         auto ratio = channel.bRatio();
+//         if (ratio > 0. && (has_neutrino(channel) || is_heavy_neutral_lepton(source)))
+//             result[source][ {channel.product(0), channel.product(1), channel.product(2), channel.product(3), channel.product(4)}][step] = ratio;
+//     }
     return result;
 }
 

@@ -1,14 +1,76 @@
 #pragma once
 
 #include "read-file.hh"
-#include "pythia.hh"
-#include "geometry.hh"
+#include "pythia-cgal.hh"
+#include "mapp.hh"
 #include "ResonanceWidths.hh"
 
 namespace hnl {
 
-auto to_cgal(Pythia8::Particle const& particle) -> cgal::Point {
-    return {particle.xProd() / 1000, particle.yProd() / 1000, particle.zProd() / 1000}; // convert from mm to m
+namespace {
+
+const bool debug = false;
+
+}
+
+auto find_mass_lhe(std::vector<std::string>& lines) {
+     if(debug) print("mass");
+    return find_in_file_copy(lines, 1, [](auto const & strings) {
+        return strings.size() > 2 && strings.at(0) == std::to_string(heavy_neutrino) && strings.at(2) == "#" && strings.at(3) == "mn1";
+    });
+}
+
+auto find_sigma_lhe(std::vector<std::string>& lines) {
+     if(debug) print("sigma");
+    return find_in_file_copy(lines, 5, [](auto const & strings) {
+        return strings.size() > 4 && strings.at(0) == "#" && strings.at(1) == "Integrated" && strings.at(2) == "weight" && strings.at(3) == "(pb)" && strings.at(4) == ":";
+    });
+}
+
+std::string get_param_heavy(int heavy){
+    switch (heavy){
+        case 9900012 : return "n1";
+        case 9900014 : return "n2";
+        case 9900016 : return "n3";
+        default : print("not a heavy neutrino");
+    }
+    return "";
+}
+
+std::string get_param_light(int light){
+    switch (light){
+        case 12 : return "e";
+        case 14 : return "mu";
+        case 16 : return "ta";
+        default : print("not a heavy neutrino");
+    }
+    return "";
+}
+
+std::string get_param(int heavy, int light){
+    return "v" + get_param_light(light) + get_param_heavy(heavy);
+}
+
+std::string find_coupling_lhe(std::vector<std::string>& lines, int heavy, int light, int pos) {
+     if(debug) print("coupling", heavy, light, pos);
+    std::string name = get_param(heavy, light);
+    return find_in_file_copy(lines, 1, [&name, pos](auto const & strings) noexcept {
+        return strings.size() > 3 && strings.at(0) == std::to_string(pos) && strings.at(2) == "#" && strings.at(3) == name;
+    });
+}
+
+boost::optional<Meta> meta_info_lhe(boost::filesystem::path const& path) {
+    auto lines = import_head(path, 500);
+    Meta meta;
+    meta.mass = to_double(find_mass_lhe(lines));
+    if (meta.mass <= 0) return boost::none;
+    meta.sigma = to_double(find_sigma_lhe(lines)) / 1e-12 * 1e-3 ; // from pico (MG) to milli (py) barn
+    if (meta.sigma <= 0) return boost::none;
+    int pos = 0;
+    for (auto light : light_neutrinos()) for (auto heavy : heavy_neutral_leptons()) meta.couplings[heavy][light] = to_double(find_coupling_lhe(lines, heavy, light, ++pos));
+    if (meta.couplings.empty()) return boost::none;
+    print("Meta info",meta.mass, meta.sigma);
+    return meta;
 }
 
 auto max(std::map<int, std::map<int, double>> const& couplings) {
@@ -17,29 +79,6 @@ auto max(std::map<int, std::map<int, double>> const& couplings) {
     return max;
 }
 
-inline double tau_to_Gamma(double tau) { //mm/c->GeV
-    return 1.97327E-13 / tau;
-}
-
-auto for_each(Pythia8::ParticleDataEntry const& particle, std::function<void(Pythia8::DecayChannel const&)> const& function) {
-    for (auto channel_number : irange(particle.sizeChannels())) function(particle.channel(channel_number));
-}
-
-std::vector<std::string> decay_table(std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id) {
-    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
-    set_pythia_passive(pythia);
-    set_pythia_init(pythia);
-    pythia.setResonancePtr(new NeutrinoResonance(pythia, coupling, mass, id));
-    pythia.init();
-    auto const& particle = *pythia.particleData.particleDataEntryPtr(id);
-    std::vector<std::string> result({std::to_string(id) + ":new = " + pythia_hnl_name(id) + " void " + std::to_string(particle.spinType()) + " " + std::to_string(particle.chargeType()) + " " + std::to_string(particle.colType()) + " " + std::to_string(mass) + " " + to_string(particle.mWidth()) + " " + to_string(mass / 2) + " " + std::to_string(mass * 2) + " " + to_string(particle.tau0())});
-    for_each(particle, [&result, id](Pythia8::DecayChannel const & channel) {
-        int onMode = 1;
-        int meMode = 101;
-        result.emplace_back(std::to_string(id) + ":addChannel = " + std::to_string(onMode) + " " + std::to_string(channel.bRatio()) + " " + std::to_string(meMode) + " " + std::to_string(channel.product(0)) + " " + std::to_string(channel.product(1)) + " " + std::to_string(channel.product(2)));
-    });
-    return result;
-}
 
 double read_lhe(boost::filesystem::path const& path, Meta const& meta, double coupling) {
     print(path.string(), "with", coupling);

@@ -1,8 +1,9 @@
-#include "Pythia8/Pythia.h"
+#include "pythia.hh"
 
 #include "ResonanceWidths.hh"
 #include "id.hh"
 #include "io.hh"
+#include "string.hh"
 
 namespace hnl {
 
@@ -98,14 +99,6 @@ bool is_down_type(quark q) {
     return q == quark::down || q == quark::strange || q == quark::bottom;
 }
 
-double tau_to_Gamma(double tau) { //mm/c->GeV
-    return 1.97327E-13 / tau;
-}
-
-double Gamma_to_tau(double Gamma) { //mm/c->GeV
-    return 1.97327E-13 / Gamma;
-}
-
 struct BRatio {
     BRatio(int a, double b, int c) : onMode(a), bRatio(b), meMode(c) {};
     int onMode;
@@ -145,16 +138,41 @@ bool MesonResonance::can_three_body(int meson) {
     return qs_1.first == qs_2.first || qs_1.first == qs_2.second || qs_1.second == qs_2.second || qs_1.second == qs_2.first;
 }
 
+std::vector< std::string > decay_table(std::function< double (int heavy, int light) > const& coupling, double mass, int id, int meson_id) {
+    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    set_pythia_stable(pythia, id, mass);
+    set_pythia_passive(pythia);
+    set_pythia_init(pythia);
+    pythia.setResonancePtr(new MesonResonance(pythia, coupling, meson_id));
+    pythia.init();
+    auto const& particle = *pythia.particleData.particleDataEntryPtr(meson_id);
+    std::vector<std::string> result({std::to_string(meson_id) + ":new = " + particle.name(meson_id) + " " + particle.name(-meson_id) + " " + std::to_string(particle.spinType()) + " " + std::to_string(particle.chargeType()) + " " + std::to_string(particle.colType()) + " " + std::to_string(mass) + " " + to_string(particle.mWidth()) + " " + to_string(mass / 2) + " " + std::to_string(mass * 2) + " " + to_string(particle.tau0())});
+    for_each(particle, [&result, meson_id](Pythia8::DecayChannel const & channel) {
+        std::string string = std::to_string(meson_id) + ":addChannel = " + std::to_string(channel.onMode()) + " " + std::to_string(channel.bRatio()) + " " + std::to_string(channel.meMode());
+        for_each(channel, [&string](int product) {
+            string += " " + std::to_string(product);
+        });
+//         for(auto i : irange(channel.multiplicity())) string += " " + std::to_string(channel.product(i));
+        result.emplace_back(string);
+    });
+    return result;
+}
+
 MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from) :
     neutrino_coupling(neutrino_coupling_) {
     if (debug) print("Meson Resonance for", id_from);
     initBasic(id_from);
     particlePtr = pythia.particleData.particleDataEntryPtr(idRes);
     std::vector<BRatio> vector;
-    for (auto pos = 0; pos < particlePtr->sizeChannels(); ++pos) {
-        particlePtr->channel(pos).meMode(101);
-        vector.emplace_back(particlePtr->channel(pos).onMode(), particlePtr->channel(pos).bRatio(), 101);
-    }
+    for_each(*particlePtr, [&vector](Pythia8::DecayChannel & channel) {
+        channel.meMode(101);
+        vector.emplace_back(channel.onMode(), channel.bRatio(), 101);
+
+    });
+//     for (auto pos = 0; pos < particlePtr->sizeChannels(); ++pos) {
+//         particlePtr->channel(pos).meMode(101);
+//         vector.emplace_back(particlePtr->channel(pos).onMode(), particlePtr->channel(pos).bRatio(), 101);
+//     }
     init(&pythia.info, &pythia.settings, &pythia.particleData, pythia.couplingsPtr);
     for (std::size_t pos = 0; pos < vector.size(); ++pos) {
         particlePtr->channel(pos).bRatio(vector.at(pos).bRatio);
@@ -486,7 +504,21 @@ void MesonResonance::calcWidth(bool test) {
     if (debug) print("Calculated", widNow, "for", idRes, "to", id2Abs, "and", id1Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particlePtr->tau0()), particlePtr->mWidth());
 }
 
-
+std::vector< std::string > decay_table(std::function<double (int heavy, int light) > const& coupling, double mass, int id) {
+    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    set_pythia_passive(pythia);
+    set_pythia_init(pythia);
+    pythia.setResonancePtr(new NeutrinoResonance(pythia, coupling, mass, id));
+    pythia.init();
+    auto const& particle = *pythia.particleData.particleDataEntryPtr(id);
+    std::vector<std::string> result({std::to_string(id) + ":new = " + pythia_hnl_name(id) + " void " + std::to_string(particle.spinType()) + " " + std::to_string(particle.chargeType()) + " " + std::to_string(particle.colType()) + " " + std::to_string(mass) + " " + to_string(particle.mWidth()) + " " + to_string(mass / 2) + " " + std::to_string(mass * 2) + " " + to_string(particle.tau0())});
+    for_each(particle, [&result, id](Pythia8::DecayChannel const & channel) {
+        int onMode = 1;
+        int meMode = 101;
+        result.emplace_back(std::to_string(id) + ":addChannel = " + std::to_string(onMode) + " " + std::to_string(channel.bRatio()) + " " + std::to_string(meMode) + " " + std::to_string(channel.product(0)) + " " + std::to_string(channel.product(1)) + " " + std::to_string(channel.product(2)));
+    });
+    return result;
+}
 
 NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id) :
     neutrino_coupling(coupling) {

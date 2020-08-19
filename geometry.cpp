@@ -4,7 +4,7 @@
 #include <iostream>
 
 #define CGAL_USE_BASIC_VIEWER
-#include "geometry.hh"
+#include "mapp.hh"
 
 #include "ui_ImageInterface.h"
 

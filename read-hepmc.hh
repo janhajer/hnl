@@ -1,22 +1,58 @@
 #pragma once
 
-#include "hepmc.hh"
-#include "geometry.hh"
-#include "ResonanceWidths.hh"
-#include "pythia.hh"
 #include "read-file.hh"
-#include "string.hh"
+#include "pythia-cgal.hh"
+#include "mapp.hh"
+#include "ResonanceWidths.hh"
+#include "hepmc.hh"
 
 namespace hnl {
+
+namespace {
+
+const bool debug = false;
+
+}
+
+auto find_sigma(std::vector<std::string>& lines) {
+    if (debug_2) print("find sigma");
+    return find_in_file_copy(lines, 1, [](auto const & strings)  {
+        return /*strings.size() == 3 &&*/ strings.at(0) == "sigma" && strings.at(2) == "mb";
+    });
+}
+
+auto find_mass(std::vector<std::string>& lines) {
+    if (debug_2) print("find mass");
+    return find_in_file_copy(lines, 1, [](auto const & strings)  {
+        return strings.size() == 3 && strings.at(0) == "mass" && strings.at(2) == "GeV";
+    });
+}
+
+auto find_coupling(std::vector<std::string>& lines, int heavy, int light) {
+    if (debug_2) print("find coupling");
+    return find_in_file_copy(lines, 3, [&](auto const & strings)  {
+        return strings.size() == 4 && strings.at(0) == "coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
+    });
+}
+
+
+boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
+    auto lines = import_head(path, 100) + import_tail(path, 100);
+    Meta meta;
+    meta.mass = to_double(find_mass(lines));
+    if (meta.mass <= 0) return boost::none;
+    meta.sigma = to_double(find_sigma(lines));
+    if (meta.sigma <= 0) return boost::none;
+    for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) meta.couplings[heavy][light] = to_double(find_coupling(lines, heavy, light));
+    if (meta.couplings.empty()) return boost::none;
+    print("Meta info",meta.mass, meta.sigma);
+    return meta;
+}
 
 auto max(std::map<int, std::map<int, double>> const& couplings) {
     double max = 0.;
     for (auto const& inner : couplings) for (auto const& pair : inner.second) if (pair.second > max) max = pair.second;
     return max;
-}
-
-auto to_cgal(Pythia8::Particle const& particle) -> cgal::Point {
-    return {particle.xProd() / 1000, particle.yProd() / 1000, particle.zProd() / 1000}; // convert from mm to m
 }
 
 void for_each_until(HepMC::GenEvent const& event, std::function<bool(HepMC::GenParticle const&)> const& function) {
