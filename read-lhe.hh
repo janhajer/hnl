@@ -88,7 +88,10 @@ double read_lhe(boost::filesystem::path const& path, Meta const& meta, double co
     auto couplings = [&meta, coupling](int heavy, int light) {
         return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
     };
-    for (auto const& line : decay_table(couplings, meta.mass, heavy_neutrino)) pythia.readString(line);
+    for (auto const& line : decay_table(couplings, meta.mass, heavy_neutrino)) {
+        if(debug) print(line);
+        pythia.readString(line);
+    }
 
     pythia.init();
 
