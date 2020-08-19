@@ -119,7 +119,7 @@ ScanResult scan_lhe(boost::filesystem::path const& path) {
     ScanResult result;
     print("file", path);
     auto meta = meta_info_lhe(path);
-    if (meta) for (auto coupling : log_range(1e-8, 1, 8)) result[meta->mass][coupling] = read_lhe(path, *meta, coupling);
+    if (meta) for (auto coupling : log_range(1e-8, 1, 80)) result[meta->mass][coupling] = read_lhe(path, *meta, coupling);
     return result;
 }
 
