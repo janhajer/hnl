@@ -14,45 +14,78 @@ enum class quark {up, down, strange, charm, bottom, top};
 
 auto& operator<<(std::ostream& stream, quark id) {
     switch (id) {
-    case quark::up : return stream << "u";
-    case quark::down : return stream << "d";
-    case quark::strange : return stream << "s";
-    case quark::charm : return stream << "c";
-    case quark::bottom : return stream << "b";
-    case quark::top : return stream << "t";
-    default : return stream << "none";
+        case quark::up :
+            return stream << "u";
+        case quark::down :
+            return stream << "d";
+        case quark::strange :
+            return stream << "s";
+        case quark::charm :
+            return stream << "c";
+        case quark::bottom :
+            return stream << "b";
+        case quark::top :
+            return stream << "t";
+        default :
+            return stream << "none";
     }
 }
 
 std::pair<quark, quark> quarks(int id) {
     switch (id) {
-    case 211 : return {quark::up, quark::down};
-    case 321 : return {quark::up, quark::strange};
-    case 411 : return {quark::charm, quark::down};
-    case 431 : return {quark::charm, quark::strange};
-    case 521 : return {quark::up, quark::bottom};
-    case 541 : return {quark::charm, quark::bottom};
-    case 111 : return {quark::down, quark::down};
-    case 221 : return {quark::up, quark::strange};
-    case 331 : return {quark::up, quark::strange};
-    case 441 : return {quark::charm, quark::strange};
+        case 211 :
+            return {quark::up, quark::down};
+        case 321 :
+            return {quark::up, quark::strange};
+        case 411 :
+            return {quark::charm, quark::down};
+        case 431 :
+            return {quark::charm, quark::strange};
+        case 521 :
+            return {quark::up, quark::bottom};
+        case 541 :
+            return {quark::charm, quark::bottom};
+        case 111 :
+            return {quark::down, quark::down};
+        case 221 :
+            return {quark::up, quark::strange};
+        case 331 :
+            return {quark::up, quark::strange};
+        case 441 :
+            return {quark::charm, quark::strange};
 
-    case 311 : return {quark::down, quark::strange};
-    case 511 : return {quark::down, quark::bottom};
-    case 421 : return {quark::charm, quark::up};
-    case 113 : return {quark::up, quark::up};
-    case 531 : return {quark::bottom, quark::strange};
-    case 213 : return {quark::up, quark::down};
-    case 130 : return {quark::down, quark::strange};
-    case 310 : return {quark::down, quark::strange};
-    case 553 : return {quark::bottom, quark::bottom};
-    case 313 : return {quark::strange, quark::down};
-    case 323 : return {quark::strange, quark::up};
-    case 413 : return {quark::charm, quark::down};
-    case 423 : return {quark::charm, quark::up};
-    case 433 : return {quark::charm, quark::strange};
-    case 443 : return {quark::charm, quark::charm};
-    default : print("meson ", id, " not known", "quarks");
+        case 311 :
+            return {quark::down, quark::strange};
+        case 511 :
+            return {quark::down, quark::bottom};
+        case 421 :
+            return {quark::charm, quark::up};
+        case 113 :
+            return {quark::up, quark::up};
+        case 531 :
+            return {quark::bottom, quark::strange};
+        case 213 :
+            return {quark::up, quark::down};
+        case 130 :
+            return {quark::down, quark::strange};
+        case 310 :
+            return {quark::down, quark::strange};
+        case 553 :
+            return {quark::bottom, quark::bottom};
+        case 313 :
+            return {quark::strange, quark::down};
+        case 323 :
+            return {quark::strange, quark::up};
+        case 413 :
+            return {quark::charm, quark::down};
+        case 423 :
+            return {quark::charm, quark::up};
+        case 433 :
+            return {quark::charm, quark::strange};
+        case 443 :
+            return {quark::charm, quark::charm};
+        default :
+            print("meson ", id, " not known", "quarks");
     }
     return {quark::top, quark::top};
 }
@@ -170,55 +203,92 @@ void MesonResonance::initConstants() {
 
 double decay_constant(int id) {  // GeV
     switch (id) {
-    case 211 : return 0.1302;
-    case 321 : return 0.1556;
-    case 411 : return 0.212;
-    case 431 : return 0.249;
-    case 521 : return 0.187;
-    case 541 : return 0.434;
-    case 111 : return 0.1302;
-    case 221 : return 0.0817;
-    case 331 : return -0.0947;
-    case 441 : return 0.237;
-    case 213 : return 0.162; // GeV^2
-    case 413 : return 0.535;
-    case 433 : return 0.650;
-    case 113 : return 0.162;
-    case 223 : return 0.153;
-    case 333 : return 0.234;
-    case 443 : return 1.29;
-    default : print("decay_constant for meson", id, "not known");
+        case 211 :
+            return 0.1302;
+        case 321 :
+            return 0.1556;
+        case 411 :
+            return 0.212;
+        case 431 :
+            return 0.249;
+        case 521 :
+            return 0.187;
+        case 541 :
+            return 0.434;
+        case 111 :
+            return 0.1302;
+        case 221 :
+            return 0.0817;
+        case 331 :
+            return -0.0947;
+        case 441 :
+            return 0.237;
+        case 213 :
+            return 0.162; // GeV^2
+        case 413 :
+            return 0.535;
+        case 433 :
+            return 0.650;
+        case 113 :
+            return 0.162;
+        case 223 :
+            return 0.153;
+        case 333 :
+            return 0.234;
+        case 443 :
+            return 1.29;
+        default :
+            print("decay_constant for meson", id, "not known");
     }
     return 0.;
 }
 
 double NeutrinoResonance::correction_factor(int id) {
     switch (id) {
-    case 113 : return 1 - 2 * couplingsPtr->sin2thetaW();
-    case 223 : return couplingsPtr->sin2thetaW() * 4 / 3;
-    case 333 : return couplingsPtr->sin2thetaW() * 4 / 3 - 1;
-    case 443 : return 1 - couplingsPtr->sin2thetaW() * 8 / 3;
-    default : print("correction_factor for meson", id, "not known");
+        case 113 :
+            return 1 - 2 * couplingsPtr->sin2thetaW();
+        case 223 :
+            return couplingsPtr->sin2thetaW() * 4 / 3;
+        case 333 :
+            return couplingsPtr->sin2thetaW() * 4 / 3 - 1;
+        case 443 :
+            return 1 - couplingsPtr->sin2thetaW() * 8 / 3;
+        default :
+            print("correction_factor for meson", id, "not known");
     }
     return 0.;
 }
 
 std::pair<int, int> quark_pair(int id) {
     switch (id) {
-    case 211 : return {1, 1};
-    case 321 : return {1, 2};
-    case 411 : return {2, 1};
-    case 431 : return {2, 2};
-    case 521 : return {1, 3};
-    case 541 : return {2, 3};
-    case 111 : return {1, 1};
-    case 221 : return {1, 2};
-    case 331 : return {1, 2};
-    case 441 : return {2, 2};
-    case 213 : return {1, 1};
-    case 413 : return {2, 1};
-    case 433 : return {2, 2};
-    default : print("quark pair for meson", id, "not known");
+        case 211 :
+            return {1, 1};
+        case 321 :
+            return {1, 2};
+        case 411 :
+            return {2, 1};
+        case 431 :
+            return {2, 2};
+        case 521 :
+            return {1, 3};
+        case 541 :
+            return {2, 3};
+        case 111 :
+            return {1, 1};
+        case 221 :
+            return {1, 2};
+        case 331 :
+            return {1, 2};
+        case 441 :
+            return {2, 2};
+        case 213 :
+            return {1, 1};
+        case 413 :
+            return {2, 1};
+        case 433 :
+            return {2, 2};
+        default :
+            print("quark pair for meson", id, "not known");
     }
     return {0, 0};
 }
@@ -250,40 +320,56 @@ auto get_down_type(std::array<quark, 4> const& quarks) {
 
 int up_idx(quark up) {
     switch (up) {
-    case quark::up : return 1;
-    case quark::charm : return 2;
-    case quark::top : return 3;
-    default : print(up, "is not an up type");
+        case quark::up :
+            return 1;
+        case quark::charm :
+            return 2;
+        case quark::top :
+            return 3;
+        default :
+            print(up, "is not an up type");
     }
     return 0;
 }
 
 int up_idx(int up) {
     switch (up) {
-    case 2 : return 1;
-    case 4 : return 2;
-    case 6 : return 3;
-    default : print(up, "is not an up type");
+        case 2 :
+            return 1;
+        case 4 :
+            return 2;
+        case 6 :
+            return 3;
+        default :
+            print(up, "is not an up type");
     }
     return 0;
 }
 
 int down_idx(quark down) {
     switch (down) {
-    case quark::down : return 1;
-    case quark::strange : return 2;
-    case quark::bottom : return 3;
-    default : print(down, "is not an down type");
+        case quark::down :
+            return 1;
+        case quark::strange :
+            return 2;
+        case quark::bottom :
+            return 3;
+        default :
+            print(down, "is not an down type");
     }
     return 0;
 }
 
 int down_idx(int down) {
     switch (down) {
-    case 1 : return 1;
-    case 3 : return 2;
-    case 5 : return 3;
-    default : print(down, "is not an down type");
+        case 1 :
+            return 1;
+        case 3 :
+            return 2;
+        case 5 :
+            return 3;
+        default :
+            print(down, "is not an down type");
     }
     return 0;
 }
@@ -360,37 +446,40 @@ void MesonResonance::calcWidth(bool test) {
     }
 
     switch (mult) {
-    case 2 : if (is_heavy_neutral_lepton(id1Abs) && id2Abs > 10 && id2Abs < 17) {
-            preFac *= (mr1 + mr2 - sqr(mr2 - mr1)) * std::sqrt(lambda(1., mr1, mr2));
-            if (debug) print("preFac", preFac);
-            if (idRes == 443 || idRes == 553) {
-                preFac *= 27. * mHat / 8. / M_PI / sqr(couplingsPtr->alphaEM(sqr(mHat)));
-                auto term = 4. / 3. * couplingsPtr->sin2thetaW();
-                if (idRes == 443) {
-                    preFac *= sqr(1. - 2 * term) / 4.;
-                    auto channel = particlePtr->channel(1);
-                    check_channel(channel);
-                    widNow = preFac * channel.bRatio() * particlePtr->mWidth() ;
-                } else if (idRes == 553) {
-                    preFac *= sqr(1. - term);
-                    auto channel = particlePtr->channel(2);
-                    check_channel(channel);
-                    widNow = preFac * channel.bRatio() * particlePtr->mWidth();
+        case 2 :
+            if (is_heavy_neutral_lepton(id1Abs) && id2Abs > 10 && id2Abs < 17) {
+                preFac *= (mr1 + mr2 - sqr(mr2 - mr1)) * std::sqrt(lambda(1., mr1, mr2));
+                if (debug) print("preFac", preFac);
+                if (idRes == 443 || idRes == 553) {
+                    preFac *= 27. * mHat / 8. / M_PI / sqr(couplingsPtr->alphaEM(sqr(mHat)));
+                    auto term = 4. / 3. * couplingsPtr->sin2thetaW();
+                    if (idRes == 443) {
+                        preFac *= sqr(1. - 2 * term) / 4.;
+                        auto channel = particlePtr->channel(1);
+                        check_channel(channel);
+                        widNow = preFac * channel.bRatio() * particlePtr->mWidth() ;
+                    } else if (idRes == 553) {
+                        preFac *= sqr(1. - term);
+                        auto channel = particlePtr->channel(2);
+                        check_channel(channel);
+                        widNow = preFac * channel.bRatio() * particlePtr->mWidth();
+                    }
+                } else {
+                    preFac *= CKM2(idRes);
+                    widNow = preFac * sqr(decay_constant(idRes));
                 }
-            } else {
-                preFac *= CKM2(idRes);
-                widNow = preFac * sqr(decay_constant(idRes));
-            }
-        } else print("Two-body for", id1Abs, "and", id2Abs, "not implemented");
-        break;
-    case 3 : if (is_heavy_neutral_lepton(id1Abs) && id3Abs > 10 && id3Abs < 17 && id2Abs > 20) {
-            preFac *= sqr(mHat) / 8. / sqr(M_PI) * clebsch_gordan_2(id2Abs) * CKM2(idRes, id2Abs);
-            if (is_vector(id2Abs)) preFac *= sqr(mHat) / sqr(mf2);
-            if (debug) print("preFac", preFac);
-            widNow = preFac * three_body_width.get_width(idRes, id1Abs, id2Abs, id3Abs);
-        } else print("Three-body for", id1Abs, ",", id2Abs, ", and", id3Abs, "not implemented");
-        break;
-    default : print("multiplicity", mult, "not implemented");
+            } else print("Two-body for", id1Abs, "and", id2Abs, "not implemented");
+            break;
+        case 3 :
+            if (is_heavy_neutral_lepton(id1Abs) && id3Abs > 10 && id3Abs < 17 && id2Abs > 20) {
+                preFac *= sqr(mHat) / 8. / sqr(M_PI) * clebsch_gordan_2(id2Abs) * CKM2(idRes, id2Abs);
+                if (is_vector(id2Abs)) preFac *= sqr(mHat) / sqr(mf2);
+                if (debug) print("preFac", preFac);
+                widNow = preFac * three_body_width.get_width(idRes, id1Abs, id2Abs, id3Abs);
+            } else print("Three-body for", id1Abs, ",", id2Abs, ", and", id3Abs, "not implemented");
+            break;
+        default :
+            print("multiplicity", mult, "not implemented");
     }
     sum += widNow;
     particlePtr->setHasChanged(sum > 0.);
@@ -505,13 +594,20 @@ void NeutrinoResonance::calcPreFac(bool) {
 
 double NeutrinoResonance::get_mass(int id) {
     switch (id) {
-    case 1 : return settingsPtr->parm("ParticleData:mdRun");
-    case 2 : return settingsPtr->parm("ParticleData:muRun");
-    case 3 : return settingsPtr->parm("ParticleData:msRun");
-    case 4 : return settingsPtr->parm("ParticleData:mcRun");
-    case 5 : return settingsPtr->parm("ParticleData:mbRun");
-    case 6 : return settingsPtr->parm("ParticleData:mtRun");
-    default : return particleDataPtr->m0(id);
+        case 1 :
+            return settingsPtr->parm("ParticleData:mdRun");
+        case 2 :
+            return settingsPtr->parm("ParticleData:muRun");
+        case 3 :
+            return settingsPtr->parm("ParticleData:msRun");
+        case 4 :
+            return settingsPtr->parm("ParticleData:mcRun");
+        case 5 :
+            return settingsPtr->parm("ParticleData:mbRun");
+        case 6 :
+            return settingsPtr->parm("ParticleData:mtRun");
+        default :
+            return particleDataPtr->m0(id);
     }
 }
 
@@ -547,48 +643,49 @@ void NeutrinoResonance::calcWidth(bool) {
     auto mr2 = sqr(mf2 / mHat);
 
     switch (mult) {
-    case 2 :
-        if (is_meson(id2Abs)) {
-            preFac *= sqr(decay_constant(id2Abs)) / 2;
-            if (is_charge_lepton(id1Abs)) {
-                preFac *= CKM2(id2Abs);
-                if (is_vector(id2Abs)) {
-                    preFac /= sqr(mf2); // dimension of form factor
-                    widNow = preFac * (sqr(1 - mr1) + mr2 * (1 + mr1) - 2 * sqr(mr2)) * std::sqrt(lambda(1, mr2, mr1));
-                } else  {
-                    widNow = preFac * (sqr(1 - mr1) - mr2 * (1 + mr1)) * std::sqrt(lambda(1, mr2, mr1));
-                }
-            } else if (is_light_neutrino(id1Abs)) {
-                preFac /= 2;
-                if (is_vector(id2Abs)) {
-                    preFac *= sqr(correction_factor(id2Abs)) / sqr(mr2); // dimension of form factor
-                    widNow = preFac * (1 + 2 * mr2) * sqr(1 - mr2);
-                } else {
-                    widNow = preFac * sqr(1 - mr2);
-                }
+        case 2 :
+            if (is_meson(id2Abs)) {
+                preFac *= sqr(decay_constant(id2Abs)) / 2;
+                if (is_charge_lepton(id1Abs)) {
+                    preFac *= CKM2(id2Abs);
+                    if (is_vector(id2Abs)) {
+                        preFac /= sqr(mf2); // dimension of form factor
+                        widNow = preFac * (sqr(1 - mr1) + mr2 * (1 + mr1) - 2 * sqr(mr2)) * std::sqrt(lambda(1, mr2, mr1));
+                    } else  {
+                        widNow = preFac * (sqr(1 - mr1) - mr2 * (1 + mr1)) * std::sqrt(lambda(1, mr2, mr1));
+                    }
+                } else if (is_light_neutrino(id1Abs)) {
+                    preFac /= 2;
+                    if (is_vector(id2Abs)) {
+                        preFac *= sqr(correction_factor(id2Abs)) / sqr(mr2); // dimension of form factor
+                        widNow = preFac * (1 + 2 * mr2) * sqr(1 - mr2);
+                    } else {
+                        widNow = preFac * sqr(1 - mr2);
+                    }
+                } else print("Two-body not implemented", id1Abs, id2Abs, id3Abs);
             } else print("Two-body not implemented", id1Abs, id2Abs, id3Abs);
-        } else print("Two-body not implemented", id1Abs, id2Abs, id3Abs);
-        break;
-    case 3 :
-        preFac *= sqr(mHat) / 24. / sqr(M_PI);
-        if (is_charge_lepton(id1Abs)) {
-            preFac *= NW(id2Abs, id3Abs);
-            if (debug) print("preFac", preFac);
-            widNow = preFac * three_body_width.get_width(idRes, id1Abs, id2Abs, id3Abs);
-        } else if (is_light_neutrino(id1Abs) && id2Abs == id3Abs) {
-            if (is_light_neutrino(id2Abs)) {
-                preFac /= 4.;
-                widNow = preFac * (1. + (id1Abs == id2Abs ? 1. : 0.));
-            } else {
-                preFac *= NZ(id2Abs);
+            break;
+        case 3 :
+            preFac *= sqr(mHat) / 24. / sqr(M_PI);
+            if (is_charge_lepton(id1Abs)) {
+                preFac *= NW(id2Abs, id3Abs);
+                if (debug) print("preFac", preFac);
+                widNow = preFac * three_body_width.get_width(idRes, id1Abs, id2Abs, id3Abs);
+            } else if (is_light_neutrino(id1Abs) && id2Abs == id3Abs) {
+                if (is_light_neutrino(id2Abs)) {
+                    preFac /= 4.;
+                    widNow = preFac * (1. + (id1Abs == id2Abs ? 1. : 0.));
+                } else {
+                    preFac *= NZ(id2Abs);
 //                 if (mr2 <= 1E-8) print("bad mass", mr2, idRes, id1Abs, id2Abs, id3Abs);
-                auto term_1 = (1. - 14. * mr2 - 2. * sqr(mr2) - 12. * cube(mr2)) * std::sqrt(1. - 4. * mr2) + 12. * sqr(mr2) * (sqr(mr2) - 1.) * L(mr2);
-                auto term_2 = mr2 * (2. + 10. * mr2 - 12 * sqr(mr2)) * std::sqrt(1. - 4. * mr2) + 6 * sqr(mr2) * (1. - 2. * mr2 + 2 * sqr(mr2)) * L(mr2);
-                widNow = preFac * (Cf1(id1Abs, id2Abs) * term_1 + 4. * Cf2(id1Abs, id2Abs) * term_2);
-            }
-        } else print("this is unexpectet");
-        break;
-    default : print("multiplicity", mult, "not implemented");
+                    auto term_1 = (1. - 14. * mr2 - 2. * sqr(mr2) - 12. * cube(mr2)) * std::sqrt(1. - 4. * mr2) + 12. * sqr(mr2) * (sqr(mr2) - 1.) * L(mr2);
+                    auto term_2 = mr2 * (2. + 10. * mr2 - 12 * sqr(mr2)) * std::sqrt(1. - 4. * mr2) + 6 * sqr(mr2) * (1. - 2. * mr2 + 2 * sqr(mr2)) * L(mr2);
+                    widNow = preFac * (Cf1(id1Abs, id2Abs) * term_1 + 4. * Cf2(id1Abs, id2Abs) * term_2);
+                }
+            } else print("this is unexpectet");
+            break;
+        default :
+            print("multiplicity", mult, "not implemented");
     }
     if (is_quark(id2Abs) && is_quark(id3Abs)) {
         alpS = couplingsPtr->alphaS(sqr(mHat));

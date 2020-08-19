@@ -82,6 +82,9 @@ target_link_libraries(scan-hepmc pythia8 HepMC ${boost-libs} pythia)
 add_executable(scan-hepmcs main-scan-hepmcs.cpp )
 target_link_libraries(scan-hepmcs pythia8 HepMC ${boost-libs} pythia)
 
+add_executable(scan-lhe main-scan-lhe.cpp )
+target_link_libraries(scan-lhe pythia8 HepMC ${boost-libs} pythia)
+
 add_executable(scan-lhes main-scan-lhes.cpp )
 target_link_libraries(scan-lhes pythia8 HepMC ${boost-libs} pythia)
 

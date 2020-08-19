@@ -14,23 +14,11 @@ const bool debug = false;
 
 }
 
-void set_pythia_production(Pythia8::Pythia& pythia) {
-    pythia.readString("Beams:idA = 2212");
-    pythia.readString("Beams:idB = 2212");
-    pythia.readString("Beams:eCM = 14000.");
-    pythia.readString("ResonanceWidths:minWidth = 1E-30");
-}
-
 void set_pythia_init(Pythia8::Pythia& pythia) {
     pythia.readString("Init:showChangedParticleData = off");
     pythia.readString("Init:showProcesses = off");
     pythia.readString("Init:showChangedSettings = off");
     pythia.readString("Init:showMultipartonInteractions = off");
-}
-
-void set_pythia_passive(Pythia8::Pythia& pythia) {
-    pythia.readString("ProcessLevel:all = off");
-    pythia.readString("ResonanceWidths:minWidth = 1E-30");
 }
 
 void set_pythia_next(Pythia8::Pythia& pythia) {
@@ -39,6 +27,17 @@ void set_pythia_next(Pythia8::Pythia& pythia) {
     pythia.readString("Next:numberShowInfo = 0");
 }
 
+void set_pythia_production(Pythia8::Pythia& pythia) {
+    pythia.readString("Beams:idA = 2212");
+    pythia.readString("Beams:idB = 2212");
+    pythia.readString("Beams:eCM = 14000.");
+    pythia.readString("ResonanceWidths:minWidth = 1E-30");
+}
+
+void set_pythia_passive(Pythia8::Pythia& pythia) {
+    pythia.readString("ProcessLevel:all = off");
+    pythia.readString("ResonanceWidths:minWidth = 1E-30");
+}
 
 void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
     set_pythia_init(pythia);
@@ -46,9 +45,15 @@ void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
     set_pythia_passive(pythia);
 }
 
-void set_pythia_read_lhe(Pythia8::Pythia& pythia) {
+void set_pythia_read_lhe(Pythia8::Pythia& pythia, std::string const& path) {
     set_pythia_init(pythia);
     set_pythia_next(pythia);
+    pythia.readString("Next:numberShowLHA = 0");
+    pythia.readString("ResonanceWidths:minWidth = 1E-30");
+    pythia.readString("SLHA:readFrom = 0");
+    pythia.readString("LesHouches:setLifetime = 2");
+    pythia.readString("Beams:frameType = 4"); // LHEF
+    pythia.readString("Beams:LHEF = " + path);
 }
 
 void set_pythia_branching_ratios(Pythia8::Pythia& pythia) {

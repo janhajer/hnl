@@ -9,6 +9,17 @@ namespace hnl {
 
 const int heavy_neutrino = 9900012;
 
+inline std::string pythia_hnl_name(int hnl) {
+    switch (hnl) {
+        case 9900012 : return "nu_Re";
+        case 9900014 : return "nu_Rmu";
+        case 9900016 : return "nu_Rtau";
+        default : print("not an hnl");
+    }
+    return "";
+}
+
+
 inline std::vector<int> heavy_neutral_leptons() {
     return {9900012, 9900014, 9900016};
 }
