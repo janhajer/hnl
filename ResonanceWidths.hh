@@ -11,25 +11,6 @@ namespace Pythia8{
 namespace hnl
 {
 
-// struct ResonanceWidths : public Pythia8::ResonanceWidths {
-//     ResonanceWidths(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from);
-// protected:
-//     virtual bool initBSM() override;
-//     virtual bool allowCalc() override;
-//     virtual void initConstants() override;
-//     virtual void calcPreFac(bool called_from_init = false) override;
-//     virtual void calcWidth(bool called_from_init = false) override;
-// private:
-//     bool can_two_body();
-//     bool can_three_body(int id);
-//     void add_two_body(Pythia8::ParticleDataEntry& particle);
-//     void add_three_body(Pythia8::ParticleDataEntry& particle, int id);
-//     bool getChannels();
-// private:
-//     std::function<double (int id_heavy, int id_light)> neutrino_coupling;
-//     ThreeBodyWidth three_body_width;
-// };
-
 struct MesonResonance : public Pythia8::ResonanceWidths {
     MesonResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from);
 protected:
@@ -51,8 +32,6 @@ private:
     MesonThreeBodyWidth three_body_width;
     double sum = 0.;
 };
-
-std::vector<std::string> decay_table(std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id, int meson_id);
 
 struct NeutrinoResonance : public Pythia8::ResonanceWidths {
     NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id);
@@ -81,7 +60,5 @@ private:
     NeutrinoThreeBodyWidth three_body_width;
     double sum = 0.;
 };
-
-std::vector<std::string> decay_table(std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id);
 
 }

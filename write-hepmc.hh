@@ -44,7 +44,7 @@ std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> c
 auto get_optimal_coupling(double mass, std::vector<int> const& mesons) {
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_write_hepmc(pythia,heavy_neutrino, mass);
-    set_pythia_init(pythia);
+    set_pythia_init_quiet(pythia);
     for (auto meson : mesons) pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(1), meson));
     pythia.init();
 
@@ -153,12 +153,11 @@ void calculate_sigma(double mass) {
     set_pythia_sigma(pythia);
     pythia.readString("Main:numberOfEvents = 100");
     pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), mass, heavy_neutrino));
-    Pythia8::SigmaProcess* sigma = new Sigma(neutrino_coupling(coupling), heavy_neutrino, 12);
-    pythia.setSigmaPtr(sigma);
+    auto sigma = std::make_unique<Sigma>(neutrino_coupling(coupling), heavy_neutrino, 12);
+    pythia.setSigmaPtr(sigma.get());
     pythia.init();
     for (auto event_number = 0; event_number < pythia.mode("Main:numberOfEvents"); ++event_number) if (!pythia.next()) print("Error in event", event_number);
     pythia.stat();
-    delete sigma;
     print("sigma", pythia.info.sigmaGen() / coupling);
 }
 
@@ -173,14 +172,13 @@ void write_sigma_hepmc(double mass) {
     pythia.readString("Main:numberOfEvents = 100000");
 
     pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), mass, heavy_neutrino));
-    Pythia8::SigmaProcess* sigma = new Sigma(neutrino_coupling(coupling), heavy_neutrino, 12);
-    pythia.setSigmaPtr(sigma);
+    auto sigma = std::make_unique<Sigma>(neutrino_coupling(coupling), heavy_neutrino, 12);
+    pythia.setSigmaPtr(sigma.get());
 
     pythia.init();
 
     write_hepmc(pythia, mass, coupling);
 
-    delete sigma;
 }
 
 void write_sigma_hepmcs() {

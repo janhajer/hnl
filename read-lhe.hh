@@ -1,9 +1,11 @@
 #pragma once
 
+#include <boost/filesystem/operations.hpp>
+#include "decay_table.hh"
 #include "read-file.hh"
 #include "pythia-cgal.hh"
 #include "mapp.hh"
-#include "ResonanceWidths.hh"
+#include "string.hh"
 
 namespace hnl {
 
@@ -88,7 +90,7 @@ double read_lhe(boost::filesystem::path const& path, Meta const& meta, double co
     auto couplings = [&meta, coupling](int heavy, int light) {
         return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
     };
-    for (auto const& line : decay_table(couplings, meta.mass, heavy_neutrino)) {
+    for (auto const& line : hnl_decay_table(couplings, meta.mass, heavy_neutrino)) {
         if(debug) print(line);
         pythia.readString(line);
     }

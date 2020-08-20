@@ -1,27 +1,20 @@
 #pragma once
 
-#include <map>
-#include <vector>
-#include <sstream>
-
+// #include <map>
+// #include <vector>
+// #include <sstream>
+//
 #include <boost/optional/optional_io.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
-#include <boost/range/irange.hpp>
 #include <boost/range/algorithm/find_if.hpp>
 #include <boost/range/adaptor/indexed.hpp>
-#include <boost/range/algorithm/transform.hpp>
+// #include <boost/range/algorithm/transform.hpp>
 #include <boost/algorithm/cxx11/any_of.hpp>
 #include <boost/range/algorithm_ext/erase.hpp>
-#include <boost/range/size.hpp>
+// #include <boost/range/size.hpp>
 
-#include "math.hh"
 
 namespace hnl {
-
-template<typename Integer>
-auto irange(Integer integer) {
-    return boost::irange(0, integer);
-}
 
 template<typename Element>
 auto make_vector(Element&& element) -> std::vector<Element> {
@@ -81,13 +74,6 @@ auto has_at_least(Range const& range, int max, Predicate predicate) {
     });
 }
 
-template <template<class...> class Container, typename Element, typename Function, typename Result = std::decay_t<std::result_of_t<Function&(Element const&)>>>
-std::vector<Result> transform(Container<Element> const& container, Function && function) {
-    std::vector<Result> result;
-    result.reserve(size(container));
-    boost::range::transform(container, std::back_inserter(result), function);
-    return result;
-}
 
 template<template<class...> class Container, typename Element, typename Function>
 auto copy_if(Container<Element> const& container, Function function) {
@@ -140,12 +126,6 @@ template<typename First, typename Second>
 std::map<First, Second>& operator+=(std::map<First, Second>& left, std::map<First, Second> const& right) {
     for (auto const& pair : right) left[pair.first] += pair.second;
     return left;
-}
-
-inline auto log_range(double min, double max, int steps) {
-    return transform(irange(steps + 1), [&](auto step) {
-        return log_scale(min, max, step, steps);
-    });
 }
 
 }

@@ -2,6 +2,7 @@
 
 #include "cgal.hh"
 #include "container.hh"
+#include "range.hh"
 
 namespace hnl
 {

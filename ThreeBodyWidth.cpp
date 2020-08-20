@@ -3,6 +3,7 @@
 #include "ThreeBodyWidth.hh"
 #include "id.hh"
 #include "io.hh"
+#include "math.hh"
 
 namespace hnl {
 

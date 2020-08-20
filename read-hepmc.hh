@@ -1,10 +1,13 @@
 #pragma once
 
+#include <boost/filesystem/operations.hpp>
+
 #include "read-file.hh"
 #include "pythia-cgal.hh"
 #include "mapp.hh"
 #include "ResonanceWidths.hh"
 #include "hepmc.hh"
+#include "string.hh"
 
 namespace hnl {
 
@@ -15,21 +18,21 @@ const bool debug = false;
 }
 
 auto find_sigma(std::vector<std::string>& lines) {
-    if (debug_2) print("find sigma");
+    if (debug) print("find sigma");
     return find_in_file_copy(lines, 1, [](auto const & strings)  {
         return /*strings.size() == 3 &&*/ strings.at(0) == "sigma" && strings.at(2) == "mb";
     });
 }
 
 auto find_mass(std::vector<std::string>& lines) {
-    if (debug_2) print("find mass");
+    if (debug) print("find mass");
     return find_in_file_copy(lines, 1, [](auto const & strings)  {
         return strings.size() == 3 && strings.at(0) == "mass" && strings.at(2) == "GeV";
     });
 }
 
 auto find_coupling(std::vector<std::string>& lines, int heavy, int light) {
-    if (debug_2) print("find coupling");
+    if (debug) print("find coupling");
     return find_in_file_copy(lines, 3, [&](auto const & strings)  {
         return strings.size() == 4 && strings.at(0) == "coupling" && strings.at(1) == std::to_string(heavy) && strings.at(2) == std::to_string(light);
     });

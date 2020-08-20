@@ -1,23 +1,29 @@
 #pragma once
 
 #include "Pythia8/Pythia.h"
-#include "ResonanceWidths.hh"
 
 #include "id.hh"
+#include "range.hh"
+#include "math.hh"
 
 namespace hnl {
 
-inline void set_pythia_init(Pythia8::Pythia& pythia) {
+inline void set_pythia_init_quiet(Pythia8::Pythia& pythia) {
     pythia.readString("Init:showChangedParticleData = off");
     pythia.readString("Init:showProcesses = off");
     pythia.readString("Init:showChangedSettings = off");
     pythia.readString("Init:showMultipartonInteractions = off");
 }
 
-inline void set_pythia_next(Pythia8::Pythia& pythia) {
+inline void set_pythia_next_quiet(Pythia8::Pythia& pythia) {
     pythia.readString("Next:numberShowEvent = 0");
     pythia.readString("Next:numberShowProcess = 0");
     pythia.readString("Next:numberShowInfo = 0");
+}
+
+inline void set_pythia_quiet(Pythia8::Pythia& pythia) {
+    set_pythia_init_quiet(pythia);
+    set_pythia_next_quiet(pythia);
 }
 
 inline void set_pythia_production(Pythia8::Pythia& pythia) {
@@ -28,19 +34,23 @@ inline void set_pythia_production(Pythia8::Pythia& pythia) {
 }
 
 inline void set_pythia_passive(Pythia8::Pythia& pythia) {
+    set_pythia_init_quiet(pythia);
     pythia.readString("ProcessLevel:all = off");
     pythia.readString("ResonanceWidths:minWidth = 1E-30");
 }
 
-inline void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
-    set_pythia_init(pythia);
-    set_pythia_next(pythia);
+inline void set_pythia_branching_ratios(Pythia8::Pythia& pythia) {
     set_pythia_passive(pythia);
+    set_pythia_production(pythia);
+}
+
+inline void set_pythia_read_hepmc(Pythia8::Pythia& pythia) {
+    set_pythia_passive(pythia);
+    set_pythia_next_quiet(pythia);
 }
 
 inline void set_pythia_read_lhe(Pythia8::Pythia& pythia, std::string const& path) {
-    set_pythia_init(pythia);
-    set_pythia_next(pythia);
+    set_pythia_quiet(pythia);
     pythia.readString("Next:numberShowLHA = 0");
     pythia.readString("ResonanceWidths:minWidth = 1E-30");
     pythia.readString("SLHA:readFrom = 0");
@@ -49,16 +59,9 @@ inline void set_pythia_read_lhe(Pythia8::Pythia& pythia, std::string const& path
     pythia.readString("Beams:LHEF = " + path);
 }
 
-inline void set_pythia_branching_ratios(Pythia8::Pythia& pythia) {
-    set_pythia_production(pythia);
-    set_pythia_init(pythia);
-    set_pythia_passive(pythia);
-}
-
 inline void set_pythia_sigma(Pythia8::Pythia& pythia) {
     set_pythia_production(pythia);
-    set_pythia_init(pythia);
-    set_pythia_next(pythia);
+    set_pythia_quiet(pythia);
 }
 
 inline void set_pythia_stable(Pythia8::Pythia& pythia, int id, double mass) {
@@ -71,7 +74,7 @@ inline void set_pythia_stable(Pythia8::Pythia& pythia, int id, double mass) {
 inline void set_pythia_write_hepmc(Pythia8::Pythia& pythia, int id, double mass) {
     set_pythia_stable(pythia, id, mass);
     set_pythia_production(pythia);
-    set_pythia_next(pythia);
+    set_pythia_next_quiet(pythia);
     pythia.readString("Bottomonium:all = on");
     if (mass < 1.96849) pythia.readString("Charmonium:all = on");
     if (mass < .493677) pythia.readString("HardQCD:all = on");
@@ -95,10 +98,15 @@ inline auto for_each(Pythia8::DecayChannel const& channel, std::function<void(in
     for (auto pos : irange(channel.multiplicity())) function(channel.product(pos));
 }
 
+inline auto for_each_until(Pythia8::DecayChannel const& channel, std::function<bool(int product)> const& function) {
+    for (auto pos : irange(channel.multiplicity())) if(function(channel.product(pos))) return true;
+    return false;
+}
+
 inline bool has_neutrino(Pythia8::DecayChannel const& channel) {
-//     for (auto heavy : heavy_neutral_leptons()) for_each(channel, [heavy](int product) {
+//     for (auto heavy : heavy_neutral_leptons()) if(for_each_until(channel, [heavy](int product) {
 //         if (product == heavy) return true;
-//     });
+//     })) return true;
     for (auto heavy : heavy_neutral_leptons()) for(auto mult : irange(channel.multiplicity())) if(channel.product(mult) == heavy) return true;
     return false;
 };
