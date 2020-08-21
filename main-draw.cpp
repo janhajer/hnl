@@ -5,6 +5,7 @@
 #include "draw_polyhedron.h"
 
 namespace hnl {
+
 namespace cgal {
 
 using Viewer = CGAL::SimplePolyhedronViewerQt<Polyhedron, CGAL::DefaultColorFunctorPolyhedron>;

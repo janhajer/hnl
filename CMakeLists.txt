@@ -27,7 +27,7 @@ if(graphic)
   find_package(CGAL REQUIRED COMPONENTS Core Qt5)
   set(cgal-libs ${CGAL_LIBRARIES})
 elseif(graphic)
-  set(cgal-libs )
+  set(cgal-libs)
 endif(graphic)
 
 # qt
@@ -40,7 +40,7 @@ if(graphic)
   set(CMAKE_AUTOUIC_SEARCH_PATHS /usr/include/CGAL/Qt/resources)
   set(qt-libs ${Qt5Widgets_LIBRARIES})
 elseif(graphic)
-  set(qt-libs )
+  set(qt-libs)
 endif(graphic)
 
 # boost
@@ -49,51 +49,52 @@ include_directories(${Boost_INCLUDE_DIR})
 set(boost-libs ${Boost_LIBRARIES})
 
 # lib
-add_library(pythia ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp decay_table.cpp read-file.cpp branching_ratios.cpp)
+add_library(hnl ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp decay_table.cpp read-file.cpp branching_ratios.cpp)
 
 # executables
 add_executable(resonance main-resonance.cpp)
-target_link_libraries(resonance pythia pythia8 HepMC ${boost-libs} )
+target_link_libraries(resonance hnl pythia8 ${boost-libs})
 
 add_executable(calculate-sigma main-calculate-sigma.cpp)
-target_link_libraries(calculate-sigma pythia pythia8 HepMC ${boost-libs} )
+target_link_libraries(calculate-sigma hnl pythia8 HepMC ${boost-libs})
 
-add_executable(write-sigma-hepmc main-write-sigma-hepmc.cpp )
-target_link_libraries(write-sigma-hepmc pythia pythia8 HepMC ${boost-libs} )
+add_executable(write-sigma-hepmc main-write-sigma-hepmc.cpp)
+target_link_libraries(write-sigma-hepmc hnl pythia8 HepMC ${boost-libs})
 
-add_executable(write-sigma-hepmcs main-write-sigma-hepmcs.cpp )
-target_link_libraries(write-sigma-hepmcs pythia pythia8 HepMC ${boost-libs} )
+add_executable(write-sigma-hepmcs main-write-sigma-hepmcs.cpp)
+target_link_libraries(write-sigma-hepmcs hnl pythia8 HepMC ${boost-libs})
 
-add_executable(write-BRs main-write-BRs.cpp )
-target_link_libraries(write-BRs pythia ${boost-libs} pythia8)
+add_executable(write-BRs main-write-BRs.cpp)
+target_link_libraries(write-BRs hnl pythia8 ${boost-libs})
 
-add_executable(write-hepmc main-write-hepmc.cpp )
-target_link_libraries(write-hepmc pythia pythia8 HepMC ${boost-libs} )
+add_executable(write-hepmc main-write-hepmc.cpp)
+target_link_libraries(write-hepmc hnl pythia8 HepMC ${boost-libs})
 
-add_executable(write-hepmcs main-write-hepmcs.cpp )
-target_link_libraries(write-hepmcs pythia pythia8 HepMC ${boost-libs} )
+add_executable(write-hepmcs main-write-hepmcs.cpp)
+target_link_libraries(write-hepmcs hnl pythia8 HepMC ${boost-libs})
 
-add_executable(read-hepmc main-read-hepmc.cpp )
-target_link_libraries(read-hepmc pythia pythia8 HepMC ${boost-libs} )
+add_executable(read-hepmc main-read-hepmc.cpp)
+target_link_libraries(read-hepmc hnl pythia8 HepMC ${boost-libs})
 
-add_executable(scan-hepmc main-scan-hepmc.cpp )
-target_link_libraries(scan-hepmc pythia pythia8 HepMC ${boost-libs} )
+add_executable(scan-hepmc main-scan-hepmc.cpp)
+target_link_libraries(scan-hepmc hnl pythia8 HepMC ${boost-libs})
 
-add_executable(scan-hepmcs main-scan-hepmcs.cpp )
-target_link_libraries(scan-hepmcs pythia pythia8 HepMC ${boost-libs} )
+add_executable(scan-hepmcs main-scan-hepmcs.cpp)
+target_link_libraries(scan-hepmcs hnl pythia8 HepMC ${boost-libs})
 
-add_executable(scan-lhe main-scan-lhe.cpp )
-target_link_libraries(scan-lhe pythia pythia8 HepMC ${boost-libs} )
+add_executable(scan-lhe main-scan-lhe.cpp)
+target_link_libraries(scan-lhe hnl pythia8 ${boost-libs})
 
-add_executable(scan-lhes main-scan-lhes.cpp )
-target_link_libraries(scan-lhes pythia pythia8 HepMC ${boost-libs} )
+add_executable(scan-lhes main-scan-lhes.cpp)
+target_link_libraries(scan-lhes hnl pythia8 ${boost-libs})
 
-add_executable(read-lhe main-read-lhe.cpp )
-target_link_libraries(read-lhe pythia8 ${boost-libs} pythia)
+add_executable(read-lhe main-read-lhe.cpp)
+target_link_libraries(read-lhe hnl pythia8 ${boost-libs})
 
 if(graphic)
   add_executable(Geometry main-geometry.cpp)
-  target_link_libraries(Geometry HepMC ${hepmc-libs} ${qt-libs})
+  target_link_libraries(Geometry ${qt-libs})
+
   add_executable(draw main-draw.cpp)
-  target_link_libraries(draw HepMC ${hepmc-libs} ${qt-libs} ${cgal-libs})
+  target_link_libraries(draw ${qt-libs} ${cgal-libs})
 endif(graphic)
