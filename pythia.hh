@@ -86,6 +86,14 @@ inline void set_pythia_write_hepmc(Pythia8::Pythia& pythia, int id, double mass)
     pythia.readString("Main:numberOfEvents = 100000");
 }
 
+inline void set_pythia_minimum_bias(Pythia8::Pythia& pythia, int id, double mass) {
+    set_pythia_stable(pythia, id, mass);
+    set_pythia_production(pythia);
+    set_pythia_next_quiet(pythia);
+    pythia.readString("SoftQCD:nonDiffractive = on");
+    pythia.readString("Main:numberOfEvents = 100000");
+}
+
 inline auto for_each(Pythia8::ParticleDataEntry const& particle, std::function<void(Pythia8::DecayChannel const&)> const& function) {
     for (auto channel_number : irange(particle.sizeChannels())) function(particle.channel(channel_number));
 }

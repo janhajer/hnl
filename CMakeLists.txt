@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.4)
 
 project(HeavyNeutralLeptons)
 
-# use QT and cgal libs?
+# use qt and cgal libs?
 set(graphic ON)
 
-# HepMC
+# hepmc
 include_directories("~/Development/HEPMC2/")
 LINK_DIRECTORIES("~/Development/HEPMC2/build/lib/")
 
@@ -16,7 +16,7 @@ LINK_DIRECTORIES("~/Development/pythia/lib")
 set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_CXX_STANDARD 17) # we want this
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") # but sometimes only this works
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token -pthread -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token")
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native") # faster for local machine
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb") # debugging
@@ -46,6 +46,7 @@ set(boost-libs ${Boost_LIBRARIES})
 # lib
 add_library(hnl ResonanceWidths.cpp ThreeBodyWidth.cpp Sigma.cpp decay_table.cpp read-file.cpp branching_ratios.cpp)
 
+# libs
 set(hnl-libs hnl pythia8 ${boost-libs} ${CMAKE_DL_LIBS} z)
 set(hnl-libs-hep ${hnl-libs} HepMC)
 
@@ -70,6 +71,12 @@ target_link_libraries(write-hepmc ${hnl-libs-hep})
 
 add_executable(write-hepmcs main-write-hepmcs.cpp)
 target_link_libraries(write-hepmcs ${hnl-libs-hep})
+
+add_executable(write-minbias main-write-minbias.cpp)
+target_link_libraries(write-minbias ${hnl-libs-hep})
+
+add_executable(write-minbiases main-write-minbiases.cpp)
+target_link_libraries(write-minbiases ${hnl-libs-hep})
 
 add_executable(read-hepmc main-read-hepmc.cpp)
 target_link_libraries(read-hepmc ${hnl-libs-hep})
