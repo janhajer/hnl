@@ -48,7 +48,7 @@ boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
     if (meta.sigma <= 0) return boost::none;
     for (auto heavy : heavy_neutral_leptons()) for (auto light : light_neutrinos()) meta.couplings[heavy][light] = to_double(find_coupling(lines, heavy, light));
     if (meta.couplings.empty()) return boost::none;
-    print("Meta info",meta.mass, meta.sigma);
+    print("Meta info", meta.mass, meta.sigma);
     return meta;
 }
 
@@ -83,6 +83,13 @@ void for_each_until(HepMC::IO_GenEvent& events, std::function<bool(HepMC::GenEve
         if (function(*event)) break;
         delete event;
         events >> event;
+    }
+}
+
+void for_each_until(Pythia8::Event const& event, std::function<void(Pythia8::Particle const& particle)> const& function) {
+    for (auto line = 0; line < event.size(); ++line) {
+        auto const& particle = event[line];
+        function(particle);
     }
 }
 

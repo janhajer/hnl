@@ -66,7 +66,7 @@ boost::optional<Meta> meta_info_lhe(boost::filesystem::path const& path) {
     Meta meta;
     meta.mass = to_double(find_mass_lhe(lines));
     if (meta.mass <= 0) return boost::none;
-    meta.sigma = to_double(find_sigma_lhe(lines)) / 1e-12 * 1e-3 ; // from pico (MG) to milli (py) barn
+    meta.sigma = to_double(find_sigma_lhe(lines)) * 1e-12 / 1e-3 ; // from pico (MG) to milli (py) barn
     if (meta.sigma <= 0) return boost::none;
     int pos = 0;
     for (auto light : light_neutrinos()) for (auto heavy : heavy_neutral_leptons()) meta.couplings[heavy][light] = to_double(find_coupling_lhe(lines, heavy, light, ++pos));
