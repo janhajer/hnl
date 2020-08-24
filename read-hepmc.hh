@@ -140,25 +140,6 @@ double read_hepmc(boost::filesystem::path const& path, Meta const& meta, double 
     return result;
 }
 
-using ScanResult = std::map<double, std::map<double, double>>;
-
-void save_result(ScanResult const& result, std::string const& name = "result") {
-    std::ofstream file;
-    file.open(name + ".dat");
-    bool first = true;
-    for (auto const& line : result) {
-        if (first) {
-            file << "mass" << '\t';
-            for (auto const& cell : line.second) file << cell.first << '\t';
-            file << std::endl;
-            first = false;
-        }
-        file << line.first << '\t';
-        for (auto const& cell : line.second) file << cell.second << '\t';
-        file << std::endl;
-    }
-}
-
 double read_hepmc(boost::filesystem::path const& path, double coupling) {
     auto meta = meta_info(path);
     return meta ? read_hepmc(path, *meta, coupling) : 0.;

@@ -16,7 +16,7 @@ const bool debug = false;
 
 std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> const& mesons) {
     double max_width = 0;
-    int id;
+    int id = 0;
     for (auto meson : mesons) {
         double partial_width = 0.;
         auto& particle = *pythia.particleData.particleDataEntryPtr(meson);

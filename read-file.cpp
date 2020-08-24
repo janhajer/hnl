@@ -35,6 +35,7 @@ std::string find_in_file_copy(std::vector<std::string>& lines, int pos, std::fun
 }
 
 std::vector<std::string> tail(FILE* file, int n) {
+    // TODO move from C to C++
     std::vector<std::string> lines;
     int count = 0;
     char string[2 * 100];
@@ -61,6 +62,20 @@ private:
     std::string string;
 };
 
+std::vector<std::string> import_file(boost::filesystem::path const& path) {
+    std::ifstream file(path.string(), std::ios_base::in | std::ios_base::binary);
+
+    std::vector<std::string> lines;
+    if (path.extension().string() == ".gz") {
+        boost::iostreams::filtering_streambuf<boost::iostreams::input> buffer;
+        buffer.push(boost::iostreams::gzip_decompressor());
+        buffer.push(file);
+        std::istream instream(&buffer);
+        std::copy(std::istream_iterator<Line>(instream), std::istream_iterator<Line>(), std::back_inserter(lines));
+    } else std::copy(std::istream_iterator<Line>(file), std::istream_iterator<Line>(), std::back_inserter(lines));
+    return lines;
+}
+
 std::vector<std::string> import_head(boost::filesystem::path const& path, int number) {
     std::ifstream file(path.string(), std::ios_base::in | std::ios_base::binary);
 
@@ -81,6 +96,23 @@ std::vector<std::string> import_tail(boost::filesystem::path const& path, int nu
     auto back = tail(fp, number);
     fclose(fp); ;
     return back;
+}
+
+void save_result(ScanResult const& result, std::string const& name) {
+    std::ofstream file;
+    file.open(name + ".dat");
+    bool first = true;
+    for (auto const& line : result) {
+        if (first) {
+            file << "mass" << '\t';
+            for (auto const& cell : line.second) file << cell.first << '\t';
+            file << std::endl;
+            first = false;
+        }
+        file << line.first << '\t';
+        for (auto const& cell : line.second) file << cell.second << '\t';
+        file << std::endl;
+    }
 }
 
 }

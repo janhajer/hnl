@@ -135,25 +135,6 @@ double read_lhe(boost::filesystem::path const& path, Meta const& meta, double co
     return result;
 }
 
-using ScanResult = std::map<double, std::map<double, double>>;
-
-void save_result(ScanResult const& result, std::string const& name = "result") {
-    std::ofstream file;
-    file.open(name + ".dat");
-    bool first = true;
-    for (auto const& line : result) {
-        if (first) {
-            file << "mass" << '\t';
-            for (auto const& cell : line.second) file << cell.first << '\t';
-            file << std::endl;
-            first = false;
-        }
-        file << line.first << '\t';
-        for (auto const& cell : line.second) file << cell.second << '\t';
-        file << std::endl;
-    }
-}
-
 double read_lhe(boost::filesystem::path const& path, double coupling) {
     auto meta = meta_info_lhe(path);
     return meta ? read_lhe(path, *meta, coupling) : 0.;
@@ -163,13 +144,14 @@ ScanResult scan_lhe(boost::filesystem::path const& path) {
     ScanResult result;
     print("file", path);
     auto meta = meta_info_lhe(path);
-    if (meta) for (auto coupling : log_range(1e-8, 1, 80)) result[meta->mass][coupling] = read_lhe(path, *meta, coupling);
+    if (meta) for (auto coupling : log_range(1e-8, 1, 8)) result[meta->mass][coupling] = read_lhe(path, *meta, coupling);
     return result;
 }
 
 void scan_lhe(std::string const& path_name) {
     boost::filesystem::path path("./" + path_name);
-    save_result(scan_lhe(path), path.stem().string());
+    save_result(scan_lhe(path), path.parent_path().string());
+//     save_result(scan_lhe(path), path.stem().string());
 }
 
 auto get_range(boost::filesystem::path const& path) {
