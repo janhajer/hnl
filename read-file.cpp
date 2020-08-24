@@ -78,7 +78,6 @@ std::vector<std::string> import_file(boost::filesystem::path const& path) {
 
 std::vector<std::string> import_head(boost::filesystem::path const& path, int number) {
     std::ifstream file(path.string(), std::ios_base::in | std::ios_base::binary);
-
     std::vector<std::string> lines;
     if (path.extension().string() == ".gz") {
         boost::iostreams::filtering_streambuf<boost::iostreams::input> buffer;
