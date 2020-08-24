@@ -4,11 +4,12 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
+#include <boost/filesystem/operations.hpp>
 
 using namespace hnl;
 
-namespace{
-    const bool debug = false;
+namespace {
+const bool debug = false;
 }
 
 std::vector<std::string> split_line(std::string const& line) {
@@ -37,7 +38,7 @@ auto find_in_file(std::vector<std::string> const& lines) {
         auto res = do_find(split_line(boost::trim_copy_if(line, boost::is_any_of("\t "))), missing);
         if (res) array[missing++] = *res;
         if (missing == 3) {
-            if(debug) print(array[0], array[1], array[2]);
+            if (debug) print(array[0], array[1], array[2]);
             result[array[0]][array[1]] = array[2];
             missing = 0;
         }
@@ -45,7 +46,20 @@ auto find_in_file(std::vector<std::string> const& lines) {
     return result;
 }
 
+auto read_out(boost::filesystem::path const& name) {
+    return find_in_file(import_file(name));
+}
+
+int main_2(int argc, char** argv) {
+    std::vector<std::string> arguments(argv + 1, argv + argc);
+    auto name = arguments.empty() ? "test.out" : arguments.front();
+    save_result(read_out(name), name);
+}
+
 int main(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
-    save_result(find_in_file(import_file(arguments.empty() ? "test.out" : arguments.front())), arguments.empty() ? "test.out" : arguments.front());
+    std::string path_name = arguments.empty() ? "." : arguments.front();
+    ScanResult result;
+    for (auto const& file : boost::make_iterator_range(boost::filesystem::directory_iterator(path_name), {})) if (file.path().extension().string() == ".out") result += read_out(file.path());
+    save_result(result);
 }
