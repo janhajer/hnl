@@ -18,13 +18,17 @@ std::vector<std::string> split_line(std::string const& line) {
 using Res = boost::optional<double>;
 Res do_find(std::vector<std::string> const& vector, int which) {
     switch (which) {
-        case 0 : return vector.size() == 6 && vector[0] == "HNLs" && vector[1] == "with" && vector[2] == "m" && vector[3] == "=" && vector[5] == "GeV" ? Res(to_double(vector[4])) : boost::none;
-        case 1 : return vector.size() > 14 && vector[0] == "Events" && vector[1] == "were" && vector[2] == "generated" && vector[3] == "with" && vector[4] == "U^2" ? Res(to_double(vector[13])) : boost::none;
-        case 2 : {auto res = vector.size() >= 3 && vector[0] == "In" && vector[1] == "MAPP" && vector[3] == "mb" ? Res(to_double(vector[2])) : boost::none;
-            if(res) print(*res , vector);
+        case 0 :
+            return vector.size() == 6 && vector[0] == "HNLs" && vector[1] == "with" && vector[2] == "m" && vector[3] == "=" && vector[5] == "GeV" ? Res(to_double(vector[4])) : boost::none;
+        case 1 :
+            return vector.size() > 14 && vector[0] == "Events" && vector[1] == "were" && vector[2] == "generated" && vector[3] == "with" && vector[4] == "U^2" ? Res(to_double(vector[13])) : boost::none;
+        case 2 : {
+            auto res = vector.size() >= 3 && vector[0] == "In" && vector[1] == "MAPP" && vector[3] == "mb" ? Res(to_double(vector[2])) : boost::none;
+//             if (res) print(*res, vector);
             return res;
         }
-        default : return boost::none;
+        default :
+            return boost::none;
     }
 }
 
@@ -34,11 +38,11 @@ auto find_in_file(std::vector<std::string> const& lines) {
     std::array<double, 3> array;
     for (auto const& line : lines) {
         auto res = do_find(split_line(boost::trim_copy_if(line, boost::is_any_of("\t "))), missing);
-        if(res) {
+        if (res) {
             array[missing] = *res;
             ++missing;
         }
-        if (missing == 2) {
+        if (missing == 3) {
             print(array[0], array[1], array[2]);
             result[array[0]][array[1]] = array[2];
             missing = 0;
