@@ -1,3 +1,6 @@
+#include <map>
+#include <array>
+
 #include "pythia.hh"
 #include "ResonanceWidths.hh"
 #include "branching_ratios.hh"
@@ -8,7 +11,10 @@ namespace {
 
 constexpr bool debug = false;
 
+using Result = std::map<int, std::map<std::array<int, 5>, std::map<int, double>>>;
+
 }
+
 
 void save_data(Result& result, hnl::Loop const& loop, double mass, int source) {
     std::ofstream output_file(std::to_string(source) + ".dat");
@@ -16,7 +22,7 @@ void save_data(Result& result, hnl::Loop const& loop, double mass, int source) {
     for (auto step = 0; step <= loop.steps; ++step) output_file << std::scientific << '\t' << loop.mass(mass, step);
     output_file << '\n';
     for (auto& row : result[source]) {
-        output_file << std::scientific << std::get<0>(row.first) << '\t' << std::get<1>(row.first) << '\t' << std::get<2>(row.first) << '\t' << std::get<3>(row.first) << '\t' << std::get<4>(row.first) << '\t';
+        output_file << std::scientific << row.first[0] << '\t' << row.first[1] << '\t' << row.first[2] << '\t' << row.first[3] << '\t' << row.first[4] << '\t';
         for (auto step = 0; step <= loop.steps; ++step) output_file << std::scientific << row.second[step] << '\t';
         output_file << '\n';
     }

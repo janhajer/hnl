@@ -8,6 +8,8 @@
 
 namespace hnl {
 
+namespace hepmc {
+
 namespace {
 
 const bool debug = false;
@@ -73,7 +75,7 @@ void for_each_if(Pythia8::Pythia& pythia, HepMC::IO_GenEvent& file, std::functio
     }
 }
 
-void write_hepmc(Pythia8::Pythia& pythia, double mass, double coupling) {
+void write(Pythia8::Pythia& pythia, double mass, double coupling) {
     HepMC::IO_GenEvent file(std::to_string(mass) + ".hep", std::ios::out);
     file.write_comment("mass " + std::to_string(mass) + " GeV");
 
@@ -115,7 +117,7 @@ void write_hepmc(Pythia8::Pythia& pythia, double mass, double coupling) {
     file.write_comment("sigma " + to_string(pythia.info.sigmaGen() * successfull / total) + " mb");
 }
 
-void write_hepmc(double mass) {
+void write(double mass) {
     print("Generating events for HNLs with mass", mass, "GeV");
 
     std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
@@ -131,17 +133,17 @@ void write_hepmc(double mass) {
     auto [id, max_width] = get_max_width(pythia, mesons);
     print("The maximal BR into HNLs with U^2 =", coupling, "is", max_width, "from", id);
 
-    write_hepmc(pythia, mass, coupling);
+    write(pythia, mass, coupling);
 }
 
-void write_hepmcs() {
+void writes() {
     Loop loop(.1, 100);
     for (auto step = 0; step <= loop.steps; ++step) {
         auto mass = loop.mass(6., step);
         std::ofstream ofstream(std::to_string(mass) + ".txt");
         std::streambuf* streambuf = std::cout.rdbuf();
         std::cout.rdbuf(ofstream.rdbuf());
-        write_hepmc(mass);
+        write(mass);
         std::cout.rdbuf(streambuf);
     }
 }
@@ -153,15 +155,14 @@ void calculate_sigma(double mass) {
     set_pythia_sigma(pythia);
     pythia.readString("Main:numberOfEvents = 100");
     pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), mass, heavy_neutrino));
-    auto sigma = std::make_unique<Sigma>(neutrino_coupling(coupling), heavy_neutrino, 12);
-    pythia.setSigmaPtr(sigma.get());
+    pythia.setSigmaPtr(std::make_unique<Sigma>(neutrino_coupling(coupling), heavy_neutrino, 12).get());
     pythia.init();
     for (auto event_number = 0; event_number < pythia.mode("Main:numberOfEvents"); ++event_number) if (!pythia.next()) print("Error in event", event_number);
     pythia.stat();
     print("sigma", pythia.info.sigmaGen() / coupling);
 }
 
-void write_sigma_hepmc(double mass) {
+void write_sigma(double mass) {
     print("Generating events for HNLs with mass", mass, "GeV");
 
     auto coupling = 1;
@@ -172,23 +173,22 @@ void write_sigma_hepmc(double mass) {
     pythia.readString("Main:numberOfEvents = 100000");
 
     pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), mass, heavy_neutrino));
-    auto sigma = std::make_unique<Sigma>(neutrino_coupling(coupling), heavy_neutrino, 12);
-    pythia.setSigmaPtr(sigma.get());
+    pythia.setSigmaPtr(std::make_unique<Sigma>(neutrino_coupling(coupling), heavy_neutrino, 12).get());
 
     pythia.init();
 
-    write_hepmc(pythia, mass, coupling);
+    write(pythia, mass, coupling);
 
 }
 
-void write_sigma_hepmcs() {
+void write_sigmas() {
     Loop loop(.1, 10);
     for (auto step = 0; step <= loop.steps; ++step) {
         auto mass = loop.mass(6.2, step);
         std::ofstream ofstream("sigma_" + std::to_string(mass) + ".txt");
         std::streambuf* streambuf = std::cout.rdbuf();
         std::cout.rdbuf(ofstream.rdbuf());
-        write_sigma_hepmc(mass);
+        write_sigma(mass);
         std::cout.rdbuf(streambuf);
     }
 }
@@ -228,7 +228,7 @@ void write_minimum_bias(double mass) {
     auto [id, max_width] = get_max_width(pythia, mesons);
     print("The maximal BR into HNLs with U^2 =", coupling, "is", max_width, "from", id);
 
-    write_hepmc(pythia, mass, coupling);
+    write(pythia, mass, coupling);
 }
 
 void write_minimum_biases() {
@@ -241,6 +241,8 @@ void write_minimum_biases() {
         write_minimum_bias(mass);
         std::cout.rdbuf(streambuf);
     }
+}
+
 }
 
 }

@@ -53,13 +53,13 @@ auto read_out(boost::filesystem::path const& name) {
 int main_2(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
     auto name = arguments.empty() ? "test.out" : arguments.front();
-    save_result(read_out(name), name);
+    save(read_out(name), name);
 }
 
 int main(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
     std::string path_name = arguments.empty() ? "." : arguments.front();
-    ScanResult result;
-    for (auto const& file : boost::make_iterator_range(boost::filesystem::directory_iterator(path_name), {})) if (file.path().extension().string() == ".out") result += read_out(file.path());
-    save_result(result);
+    Result result;
+    for (auto const& file : files(path_name)) if (file.path().extension().string() == ".out") result += read_out(file.path());
+    save(result);
 }

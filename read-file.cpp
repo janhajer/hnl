@@ -4,7 +4,7 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-#include <boost/filesystem.hpp>
+
 #include <boost/range/algorithm/find_if.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string.hpp>
@@ -26,10 +26,9 @@ std::vector<std::string> split_line(std::string const& line) {
     return strings;
 }
 
-std::string find_in_file_copy(std::vector<std::string>& lines, int pos, std::function<bool(std::vector<std::string>)> const& predicate) {
-    auto found = boost::range::find_if(lines, [&predicate](auto & line) {
-        boost::trim_if(line, boost::is_any_of("\t "));
-        return predicate(split_line(line));
+std::string find_if(std::vector<std::string> const& lines, int pos, std::function<bool(std::vector<std::string>)> const& predicate) {
+    auto found = boost::range::find_if(lines, [&predicate](auto const& line) {
+        return predicate(split_line(boost::trim_copy_if(line, boost::is_any_of("\t "))));
     });
     return found == lines.end() ? "value not found" : split_line(*found).at(pos);
 }
@@ -97,7 +96,7 @@ std::vector<std::string> import_tail(boost::filesystem::path const& path, int nu
     return back;
 }
 
-void save_result(ScanResult const& result, std::string const& name) {
+void save(Result const& result, std::string const& name) {
     std::ofstream file;
     file.open(name + ".dat");
     bool first = true;
@@ -113,5 +112,16 @@ void save_result(ScanResult const& result, std::string const& name) {
         file << std::endl;
     }
 }
+
+double max(Couplings const& couplings) {
+    double max = 0.;
+    for (auto const& inner : couplings) for (auto const& pair : inner.second) if (pair.second > max) max = pair.second;
+    return max;
+}
+
+boost::iterator_range<boost::filesystem::directory_iterator> files(boost::filesystem::path const& path) {
+    return boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
+}
+
 
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/filesystem/operations.hpp>
 #include "decay_table.hh"
 #include "read-file.hh"
 #include "pythia-cgal.hh"
@@ -15,21 +14,23 @@ const bool debug = false;
 
 }
 
-auto find_mass_lhe(std::vector<std::string>& lines) {
+namespace lhe {
+
+auto mass(std::vector<std::string> const& lines) {
      if(debug) print("mass");
-    return find_in_file_copy(lines, 1, [](auto const & strings) {
+    return find_if(lines, 1, [](auto const & strings) {
         return strings.size() > 2 && strings.at(0) == std::to_string(heavy_neutrino) && strings.at(2) == "#" && strings.at(3) == "mn1";
     });
 }
 
-auto find_sigma_lhe(std::vector<std::string>& lines) {
+auto sigma(std::vector<std::string> const& lines) {
      if(debug) print("sigma");
-    return find_in_file_copy(lines, 5, [](auto const & strings) {
+    return find_if(lines, 5, [](auto const & strings) {
         return strings.size() > 4 && strings.at(0) == "#" && strings.at(1) == "Integrated" && strings.at(2) == "weight" && strings.at(3) == "(pb)" && strings.at(4) == ":";
     });
 }
 
-std::string get_param_heavy(int heavy){
+std::string parameter_heavy(int heavy){
     switch (heavy){
         case 9900012 : return "n1";
         case 9900014 : return "n2";
@@ -39,7 +40,7 @@ std::string get_param_heavy(int heavy){
     return "";
 }
 
-std::string get_param_light(int light){
+std::string parameter_light(int light){
     switch (light){
         case 12 : return "e";
         case 14 : return "mu";
@@ -49,40 +50,33 @@ std::string get_param_light(int light){
     return "";
 }
 
-std::string get_param(int heavy, int light){
-    return "v" + get_param_light(light) + get_param_heavy(heavy);
+std::string parameter(int heavy, int light){
+    return "v" + parameter_light(light) + parameter_heavy(heavy);
 }
 
-std::string find_coupling_lhe(std::vector<std::string>& lines, int heavy, int light, int pos) {
+std::string coupling(std::vector<std::string> const& lines, int heavy, int light, int pos) {
      if(debug) print("coupling", heavy, light, pos);
-    std::string name = get_param(heavy, light);
-    return find_in_file_copy(lines, 1, [&name, pos](auto const & strings) noexcept {
+    std::string name = parameter(heavy, light);
+    return find_if(lines, 1, [&name, pos](auto const & strings) {
         return strings.size() > 3 && strings.at(0) == std::to_string(pos) && strings.at(2) == "#" && strings.at(3) == name;
     });
 }
 
-boost::optional<Meta> meta_info_lhe(boost::filesystem::path const& path) {
+boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
     auto lines = import_head(path, 500);
     Meta meta;
-    meta.mass = to_double(find_mass_lhe(lines));
+    meta.mass = to_double(mass(lines));
     if (meta.mass <= 0) return boost::none;
-    meta.sigma = to_double(find_sigma_lhe(lines)) * 1e-12 / 1e-3 ; // from pico (MG) to milli (py) barn
+    meta.sigma = to_double(sigma(lines)) * 1e-12 / 1e-3 ; // from picobarn (MadGraph) to millibarn (Pythia)
     if (meta.sigma <= 0) return boost::none;
     int pos = 0;
-    for (auto light : light_neutrinos()) for (auto heavy : heavy_neutral_leptons()) meta.couplings[heavy][light] = to_double(find_coupling_lhe(lines, heavy, light, ++pos));
+    for (auto light : light_neutrinos()) for (auto heavy : heavy_neutral_leptons()) meta.couplings[heavy][light] = to_double(coupling(lines, heavy, light, ++pos));
     if (meta.couplings.empty()) return boost::none;
     print("Meta info",meta.mass, meta.sigma);
     return meta;
 }
 
-auto max(std::map<int, std::map<int, double>> const& couplings) {
-    double max = 0.;
-    for (auto const& inner : couplings) for (auto const& pair : inner.second) if (pair.second > max) max = pair.second;
-    return max;
-}
-
-
-double read_lhe(boost::filesystem::path const& path, Meta const& meta, double coupling) {
+double read(boost::filesystem::path const& path, Meta const& meta, double coupling) {
     print(path.string(), "with", coupling);
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_read_lhe(pythia, path.string());
@@ -135,34 +129,32 @@ double read_lhe(boost::filesystem::path const& path, Meta const& meta, double co
     return result;
 }
 
-double read_lhe(boost::filesystem::path const& path, double coupling) {
-    auto meta = meta_info_lhe(path);
-    return meta ? read_lhe(path, *meta, coupling) : 0.;
+double read(boost::filesystem::path const& path, double coupling) {
+    auto meta = meta_info(path);
+    return meta ? read(path, *meta, coupling) : 0.;
 }
 
-ScanResult scan_lhe(boost::filesystem::path const& path) {
-    ScanResult result;
+Result scan(boost::filesystem::path const& path) {
+    Result result;
     print("file", path);
-    auto meta = meta_info_lhe(path);
-    if (meta) for (auto coupling : log_range(1e-8, 1, 8)) result[meta->mass][coupling] = read_lhe(path, *meta, coupling);
+    auto meta = meta_info(path);
+    if (meta) for (auto coupling : log_range(1e-8, 1, 8)) result[meta->mass][coupling] = read(path, *meta, coupling);
     return result;
 }
 
-void scan_lhe(std::string const& path_name) {
+void scan(std::string const& path_name) {
     boost::filesystem::path path("./" + path_name);
-    save_result(scan_lhe(path), path.parent_path().string());
-//     save_result(scan_lhe(path), path.stem().string());
+    save(scan(path), path.parent_path().string());
+//     save(scan(path), path.stem().string());
 }
 
-auto get_range(boost::filesystem::path const& path) {
-    return boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
-}
-
-void scan_lhes(std::string const& path_name) {
+void scans(std::string const& path_name) {
     print("read lhe in", path_name);
-    ScanResult result;
-    for (auto const& folder : get_range(path_name)) if (boost::filesystem::is_directory(folder)) for (auto const& file : get_range(folder.path())) if (file.path().extension().string() == ".lhe" || file.path().extension().string() == ".gz") result += scan_lhe(file.path());
-    save_result(result);
+    Result result;
+    for (auto const& folder : files(path_name)) if (boost::filesystem::is_directory(folder)) for (auto const& file : files(folder.path())) if (file.path().extension().string() == ".lhe" || file.path().extension().string() == ".gz") result += scan(file.path());
+    save(result);
+}
+
 }
 
 }
