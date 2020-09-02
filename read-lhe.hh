@@ -8,13 +8,13 @@
 
 namespace hnl {
 
+namespace lhe {
+
 namespace {
 
 const bool debug = false;
 
 }
-
-namespace lhe {
 
 auto mass(std::vector<std::string> const& lines) {
      if(debug) print("mass");

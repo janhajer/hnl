@@ -11,6 +11,8 @@
 
 namespace hnl {
 
+std::vector<std::string> split_line(std::string const& line);
+
 std::string find_if(std::vector<std::string> const& lines, int pos, std::function<bool(std::vector<std::string>)> const& predicate);
 
 std::vector<std::string> import_file(boost::filesystem::path const& path);

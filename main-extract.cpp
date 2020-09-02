@@ -1,27 +1,22 @@
-#include "container.hh"
-#include "string.hh"
-#include "read-file.hh"
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
-#include <boost/filesystem/operations.hpp>
+
+#include "container.hh"
+#include "string.hh"
+#include "read-file.hh"
 
 using namespace hnl;
 
 namespace {
-const bool debug = false;
-}
 
-std::vector<std::string> split_line(std::string const& line) {
-    std::vector<std::string> strings;
-    boost::split(strings, line, [](char c) {
-        return c == ' ';
-    }, boost::token_compress_on);
-    return strings;
+const bool debug = false;
+
 }
 
 using Res = boost::optional<double>;
-Res do_find(std::vector<std::string> const& vector, int which) {
+
+Res extract_from_line(std::vector<std::string> const& vector, int which) {
     switch (which) {
         case 0 : return vector.size() == 6 && vector[0] == "HNLs" && vector[1] == "with" && vector[2] == "m" && vector[3] == "=" && vector[5] == "GeV" ? Res(to_double(vector[4])) : boost::none;
         case 1 : return vector.size() > 14 && vector[0] == "Events" && vector[1] == "were" && vector[2] == "generated" && vector[3] == "with" && vector[4] == "U^2" ? Res(to_double(vector[13])) : boost::none;
@@ -32,11 +27,12 @@ Res do_find(std::vector<std::string> const& vector, int which) {
 
 auto find_in_file(std::vector<std::string> const& lines) {
     int missing = 0;
-    std::map<double, std::map<double, double>> result;
+    Result result;
     std::array<double, 3> array;
     for (auto const& line : lines) {
-        auto res = do_find(split_line(boost::trim_copy_if(line, boost::is_any_of("\t "))), missing);
-        if (res) array[missing++] = *res;
+        auto found = extract_from_line(split_line(boost::trim_copy_if(line, boost::is_any_of("\t "))), missing);
+        if (!found) continue;
+        array[missing++] = *found;
         if (missing == 3) {
             if (debug) print(array[0], array[1], array[2]);
             result[array[0]][array[1]] = array[2];
@@ -56,10 +52,13 @@ int main_2(int argc, char** argv) {
     save(read_out(name), name);
 }
 
-int main(int argc, char** argv) {
-    std::vector<std::string> arguments(argv + 1, argv + argc);
-    std::string path_name = arguments.empty() ? "." : arguments.front();
+auto reads_out(boost::filesystem::path const& path_name) {
     Result result;
     for (auto const& file : files(path_name)) if (file.path().extension().string() == ".out") result += read_out(file.path());
     save(result);
+}
+
+int main(int argc, char** argv) {
+    std::vector<std::string> arguments(argv + 1, argv + argc);
+    reads_out(arguments.empty() ? "." : arguments.front());
 }

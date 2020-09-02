@@ -106,3 +106,5 @@ if(graphic)
   add_executable(draw main-draw.cpp)
   target_link_libraries(draw ${qt-libs} ${cgal-libs})
 endif(graphic)
+
+add_executable(test-slurm test-slurm.cpp)

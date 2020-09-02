@@ -118,7 +118,7 @@ inline bool has_neutrino(Pythia8::DecayChannel const& channel) {
 //     })) return true;
     for (auto heavy : heavy_neutral_leptons()) for(auto mult : irange(channel.multiplicity())) if(channel.product(mult) == heavy) return true;
     return false;
-};
+}
 
 inline double tau_to_Gamma(double tau) { //mm/c->GeV
     return 1.97327E-13 / tau;
