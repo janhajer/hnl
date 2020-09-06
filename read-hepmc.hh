@@ -143,7 +143,7 @@ double read(boost::filesystem::path const& path, double coupling) {
     return meta ? read(path, *meta, coupling) : 0.;
 }
 
-boost::optional<Result> scan(boost::filesystem::path const& path) {
+boost::optional<Result> scan_file(boost::filesystem::path const& path) {
     Result result;
     print("file", path);
     if (auto meta = meta_info(path)) for (auto coupling : log_range(1e-8, 1, 80)) result[meta->mass][coupling] = read(path, *meta, coupling);
@@ -151,15 +151,14 @@ boost::optional<Result> scan(boost::filesystem::path const& path) {
     return result;
 }
 
-void scan(std::string const& path_name) {
-    boost::filesystem::path path("./" + path_name);
-    if(auto result = scan(path)) save(*result, path.stem().string());
+void scan(boost::filesystem::path const& path) {
+    if(auto result = scan_file(path)) save(*result, path.stem().string());
 }
 
 void scans(std::string const& path_name) {
     if (debug) print("read hep mcs in", path_name);
     Result results;
-    for (auto const& file : files(path_name)) if (file.path().extension().string() == ".hep") if (auto result = scan(file.path())) results += *result;
+    for (auto const& file : files(path_name)) if (file.path().extension().string() == ".hep") if (auto result = scan_file(file.path())) results += *result;
     save(results);
 }
 

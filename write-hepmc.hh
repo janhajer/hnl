@@ -85,7 +85,7 @@ void write(Pythia8::Pythia& pythia, double mass, double coupling) {
     int successfull = 0;
     int too_many = 0;
 
-    for_each_if(pythia, file, [&too_many, &total, &successfull](Pythia8::Event const & event) -> bool {
+    for_each_if(pythia, file, [&too_many, &total, &successfull, &file, &pythia](Pythia8::Event const & event) -> bool {
         ++total;
         int found_one = 0;
         bool success = false;
@@ -104,7 +104,10 @@ void write(Pythia8::Pythia& pythia, double mass, double coupling) {
             success = true;
         }
         if (found_one > 1) ++too_many;
-        if (success) ++successfull;
+        if (success) {
+            ++successfull;
+            file.write_comment("sigma " + to_string(pythia.info.sigmaGen() * successfull / total) + " mb");
+        }
         return success;
     });
 
