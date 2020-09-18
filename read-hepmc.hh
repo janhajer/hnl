@@ -146,7 +146,7 @@ double read(boost::filesystem::path const& path, double coupling) {
 boost::optional<Result> scan_file(boost::filesystem::path const& path) {
     Result result;
     print("file", path);
-    if (auto meta = meta_info(path)) for (auto coupling : log_range(1e-8, 1, 80)) result[meta->mass][coupling] = read(path, *meta, coupling);
+    if (auto meta = meta_info(path)) for (auto coupling : log_range(1e-8, 1, 8)) result[meta->mass][coupling] = read(path, *meta, coupling);
     else return boost::none;
     return result;
 }
