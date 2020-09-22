@@ -25,7 +25,7 @@ std::vector<Result> transform(Container<Element> const& container, Function && f
 
 inline auto log_range(double min, double max, int steps) {
     return transform(irange(steps + 1), [&](auto step) {
-        return log_scale(min, max, step, steps);
+        return log_step(min, max, step, steps);
     });
 }
 

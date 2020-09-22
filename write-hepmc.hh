@@ -120,7 +120,7 @@ void write(Pythia8::Pythia& pythia, double mass, double coupling) {
     file.write_comment("sigma " + to_string(pythia.info.sigmaGen() * successfull / total) + " mb");
 }
 
-void write(double mass) {
+void write_hepmc(double mass) {
     print("Generating events for HNLs with mass", mass, "GeV");
 
     std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
@@ -146,7 +146,7 @@ void writes() {
         std::ofstream ofstream(std::to_string(mass) + ".txt");
         std::streambuf* streambuf = std::cout.rdbuf();
         std::cout.rdbuf(ofstream.rdbuf());
-        write(mass);
+        write_hepmc(mass);
         std::cout.rdbuf(streambuf);
     }
 }

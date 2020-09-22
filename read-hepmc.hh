@@ -71,7 +71,7 @@ Pythia8::Particle retrive_neutrino(HepMC::GenEvent const& event, double lifetime
 }
 
 void for_each_until(HepMC::IO_GenEvent& events, std::function<bool(HepMC::GenEvent const&)> const& function) {
-    auto* event = events.read_next_event();
+    auto * event = events.read_next_event();
     if (!event) print("Hepmc file is empty");
     while (event) {
         if (function(*event)) break;

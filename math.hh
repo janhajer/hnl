@@ -38,12 +38,12 @@ Base pow(Base base, int exp) {
     return result;
 }
 
-inline auto lin_scale(double min, double max, int step, int steps) {
+inline auto linear_step(double min, double max, int step, int steps) {
     return min + (max - min) * step / steps;
 }
 
-inline auto log_scale(double min, double max, int step, int steps) {
-    return std::pow(10, lin_scale(std::log10(min), std::log10(max), step, steps));
+inline auto log_step(double min, double max, int step, int steps) {
+    return std::pow(10, linear_step(std::log10(min), std::log10(max), step, steps));
 }
 
 struct Loop {
@@ -51,7 +51,7 @@ struct Loop {
     double m_min;
     int steps;
     double mass(double max, int step) const {
-        return log_scale(m_min, max, step, steps);
+        return log_step(m_min, max, step, steps);
     }
 };
 
