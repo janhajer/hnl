@@ -19,6 +19,7 @@ inline void set_pythia_next_quiet(Pythia8::Pythia& pythia) {
     pythia.readString("Next:numberShowEvent = 0");
     pythia.readString("Next:numberShowProcess = 0");
     pythia.readString("Next:numberShowInfo = 0");
+    pythia.readString("Next:numberCount = 0");
 }
 
 inline void set_pythia_quiet(Pythia8::Pythia& pythia) {
