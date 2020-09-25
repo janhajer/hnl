@@ -138,9 +138,12 @@ double read(boost::filesystem::path const& path, Meta const& meta, double coupli
     return result;
 }
 
-double read(boost::filesystem::path const& path, double coupling) {
+void read(boost::filesystem::path const& path, double coupling) {
     auto meta = meta_info(path);
-    return meta ? read(path, *meta, coupling) : 0.;
+    if(!meta) return;
+    Result result;
+    result[meta->mass][coupling] = read(path, *meta, coupling);
+    save(result, path.stem().string() + "-" + std::to_string(coupling));
 }
 
 boost::optional<Result> scan_file(boost::filesystem::path const& path) {
