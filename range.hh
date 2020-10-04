@@ -11,7 +11,7 @@ namespace hnl {
 
 template<typename Integer>
 auto irange(Integer integer) {
-    return boost::irange(0, integer);
+    return boost::irange(static_cast<Integer>(0), integer);
 }
 
 

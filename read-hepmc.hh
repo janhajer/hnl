@@ -3,6 +3,7 @@
 #include "read-file.hh"
 #include "pythia-cgal.hh"
 #include "mapp.hh"
+#include "range.hh"
 #include "ResonanceWidths.hh"
 #include "hepmc.hh"
 #include "string.hh"
@@ -71,7 +72,7 @@ Pythia8::Particle retrive_neutrino(HepMC::GenEvent const& event, double lifetime
 }
 
 void for_each_until(HepMC::IO_GenEvent& events, std::function<bool(HepMC::GenEvent const&)> const& function) {
-    auto * event = events.read_next_event();
+    auto* event = events.read_next_event();
     if (!event) print("Hepmc file is empty");
     while (event) {
         if (function(*event)) break;
@@ -99,27 +100,35 @@ double read(boost::filesystem::path const& path, Meta const& meta, double coupli
     if (debug) print("trying to open", path.string());
     HepMC::IO_GenEvent events(path.string(), std::ios::in);
     if (debug) print("with result", events.error_message());
-    int total = 0;
-    int good = 0;
-    int events_max = 1e6;
+    long long total = 0;
+    long long good = 0;
+    long long events_max = LLONG_MAX;
+    long long max_tries = 10e5;
     auto analysis = mapp::analysis();
     for_each_until(events, [&](HepMC::GenEvent const & event) -> bool {
-        ++total;
-        pythia.event.reset();
-        pythia.event.append(retrive_neutrino(event, lifetime));
-        if (!pythia.next()) {
-            print("Pythia encountered a problem");
-            return false;
-        }
-        if (debug) pythia.event.list(true);
-        for (auto line = 0; line < pythia.event.size(); ++line) {
-            auto const& particle = pythia.event[line];
-            if (!particle.isFinal() || !particle.isCharged()) continue;
-            if (!analysis.is_inside(to_cgal(particle))) continue;
-            if (debug) print("Hooray!", particle.vProd().pAbs());
-            ++good;
-            break;
-        }
+        auto neutrino = retrive_neutrino(event, lifetime);
+        bool is_good = false;
+        long long sub_total = 0;
+        do {
+            ++sub_total;
+            pythia.event.reset();
+            pythia.event.append(neutrino);
+            if (!pythia.next()) {
+                print("Pythia encountered a problem");
+                return false;
+            }
+            if (debug) pythia.event.list(true);
+            for (auto line = 0; line < pythia.event.size(); ++line) {
+                auto const& particle = pythia.event[line];
+                if (!particle.isFinal() || !particle.isCharged()) continue;
+                if (!analysis.is_inside(to_cgal(particle))) continue;
+                if (debug) print("Hooray!", particle.vProd().pAbs());
+                ++good;
+                is_good = true;
+                break;
+            }
+        } while (sub_total < max_tries && !is_good);
+        total += sub_total;
         return total > events_max;
     });
     print("HNLs with m =", meta.mass, "GeV");
@@ -140,7 +149,7 @@ double read(boost::filesystem::path const& path, Meta const& meta, double coupli
 
 void read(boost::filesystem::path const& path, double coupling) {
     auto meta = meta_info(path);
-    if(!meta) return;
+    if (!meta) return;
     Result result;
     result[meta->mass][coupling] = read(path, *meta, coupling);
     save(result, path.stem().string() + "-" + std::to_string(coupling));
@@ -155,7 +164,7 @@ boost::optional<Result> scan_file(boost::filesystem::path const& path) {
 }
 
 void scan(boost::filesystem::path const& path) {
-    if(auto result = scan_file(path)) save(*result, path.stem().string());
+    if (auto result = scan_file(path)) save(*result, path.stem().string());
 }
 
 void scans(std::string const& path_name) {
