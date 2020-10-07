@@ -108,7 +108,7 @@ void save(Result const& result, std::string const& name) {
             first = false;
         }
         file << line.first << '\t';
-        for (auto const& cell : line.second) file << cell.second << '\t';
+        for (auto const& cell : line.second) file << std::scientific << cell.second << '\t';
         file << std::endl;
     }
 }
