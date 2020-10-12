@@ -119,7 +119,7 @@ double max(Couplings const& couplings) {
     return max;
 }
 
-boost::iterator_range<boost::filesystem::directory_iterator> files(boost::filesystem::path const& path) {
+Files files(boost::filesystem::path const& path) {
     return boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
 }
 

@@ -35,6 +35,8 @@ using Result = std::map<double, std::map<double, double>>;
 
 void save(Result const& result, std::string const& name = "result");
 
-boost::iterator_range<boost::filesystem::directory_iterator> files(boost::filesystem::path const& path);
+using Files = boost::iterator_range<boost::filesystem::directory_iterator>;
+
+Files files(boost::filesystem::path const& path);
 
 }

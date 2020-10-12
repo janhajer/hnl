@@ -5,19 +5,19 @@
 namespace hnl {
 
 inline void print() {
-    std::cout << std::endl;
+    std::clog << std::endl;
 }
 
 template<typename Object, typename ... Arguments>
 void print(Object const& object, Arguments ... arguments) {
-    std::cout << std::boolalpha << std::scientific << object << ' ';
+    std::clog << std::boolalpha << std::scientific << object << ' ';
     print(arguments ...);
 }
 
 template<typename Container>
 void print_line(Container const& container) {
-    for (auto const& element : container) std::cout << element << ", ";
-    std::cout << std::endl;
+    for (auto const& element : container) std::clog << element << ", ";
+    std::clog << std::endl;
 }
 
 }
