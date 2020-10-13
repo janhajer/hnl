@@ -94,13 +94,13 @@ void write(Pythia8::Pythia& pythia, double mass, double coupling) {
             if (!is_heavy_neutral_lepton(std::abs(particle.id()))) continue;
             if (!is_heavy_neutral_lepton(std::abs(event[particle.mother1()].id()))) ++found_one;
             if (found_one > 1) {
-                print("More than one neutrino in event", total, "in line", line, "from mother", event[particle.mother1()].id());
+                if(debug) print("More than one neutrino in event", total, "in line", line, "from mother", event[particle.mother1()].id());
                 success = false;
                 break;
             }
             double eta = std::abs(particle.eta());
             if (!(1.4 < eta && eta < 3.5)) continue;
-            if (!is_heavy_neutral_lepton(event[particle.mother1()].id())) print("Success event", successfull + 1, "of", total, "in line", line, "from mother", event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs(), "and eta", particle.eta(), "and phi", particle.phi());
+            if (debug && !is_heavy_neutral_lepton(event[particle.mother1()].id())) print("Success event", successfull + 1, "of", total, "in line", line, "from mother", event[particle.mother1()].id(), "with decay vertex", particle.vDec().pAbs(), "and eta", particle.eta(), "and phi", particle.phi());
             success = true;
         }
         if (found_one > 1) ++too_many;
