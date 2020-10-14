@@ -9,7 +9,7 @@ namespace hnl {
 
 namespace {
 
-const bool debug = false;
+const bool debug = true;
 
 enum class quark {up, down, strange, charm, bottom, top};
 
@@ -611,6 +611,17 @@ void NeutrinoResonance::calcWidth(bool) {
     if (debug) print("calcWidth", idRes, id1Abs, id2Abs, id3Abs);
 
     auto id1Abs = std::abs(particlePtr->channel(iChannel).product(0));
+
+    auto id2Abs = std::abs(particlePtr->channel(iChannel).product(1));
+    auto id3Abs = std::abs(particlePtr->channel(iChannel).product(2));
+
+    auto mf1 = get_mass(id1Abs);
+    auto mf2 = get_mass(id2Abs);
+    auto mf3 = get_mass(id3Abs);
+
+    auto mr1 = sqr(mf1 / mHat);
+    auto mr2 = sqr(mf2 / mHat);
+    auto mr3 = sqr(mf3 / mHat);
     if (!is_lepton(id1Abs)) {
         print("the second daughter should be a lepton", idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
         return;
@@ -628,15 +639,6 @@ void NeutrinoResonance::calcWidth(bool) {
         if (debug) print("no phase space", idRes, "to", id1Abs, id2Abs, id3Abs, "mass", mHat, "sum", mf1 + mf2 + mf3, mf1 + mf2);
         return;
     }
-
-    auto id2Abs = std::abs(particlePtr->channel(iChannel).product(1));
-    auto id3Abs = std::abs(particlePtr->channel(iChannel).product(2));
-
-    auto mf1 = get_mass(id1Abs);
-    auto mf2 = get_mass(id2Abs);
-
-    auto mr1 = sqr(mf1 / mHat);
-    auto mr2 = sqr(mf2 / mHat);
 
     switch (mult) {
         case 2 :
@@ -688,107 +690,214 @@ void NeutrinoResonance::calcWidth(bool) {
         auto mod = alpS / M_PI;
         widNow *= 1. + mod + 5.2 * sqr(mod) + 26.4 * cube(mod);
     }
-    sum += widNow;
+    if (debug) sum += widNow;
     if (debug) print("Calculated", widNow, "for", idRes, "to", id1Abs, "and", id2Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particlePtr->tau0()), particlePtr->mWidth(), sum);
     if (debug) print(minWidth, particlePtr->isResonance(), particlePtr->mayDecay(), particlePtr->doExternalDecay(), particlePtr->isVisible(), particlePtr->doForceWidth(), particlePtr->mWidth());
     if (debug) print(sum, Gamma_to_tau(sum));
 }
 
-std::vector<std::string> NeutrinoResonance::decay_table() {
-    std::vector<std::string> result;
+// std::vector<std::string> NeutrinoResonance::decay_table() {
+//     std::vector<std::string> result;
+//
+//     return result;
+// }
 
-    return result;
-}
+// double NeutrinoResonance::test(/*int idSgn,*/ double mHatIn/*, int idInFlavIn, bool openOnly, bool setBR, int idOutFlav1, int idOutFlav2*/) {
+//     // Calculate various prefactors for the current mass.
+//     double MASSMARGIN = 0;
+//     mHat = mHatIn;
+// //     idInFlav = idInFlavIn;
+//     if (allowCalcWidth) calcPreFac(false);
+//     double widSum = 0.; // Reset quantities to sum.
+// //     for_each(particlePtr,[&](Pythia8::DecayChannel const& channel){
+//     for (int channel_num = 0; channel_num < particlePtr->sizeChannels(); ++channel_num) { // Loop over all decay channels. Basic properties of channel.
+//         iChannel = channel_num;
+//         onMode = particlePtr->channel(channel_num).onMode();
+//         meMode = particlePtr->channel(channel_num).meMode();
+//         mult = particlePtr->channel(channel_num).multiplicity();
+//         widNow = 0.; // Initially assume vanishing branching ratio.
+// //         if (setBR) particlePtr->channel(channel_num).currentBR(widNow);
+// //         if (idOutFlav1 > 0 || idOutFlav2 > 0) { // Optionally only consider specific (two-body) decay channel. Currently only used for Higgs -> q qbar, g g or gamma gamma.
+// //             if (mult > 2) continue;
+// //             if (particlePtr->channel(channel_num).product(0) != idOutFlav1) continue;
+// //             if (particlePtr->channel(channel_num).product(1) != idOutFlav2) continue;
+// //         }
+// //         if (openOnly) { // Optionally only consider open channels.
+// //             if (idSgn > 0 && onMode != 1 && onMode != 2) continue;
+// //             if (idSgn < 0 && onMode != 1 && onMode != 3) continue;
+// //         }
+// //         if (meMode < 100) { // Channels with meMode < 100 must be implemented in derived classes.
+//         // Read out information on channel: primarily use first two.
+//         id1 = particlePtr->channel(channel_num).product(0);
+//         id2 = particlePtr->channel(channel_num).product(1);
+//         id1Abs = abs(id1);
+//         id2Abs = abs(id2);
+//         if (id2Abs > id1Abs) { // Order first two in descending order of absolute values.
+//             std::swap(id1, id2);
+//             std::swap(id1Abs, id2Abs);
+//         }
+//         if (mult > 2) { // Allow for third product to be treated in derived classes.
+//             id3 = particlePtr->channel(channel_num).product(2);
+//             id3Abs = abs(id3);
+//             if (id3Abs > id2Abs) { // Also order third into descending order of absolute values.
+//                 std::swap(id2, id3);
+//                 std::swap(id2Abs, id3Abs);
+//             }
+//             if (id2Abs > id1Abs) {
+//                 std::swap(id1, id2);
+//                 std::swap(id1Abs, id2Abs);
+//             }
+//         }
+//         // Read out masses. Calculate two-body phase space.
+//         mf1 = particleDataPtr->m0(id1Abs);
+//         mf2 = particleDataPtr->m0(id2Abs);
+//         mr1 = sqr(mf1 / mHat);
+//         mr2 = sqr(mf2 / mHat);
+//         ps = (mHat < mf1 + mf2 + MASSMARGIN) ? 0. : Pythia8::sqrtpos(sqr(1. - mr1 - mr2) - 4. * mr1 * mr2);
+//         if (mult > 2) {
+//             mf3 = particleDataPtr->m0(id3Abs);
+//             mr3 = sqr(mf3 / mHat);
+//             ps = (mHat < mf1 + mf2 + mf3 + MASSMARGIN) ? 0. : 1.;
+//         }
+//         calcWidth(false); // Let derived class calculate width for channel provided.
+// //         }
+// //         else if (meMode == 100) widNow = GammaRes * particlePtr->channel(channel_num).bRatio(); // Now on to meMode >= 100. First case: no correction at all.
+// //         else if (meMode == 101) { // Correction by step at threshold.
+// //             double mfSum = 0.;
+// //             for (int j = 0; j < mult; ++j) mfSum += particleDataPtr->m0(particlePtr->channel(channel_num).product(j));
+// //             if (mfSum + MASSMARGIN < mHat) widNow = GammaRes * particlePtr->channel(channel_num).bRatio();
+// //         }
+// //         else if ((meMode == 102 || meMode == 103) && mult == 2) { // Correction by a phase space factor for two-body decays.
+// //             mf1 = particleDataPtr->m0(particlePtr->channel(channel_num).product(0));
+// //             mf2 = particleDataPtr->m0(particlePtr->channel(channel_num).product(1));
+// //             mr1 = sqr(mf1 / mHat);
+// //             mr2 = sqr(mf2 / mHat);
+// //             ps = (mHat < mf1 + mf2 + MASSMARGIN) ? 0. : Pythia8::sqrtpos(sqr(1. - mr1 - mr2) - 4. * mr1 * mr2);
+// //             mr1 = sqr(mf1 / mRes);
+// //             mr2 = sqr(mf2 / mRes);
+// //             double psOnShell = (meMode == 102) ? 1. : std::max(minThreshold, Pythia8::sqrtpos(sqr(1. - mr1 - mr2) - 4. * mr1 * mr2));
+// //             widNow = GammaRes * particlePtr->channel(channel_num).bRatio() * ps / psOnShell;
+// //         }
+// //         else if (meMode == 102 || meMode == 103) { // Correction by simple threshold factor for multibody decay.
+// //             double mfSum = 0.;
+// //             for (int j = 0; j < mult; ++j) mfSum += particleDataPtr->m0(particlePtr->channel(channel_num).product(j));
+// //             ps = Pythia8::sqrtpos(1. - mfSum / mHat);
+// //             double psOnShell = (meMode == 102) ? 1. : std::max(minThreshold, Pythia8::sqrtpos(1. - mfSum / mRes));
+// //             widNow = GammaRes * particlePtr->channel(channel_num).bRatio() * ps / psOnShell;
+// //         }
+// //         if (openOnly) widNow *= particlePtr->channel(channel_num).openSec(idSgn); // Optionally multiply by secondary widths.
+//         if (doForceWidth) widNow *= forceFactor; // Optionally include factor to force to fixed width.
+//         widSum += widNow; // Sum back up.
+// //         if (setBR) particlePtr->channel(channel_num).currentBR(widNow); // Optionally store partial widths for later decay channel choice.
+//     }
+//     return widSum;
+// }
+//
+//
+// double NeutrinoResonance::width() {
+// // double NeutrinoResonance::test2(int idRes, Pythia8::ParticleDataEntry* particlePtr, int iChannel, int mult, double preFac, Pythia8::Couplings* couplingsPtr, double mHat, std::function<double(int, int)>  const& neutrino_coupling) {
+//
+//     widNow = 0.;
+//     id1Abs = std::abs(particlePtr->channel(iChannel).product(0));
+//     if (!is_lepton(id1Abs)) {
+// //         print("the second daughter should be a lepton", idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
+//         return widNow;
+//     }
+//     preFac = sqr(couplingsPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
+//     preFac *= neutrino_coupling(idRes, id1Abs % 2 == 0 ? id1Abs : id1Abs + 1);
+//
+//     if (preFac <= 0.) {
+// //         if (debug) print("preFac", preFac, idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
+//         return widNow;
+//     }
+//
+//     id2Abs = std::abs(particlePtr->channel(iChannel).product(1));
+//     id3Abs = std::abs(particlePtr->channel(iChannel).product(2));
+//
+//     mf1 = get_mass(id1Abs);
+//     mf2 = get_mass(id2Abs);
+//     mf3 = get_mass(id3Abs);
+//
+//     if (mHat < mf1 + mf2 + (mult == 2 ? 0 : mf3)) {
+// //         if (debug) print("no phase space", idRes, "to", id1Abs, id2Abs, id3Abs, "mass", mHat, "sum", mf1 + mf2 + mf3, mf1 + mf2);
+//         return widNow;
+//     }
+//
+//     mr1 = sqr(mf1 / mHat);
+//     mr2 = sqr(mf2 / mHat);
+//     mr3 = sqr(mf3 / mHat);
+//
+//     switch (mult) {
+//         case 2 :
+//             if (is_meson(id2Abs)) {
+//                 preFac *= sqr(decay_constant(id2Abs)) / 2;
+//                 if (is_charge_lepton(id1Abs)) {
+//                     preFac *= CKM2(id2Abs);
+//                     if (is_vector(id2Abs)) {
+//                         preFac /= sqr(mf2); // dimension of form factor
+//                         widNow = preFac * (sqr(1 - mr1) + mr2 * (1 + mr1) - 2 * sqr(mr2)) * std::sqrt(lambda(1, mr2, mr1));
+//                     } else {
+//                         widNow = preFac * (sqr(1 - mr1) - mr2 * (1 + mr1)) * std::sqrt(lambda(1, mr2, mr1));
+//                     }
+//                 } else if (is_light_neutrino(id1Abs)) {
+//                     preFac /= 2;
+//                     if (is_vector(id2Abs)) {
+//                         preFac *= sqr(correction_factor(id2Abs)) / sqr(mr2); // dimension of form factor
+//                         widNow = preFac * (1 + 2 * mr2) * sqr(1 - mr2);
+//                     } else {
+//                         widNow = preFac * sqr(1 - mr2);
+//                     }
+//                 } else print("Two-body not implemented", id1Abs, id2Abs, id3Abs);
+//             } else print("Two-body not implemented", id1Abs, id2Abs, id3Abs);
+//             break;
+//         case 3 :
+//             preFac *= sqr(mHat) / 24. / sqr(M_PI);
+//             if (is_charge_lepton(id1Abs)) {
+//                 preFac *= NW(id2Abs, id3Abs);
+//                 if (debug) print("preFac", preFac);
+//                 widNow = preFac * three_body_width.get_width(idRes, id1Abs, id2Abs, id3Abs);
+//             } else if (is_light_neutrino(id1Abs) && id2Abs == id3Abs) {
+//                 if (is_light_neutrino(id2Abs)) {
+//                     preFac /= 4.;
+//                     widNow = preFac * (1. + (id1Abs == id2Abs ? 1. : 0.));
+//                 } else {
+//                     preFac *= NZ(id2Abs);
+// // if (mr2 <= 1E-8) print("bad mass", mr2, idRes, id1Abs, id2Abs, id3Abs);
+//                     auto term_1 = (1. - 14. * mr2 - 2. * sqr(mr2) - 12. * cube(mr2)) * std::sqrt(1. - 4. * mr2) + 12. * sqr(mr2) * (sqr(mr2) - 1.) * L(mr2);
+//                     auto term_2 = mr2 * (2. + 10. * mr2 - 12 * sqr(mr2)) * std::sqrt(1. - 4. * mr2) + 6 * sqr(mr2) * (1. - 2. * mr2 + 2 * sqr(mr2)) * L(mr2);
+//                     widNow = preFac * (Cf1(id1Abs, id2Abs) * term_1 + 4. * Cf2(id1Abs, id2Abs) * term_2);
+//                 }
+//             } else print("this is unexpectet");
+//             break;
+//         default :
+//             print("multiplicity", mult, "not implemented");
+//     }
+//     if (is_quark(id2Abs) && is_quark(id3Abs)) {
+//         double alpS = couplingsPtr->alphaS(sqr(mHat));
+//         auto mod = alpS / M_PI;
+//         widNow *= 1. + mod + 5.2 * sqr(mod) + 26.4 * cube(mod);
+//     }
+//     return widNow;
+// }
 
-double NeutrinoResonance::test(int idSgn, double mHatIn/*, int idInFlavIn, bool openOnly, bool setBR, int idOutFlav1, int idOutFlav2*/) {
-    // Calculate various prefactors for the current mass.
-    double MASSMARGIN = 0;
-    mHat = mHatIn;
-//     idInFlav = idInFlavIn;
-    if (allowCalcWidth) calcPreFac(false);
-    double widSum = 0.; // Reset quantities to sum.
-//     for_each(particlePtr,[&](Pythia8::DecayChannel const& channel){
-    for (int channel_num = 0; channel_num < particlePtr->sizeChannels(); ++channel_num) { // Loop over all decay channels. Basic properties of channel.
-        iChannel = channel_num;
-        onMode = particlePtr->channel(channel_num).onMode();
-        meMode = particlePtr->channel(channel_num).meMode();
-        mult = particlePtr->channel(channel_num).multiplicity();
-        widNow = 0.; // Initially assume vanishing branching ratio.
-//         if (setBR) particlePtr->channel(channel_num).currentBR(widNow);
-//         if (idOutFlav1 > 0 || idOutFlav2 > 0) { // Optionally only consider specific (two-body) decay channel. Currently only used for Higgs -> q qbar, g g or gamma gamma.
-//             if (mult > 2) continue;
-//             if (particlePtr->channel(channel_num).product(0) != idOutFlav1) continue;
-//             if (particlePtr->channel(channel_num).product(1) != idOutFlav2) continue;
-//         }
-//         if (openOnly) { // Optionally only consider open channels.
-//             if (idSgn > 0 && onMode != 1 && onMode != 2) continue;
-//             if (idSgn < 0 && onMode != 1 && onMode != 3) continue;
-//         }
-//         if (meMode < 100) { // Channels with meMode < 100 must be implemented in derived classes.
-            // Read out information on channel: primarily use first two.
-            id1 = particlePtr->channel(channel_num).product(0);
-            id2 = particlePtr->channel(channel_num).product(1);
-            id1Abs = abs(id1);
-            id2Abs = abs(id2);
-            if (id2Abs > id1Abs) { // Order first two in descending order of absolute values.
-                std::swap(id1, id2);
-                std::swap(id1Abs, id2Abs);
-            }
-            if (mult > 2) { // Allow for third product to be treated in derived classes.
-                id3 = particlePtr->channel(channel_num).product(2);
-                id3Abs = abs(id3);
-                if (id3Abs > id2Abs) { // Also order third into descending order of absolute values.
-                    std::swap(id2, id3);
-                    std::swap(id2Abs, id3Abs);
-                }
-                if (id2Abs > id1Abs) {
-                    std::swap(id1, id2);
-                    std::swap(id1Abs, id2Abs);
-                }
-            }
-            // Read out masses. Calculate two-body phase space.
-            mf1 = particleDataPtr->m0(id1Abs);
-            mf2 = particleDataPtr->m0(id2Abs);
-            mr1 = sqr(mf1 / mHat);
-            mr2 = sqr(mf2 / mHat);
-            ps = (mHat < mf1 + mf2 + MASSMARGIN) ? 0. : Pythia8::sqrtpos(sqr(1. - mr1 - mr2) - 4. * mr1 * mr2);
-            if (mult > 2) {
-                mf3 = particleDataPtr->m0(id3Abs);
-                mr3 = sqr(mf3 / mHat);
-                ps = (mHat < mf1 + mf2 + mf3 + MASSMARGIN) ? 0. : 1.;
-            }
-            calcWidth(false); // Let derived class calculate width for channel provided.
-//         }
-//         else if (meMode == 100) widNow = GammaRes * particlePtr->channel(channel_num).bRatio(); // Now on to meMode >= 100. First case: no correction at all.
-//         else if (meMode == 101) { // Correction by step at threshold.
-//             double mfSum = 0.;
-//             for (int j = 0; j < mult; ++j) mfSum += particleDataPtr->m0(particlePtr->channel(channel_num).product(j));
-//             if (mfSum + MASSMARGIN < mHat) widNow = GammaRes * particlePtr->channel(channel_num).bRatio();
-//         }
-//         else if ((meMode == 102 || meMode == 103) && mult == 2) { // Correction by a phase space factor for two-body decays.
-//             mf1 = particleDataPtr->m0(particlePtr->channel(channel_num).product(0));
-//             mf2 = particleDataPtr->m0(particlePtr->channel(channel_num).product(1));
-//             mr1 = sqr(mf1 / mHat);
-//             mr2 = sqr(mf2 / mHat);
-//             ps = (mHat < mf1 + mf2 + MASSMARGIN) ? 0. : Pythia8::sqrtpos(sqr(1. - mr1 - mr2) - 4. * mr1 * mr2);
-//             mr1 = sqr(mf1 / mRes);
-//             mr2 = sqr(mf2 / mRes);
-//             double psOnShell = (meMode == 102) ? 1. : std::max(minThreshold, Pythia8::sqrtpos(sqr(1. - mr1 - mr2) - 4. * mr1 * mr2));
-//             widNow = GammaRes * particlePtr->channel(channel_num).bRatio() * ps / psOnShell;
-//         }
-//         else if (meMode == 102 || meMode == 103) { // Correction by simple threshold factor for multibody decay.
-//             double mfSum = 0.;
-//             for (int j = 0; j < mult; ++j) mfSum += particleDataPtr->m0(particlePtr->channel(channel_num).product(j));
-//             ps = Pythia8::sqrtpos(1. - mfSum / mHat);
-//             double psOnShell = (meMode == 102) ? 1. : std::max(minThreshold, Pythia8::sqrtpos(1. - mfSum / mRes));
-//             widNow = GammaRes * particlePtr->channel(channel_num).bRatio() * ps / psOnShell;
-//         }
-//         if (openOnly) widNow *= particlePtr->channel(channel_num).openSec(idSgn); // Optionally multiply by secondary widths.
-        if (doForceWidth) widNow *= forceFactor; // Optionally include factor to force to fixed width.
-        widSum += widNow; // Sum back up.
-//         if (setBR) particlePtr->channel(channel_num).currentBR(widNow); // Optionally store partial widths for later decay channel choice.
+Pythia8::ParticleDataEntry & NeutrinoResonance::calculate_widths() {
+    initBSM();
+    allowCalc();
+    initConstants();
+    calcPreFac();
+    mHat = particlePtr->m0();
+    double widTot = 0.;
+    for (iChannel = 0; iChannel < particlePtr->sizeChannels(); ++iChannel) {
+        mult = particlePtr->channel(iChannel).multiplicity();
+//         width();
+        calcWidth();
+        widTot += widNow;
+        particlePtr->channel(iChannel).bRatio(widNow);
     }
-    return widSum;
+    particlePtr->setMWidth(widTot, false);
+    particlePtr->setTau0(Gamma_to_tau(widTot));
+    particlePtr->rescaleBR();
+    return *particlePtr;
 }
 
 }

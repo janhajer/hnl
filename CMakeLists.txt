@@ -19,7 +19,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") # but sometimes only this w
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token")
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native") # faster for local machine
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb") # debugging
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb") # debugging
 
 # cgal
 if(graphic)

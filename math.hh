@@ -25,19 +25,6 @@ auto norm(Object const& one) {
     return sqrt(sqr(one));
 }
 
-template<typename Base>
-Base pow(Base base, int exp) {
-    assert(exp >= 0);
-    Base result = 1;
-    for (;;) {
-        if (exp & 1) result *= base;
-        exp >>= 1;
-        if (!exp) break;
-        base *= base;
-    }
-    return result;
-}
-
 inline auto linear_step(double min, double max, int step, int steps) {
     return min + (max - min) * step / steps;
 }

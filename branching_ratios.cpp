@@ -4,6 +4,7 @@
 #include "pythia.hh"
 #include "ResonanceWidths.hh"
 #include "branching_ratios.hh"
+#include "decay_table.hh"
 
 namespace hnl {
 
@@ -34,8 +35,20 @@ Result branching_ratio(Loop const& loop, double& mass_max, int source, int step)
     set_pythia_branching_ratios(pythia);
     if (!is_heavy_neutral_lepton(source)) mass_max = pythia.particleData.m0(source);
     double coupling = 1;
-    is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), loop.mass(mass_max, step), source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
-    pythia.particleData.particleDataEntryPtr(source)->rescaleBR();
+
+
+//     is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), loop.mass(mass_max, step), source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
+
+    if(is_heavy_neutral_lepton(source)){
+        for (auto const& line : hnl_decay_table(neutrino_coupling(1), loop.mass(mass_max, step), source)) {
+        if(debug) print(line);
+        pythia.readString(line);
+    }
+    } else {
+            pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
+    }
+
+
     pythia.init();
     Result result;
     auto const& particle = *pythia.particleData.particleDataEntryPtr(source);
@@ -53,9 +66,10 @@ Result branching_ratio(Loop const& loop, double& mass_max, int source, int step)
 
 void write_branching_ratios(int source) {
     Result result;
-    Loop loop(.1, 5);
-    double mass_max = 5;
+    Loop loop(.1, 20);
+    double mass_max = 1;
     for (auto step = 0; step <= loop.steps; ++step) result += branching_ratio(loop, mass_max, source, step);
+    print("in wbr");
     save_data(result, loop, mass_max, source);
 }
 
