@@ -74,6 +74,7 @@ Pythia8::Particle retrive_neutrino(HepMC::GenEvent const& event, double lifetime
 }
 
 HepMC::GenParticle retrive_neutrino_2(HepMC::GenEvent const& event) {
+    if (debug) print("get neutrino");
     HepMC::GenParticle pythia_particle;
     for_each_until(event, [&pythia_particle](HepMC::GenParticle const & hep_particle) {
         if (!is_heavy_neutral_lepton(hep_particle.pdg_id())) return false;
@@ -86,7 +87,10 @@ HepMC::GenParticle retrive_neutrino_2(HepMC::GenEvent const& event) {
 void for_each_until(HepMC::IO_GenEvent& events, std::function<bool(HepMC::GenEvent const&)> const& function) {
     auto* event = events.read_next_event();
     if (!event) print("Hepmc file is empty");
+    int counter = 0;
     while (event) {
+        ++counter;
+        if(debug) print("Event", counter);
         if (function(*event)) break;
         delete event;
         events >> event;
