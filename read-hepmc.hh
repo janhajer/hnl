@@ -16,7 +16,7 @@ namespace hepmc {
 
 namespace {
 
-const bool debug = false;
+const bool debug = true;
 
 }
 
@@ -202,6 +202,7 @@ auto russian() {
 }
 
 std::vector<std::pair<double, int>> histogram(std::vector<double> const& data) {
+    if(debug) print("histogram");
     auto const [min, max] = std::minmax_element(begin(data), end(data));
     int bins = 100;
     std::vector<std::pair<double, int>> histogram(100, {0., 0});
