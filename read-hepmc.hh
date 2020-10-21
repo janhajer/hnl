@@ -211,7 +211,7 @@ std::vector<std::pair<double, int>> histogram(std::vector<double> const& data) {
     return histogram;
 }
 
-std::vector<std::pair<double, int>> read_simplified(boost::filesystem::path const& path, double coupling) {
+std::vector<std::pair<double, int>> read_simplified_det(boost::filesystem::path const& path, double coupling) {
     if (debug) print("read hep mc", path.string(), "with", coupling);
 
 //     auto couplings = [&meta, coupling](int heavy, int light) {
@@ -256,7 +256,7 @@ void read_simplified(boost::filesystem::path const& path, double coupling) {
     if (debug) print("read hep mc simp");
 //     auto meta = meta_info(path);
 //     if (!meta) return;
-    auto result = read_simplified(path, coupling);
+    auto result = read_simplified_det(path, coupling);
     save(result, path.stem().string() + "-" + std::to_string(coupling));
 }
 
