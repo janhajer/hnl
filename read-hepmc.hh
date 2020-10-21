@@ -253,6 +253,7 @@ void save(std::vector<std::pair<double, int>> const& result, std::string const& 
 }
 
 void read_simplified(boost::filesystem::path const& path, double coupling) {
+    if (debug) print("read hep mc simp");
     auto meta = meta_info(path);
     if (!meta) return;
     auto result = read_simplified(path, *meta, coupling);
