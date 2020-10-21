@@ -16,7 +16,7 @@ namespace hepmc {
 
 namespace {
 
-const bool debug = true;
+const bool debug = false;
 
 }
 
@@ -194,16 +194,16 @@ double three(HepMC::FourVector const& vector) {
     return std::sqrt(sqr(vector.x()) + sqr(vector.y()) + sqr(vector.z()));
 }
 
-double beta(HepMC::FourVector const& vector) {
-    return 1. / std::sqrt(1 + sqr(vector.m() / three(vector)));
+double betagamma(HepMC::FourVector const& vector) {
+    return vector.m() / three(vector);
 }
 
-auto russian() {
-    double l1 = 5; // m
-    double l2 = 7; // m
-    double beta = 1; // m
-    return std::exp(l1 / beta) - std::exp(l2 / beta);
-}
+// auto russian() {
+//     double l1 = 5; // m
+//     double l2 = 7; // m
+//     double beta = 1; // m
+//     return std::exp(l1 / beta) - std::exp(l2 / beta);
+// }
 
 std::vector<std::pair<double, int>> histogram(std::vector<double> const& data) {
     if(debug) print("histogram");
@@ -227,11 +227,11 @@ std::vector<std::pair<double, int>> read_simplified_det(boost::filesystem::path 
     if (debug) print("with result", events.error_message());
 
     std::vector<double> betas;
-    std::size_t events_max = 1000;
+    std::size_t events_max = 10000000;
 
     for_each_until(events, [&](HepMC::GenEvent const & event) -> bool {
         auto neutrino = retrive_neutrino_2(event);
-        betas.emplace_back(beta(neutrino.momentum()));
+        betas.emplace_back(betagamma(neutrino.momentum()));
         return betas.size() > events_max;
     });
 
@@ -250,7 +250,6 @@ void save(std::vector<std::pair<double, int>> const& result, std::string const& 
             file << std::endl;
             first = false;
         }
-        file << line.first << '\t';
         file << std::scientific << line.first << '\t' << line.second;
         file << std::endl;
     }
