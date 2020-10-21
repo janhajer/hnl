@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include "read-file.hh"
 #include "pythia-cgal.hh"
 #include "mapp.hh"
@@ -68,6 +70,16 @@ Pythia8::Particle retrive_neutrino(HepMC::GenEvent const& event, double lifetime
         return true;
     });
     pythia_particle.tau(lifetime);
+    return pythia_particle;
+}
+
+HepMC::GenParticle retrive_neutrino_2(HepMC::GenEvent const& event) {
+    HepMC::GenParticle pythia_particle;
+    for_each_until(event, [&pythia_particle](HepMC::GenParticle const & hep_particle) {
+        if (!is_heavy_neutral_lepton(hep_particle.pdg_id())) return false;
+        pythia_particle = hep_particle;
+        return true;
+    });
     return pythia_particle;
 }
 
@@ -173,6 +185,79 @@ void scans(std::string const& path_name) {
     for (auto const& file : files(path_name)) if (file.path().extension().string() == ".hep") if (auto result = scan_file(file.path())) results += *result;
     save(results);
 }
+
+double three(HepMC::FourVector const& vector) {
+    return std::sqrt(sqr(vector.x()) + sqr(vector.y()) + sqr(vector.z()));
+}
+
+double beta(HepMC::FourVector const& vector) {
+    return 1. / std::sqrt(1 + sqr(vector.m() / three(vector)));
+}
+
+auto russian() {
+    double l1 = 5; // m
+    double l2 = 7; // m
+    double beta = 1; // m
+    return std::exp(l1 / beta) - std::exp(l2 / beta);
+}
+
+std::vector<std::pair<double, int>> histogram(std::vector<double> const& data) {
+    auto const [min, max] = std::minmax_element(begin(data), end(data));
+    int bins = 100;
+    std::vector<std::pair<double, int>> histogram(100, {0., 0});
+    for (auto i = 0; i < bins; ++i) histogram[i].first = *min + i * (*max - *min) / bins;
+    for (auto point : data) histogram[static_cast<int>(std::floor(bins * (point - *min) / (*max - *min)))].second++;
+    return histogram;
+}
+
+std::vector<std::pair<double, int>> read_simplified(boost::filesystem::path const& path, Meta const& meta, double coupling) {
+    if (debug) print("read hep mc", path.string(), "with", coupling);
+
+//     auto couplings = [&meta, coupling](int heavy, int light) {
+//         return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
+//     };
+
+    if (debug) print("trying to open", path.string());
+    HepMC::IO_GenEvent events(path.string(), std::ios::in);
+    if (debug) print("with result", events.error_message());
+
+    std::vector<double> betas;
+    std::size_t events_max = 1000;
+
+    for_each_until(events, [&](HepMC::GenEvent const & event) -> bool {
+        auto neutrino = retrive_neutrino_2(event);
+        betas.emplace_back(beta(neutrino.momentum()));
+        return betas.size() > events_max;
+    });
+
+
+    return histogram(betas);
+}
+
+void save(std::vector<std::pair<double, int>> const& result, std::string const& name) {
+    std::ofstream file;
+    file.open(name + ".dat");
+    bool first = false;
+    for (auto const& line : result) {
+        if (first) {
+            file << "mass" << '\t';
+            file << std::scientific << line.first << '\t' << line.second;
+            file << std::endl;
+            first = false;
+        }
+        file << line.first << '\t';
+        file << std::scientific << line.first << '\t' << line.second;
+        file << std::endl;
+    }
+}
+
+void read_simplified(boost::filesystem::path const& path, double coupling) {
+    auto meta = meta_info(path);
+    if (!meta) return;
+    auto result = read_simplified(path, *meta, coupling);
+    save(result, path.stem().string() + "-" + std::to_string(coupling));
+}
+
 
 }
 

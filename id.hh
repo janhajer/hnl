@@ -19,7 +19,6 @@ inline std::string pythia_hnl_name(int hnl) {
     return "";
 }
 
-
 inline std::vector<int> heavy_neutral_leptons() {
     return {9900012, 9900014, 9900016};
 }

@@ -97,6 +97,12 @@ auto& operator<<(std::ostream& stream, std::pair<Key_, Value_> const& pair) {
     return stream << '(' << pair.first << ", " << pair.second << ')';
 }
 
+template<typename Element, size_t size>
+auto& operator<<(std::ostream& stream, std::array<Element, size> const& container) {
+    for (auto const& element : boost::adaptors::index(container)) stream << '\n' << element.index() << ": " << element.value();
+    return stream;
+}
+
 template<typename Key, typename Value>
 auto & operator<<(std::ostream& stream, std::map<Key, Value> const& map) {
     for (auto const& pair : map) stream << '\n' << pair.first << ": " << pair.second;
@@ -105,12 +111,6 @@ auto & operator<<(std::ostream& stream, std::map<Key, Value> const& map) {
 
 template<typename Element, template <typename, typename = std::allocator<Element>> class Container>
 auto & operator<<(std::ostream& stream, Container<Element> const& container) {
-    for (auto const& element : boost::adaptors::index(container)) stream << '\n' << element.index() << ": " << element.value();
-    return stream;
-}
-
-template<typename Element, size_t size>
-auto& operator<<(std::ostream& stream, std::array<Element, size> const& container) {
     for (auto const& element : boost::adaptors::index(container)) stream << '\n' << element.index() << ": " << element.value();
     return stream;
 }

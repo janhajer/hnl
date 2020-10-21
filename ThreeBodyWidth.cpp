@@ -13,6 +13,8 @@ const bool debug = false;
 
 }
 
+// Code from Pythia after inheritance became impossible.
+
 // The intended use is for numerical integration (a Gaussian quadrature routine is implemented in the base class), root finding, etc, without having to use function pointers (so will probably become obsolete when moving to C++11.)
 
 // Definition of the function to be encapsulated; base class returns 0.
@@ -305,28 +307,20 @@ double a_2(int id, bool charged) {
 
 double a(int n, int id, int charged) {
     switch (n) {
-    case 0 :
-        return a_0(id, charged);
-    case 1 :
-        return a_1(id, charged);
-    case 2 :
-        return a_2(id, charged);
-    default :
-        print("Case not covered");
+    case 0 : return a_0(id, charged);
+    case 1 : return a_1(id, charged);
+    case 2 : return a_2(id, charged);
+    default : print("Case not covered");
     }
     return 0;
 }
 
 double zq2n(int n, double zq2, double zq2N3) {
     switch (n) {
-    case 0 :
-        return 1.;
-    case 1 :
-        return zq2 - zq2N3;
-    case 2 :
-        return sqr(zq2) + 2 * zq2N3;
-    default :
-        print("unexpected integer");
+    case 0 : return 1.;
+    case 1 : return zq2 - zq2N3;
+    case 2 : return sqr(zq2) + 2 * zq2N3;
+    default : print("unexpected integer");
     }
     return 0.;
 }
@@ -600,20 +594,13 @@ void NeutrinoThreeBodyWidth::set_pointers(Pythia8::ParticleData* particle_data_,
 
 double NeutrinoThreeBodyWidth::get_mass(int id) const {
     switch (id) {
-    case 1 :
-        return settings->parm("ParticleData:mdRun");
-    case 2 :
-        return settings->parm("ParticleData:muRun");
-    case 3 :
-        return settings->parm("ParticleData:msRun");
-    case 4 :
-        return settings->parm("ParticleData:mcRun");
-    case 5 :
-        return settings->parm("ParticleData:mbRun");
-    case 6 :
-        return settings->parm("ParticleData:mtRun");
-    default :
-        return particle_data->m0(id);
+    case 1 : return settings->parm("ParticleData:mdRun");
+    case 2 : return settings->parm("ParticleData:muRun");
+    case 3 : return settings->parm("ParticleData:msRun");
+    case 4 : return settings->parm("ParticleData:mcRun");
+    case 5 : return settings->parm("ParticleData:mbRun");
+    case 6 : return settings->parm("ParticleData:mtRun");
+    default : return particle_data->m0(id);
     }
 }
 

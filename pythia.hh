@@ -115,9 +115,6 @@ inline auto for_each_until(Pythia8::DecayChannel const& channel, std::function<b
 }
 
 inline bool has_neutrino(Pythia8::DecayChannel const& channel) {
-//     for (auto heavy : heavy_neutral_leptons()) if(for_each_until(channel, [heavy](int product) {
-//         if (product == heavy) return true;
-//     })) return true;
     for (auto heavy : heavy_neutral_leptons()) for(auto mult : irange(channel.multiplicity())) if(channel.product(mult) == heavy) return true;
     return false;
 }

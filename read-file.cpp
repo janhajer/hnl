@@ -62,6 +62,7 @@ private:
 };
 
 std::vector<std::string> import_file(boost::filesystem::path const& path) {
+    if(debug) print("import file");
     std::ifstream file(path.string(), std::ios_base::in | std::ios_base::binary);
 
     std::vector<std::string> lines;
@@ -76,6 +77,7 @@ std::vector<std::string> import_file(boost::filesystem::path const& path) {
 }
 
 std::vector<std::string> import_head(boost::filesystem::path const& path, int number) {
+    if(debug) print("import head");
     std::ifstream file(path.string(), std::ios_base::in | std::ios_base::binary);
     std::vector<std::string> lines;
     if (path.extension().string() == ".gz") {
@@ -90,6 +92,7 @@ std::vector<std::string> import_head(boost::filesystem::path const& path, int nu
 
 std::vector<std::string> import_tail(boost::filesystem::path const& path, int number) {
     // TODO move from C to C++
+    if(debug) print("import tail");
     FILE* fp = std::fopen(path.string().c_str(), "r");
     auto back = tail(fp, number);
     fclose(fp); ;

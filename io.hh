@@ -14,10 +14,4 @@ void print(Object const& object, Arguments ... arguments) {
     print(arguments ...);
 }
 
-template<typename Container>
-void print_line(Container const& container) {
-    for (auto const& element : container) std::clog << element << ", ";
-    std::clog << std::endl;
-}
-
 }

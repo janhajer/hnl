@@ -50,6 +50,7 @@ int main_2(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
     auto name = arguments.empty() ? "test.out" : arguments.front();
     save(read_out(name), name);
+    return 0;
 }
 
 auto reads_out(boost::filesystem::path const& path_name) {

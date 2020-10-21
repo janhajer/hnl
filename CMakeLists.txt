@@ -19,7 +19,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") # but sometimes only this w
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Ofast -Wall -Wextra -Wpedantic -Wfatal-errors -Wno-language-extension-token")
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native") # faster for local machine
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb") # debugging
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb") # debugging
 
 # cgal
 if(graphic)
@@ -80,6 +80,9 @@ target_link_libraries(write-minbiases ${hnl-libs-hep})
 
 add_executable(read-hepmc main-read-hepmc.cpp)
 target_link_libraries(read-hepmc ${hnl-libs-hep})
+
+add_executable(read-hepmc-simplified main-read-hepmc-simplifed.cpp)
+target_link_libraries(read-hepmc-simplified ${hnl-libs-hep})
 
 add_executable(scan-hepmc main-scan-hepmc.cpp)
 target_link_libraries(scan-hepmc ${hnl-libs-hep})
