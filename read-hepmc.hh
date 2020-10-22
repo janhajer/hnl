@@ -265,7 +265,7 @@ void read_simplified(boost::filesystem::path const& path, double coupling) {
 //     auto meta = meta_info(path);
 //     if (!meta) return;
     auto result = read_simplified_det(path, coupling);
-    save(result, path.stem().string());
+    save(result, path.stem().string() + "log");
 }
 
 
