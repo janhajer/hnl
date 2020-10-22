@@ -210,9 +210,9 @@ std::vector<std::pair<double, int>> histogram(std::vector<double> const& data) {
     auto const [min, max] = std::minmax_element(begin(data), end(data));
     int bins = 100;
     std::vector<std::pair<double, int>> histogram(bins, {0., 0});
-    for (auto i = 0; i < bins; ++i) histogram[i].first = *min + i * (*max - *min) / bins;
+    for (auto i = 0; i < bins; ++i) histogram[i].first = log_value(*min, *max, i, bins);
     for (auto point : data) {
-        int i = static_cast<int>(std::floor(bins * (point - *min) / (*max - *min)));
+        int i = static_cast<int>(std::floor(log_step(*min, *max, point, bins)));
         if (i == bins) --i;
         if (i < 0 || i >= bins) print("going to acces", i);
         histogram[i].second++;
