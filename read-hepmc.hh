@@ -90,7 +90,7 @@ void for_each_until(HepMC::IO_GenEvent& events, std::function<bool(HepMC::GenEve
     int counter = 0;
     while (event) {
         ++counter;
-        if(debug) print("Event", counter);
+        if (debug) print("Event", counter);
         if (function(*event)) break;
         delete event;
         events >> event;
@@ -206,14 +206,15 @@ double betagamma(HepMC::FourVector const& vector) {
 // }
 
 std::vector<std::pair<double, int>> histogram(std::vector<double> const& data) {
-    if(debug) print("histogram");
+    if (debug) print("histogram");
     auto const [min, max] = std::minmax_element(begin(data), end(data));
     int bins = 100;
-    std::vector<std::pair<double, int>> histogram(100, {0., 0});
+    std::vector<std::pair<double, int>> histogram(bins, {0., 0});
     for (auto i = 0; i < bins; ++i) histogram[i].first = *min + i * (*max - *min) / bins;
     for (auto point : data) {
         int i = static_cast<int>(std::floor(bins * (point - *min) / (*max - *min)));
-        if (i < 0 || i >= 100) print("going to acces", i);
+        if (i == bins) --i;
+        if (i < 0 || i >= bins) print("going to acces", i);
         histogram[i].second++;
     }
     return histogram;
