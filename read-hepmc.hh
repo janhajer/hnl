@@ -211,7 +211,11 @@ std::vector<std::pair<double, int>> histogram(std::vector<double> const& data) {
     int bins = 100;
     std::vector<std::pair<double, int>> histogram(100, {0., 0});
     for (auto i = 0; i < bins; ++i) histogram[i].first = *min + i * (*max - *min) / bins;
-    for (auto point : data) histogram[static_cast<int>(std::floor(bins * (point - *min) / (*max - *min)))].second++;
+    for (auto point : data) {
+        int i = static_cast<int>(std::floor(bins * (point - *min) / (*max - *min)));
+        if (i < 0 || i >= 100) print("going to acces", i);
+        histogram[i].second++;
+    }
     return histogram;
 }
 
