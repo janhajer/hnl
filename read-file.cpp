@@ -99,11 +99,12 @@ std::vector<std::string> import_tail(boost::filesystem::path const& path, int nu
     // TODO move from C to C++
     if(debug) print("import tail");
     FILE* fp = std::fopen(path.string().c_str(), "r");
-    auto back = tail(fp, number);
-    if(debug) print("result",back.size());
-    if(debug) print("result",back);
+    std::vector<std::string> back = tail(fp, number);
+    std::vector<std::string> test = back;
+    if(debug) print("result",test.size());
+    if(debug) print("result",test);
     fclose(fp); ;
-    return back;
+    return test;
 }
 
 void save(Result const& result, std::string const& name) {
