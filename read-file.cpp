@@ -99,6 +99,7 @@ std::vector<std::string> import_tail(boost::filesystem::path const& path, int nu
     if(debug) print("import tail");
     FILE* fp = std::fopen(path.string().c_str(), "r");
     auto back = tail(fp, number);
+    if(debug) print("result",back.size());
     fclose(fp); ;
     return back;
 }
