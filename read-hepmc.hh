@@ -44,7 +44,7 @@ auto coupling(std::vector<std::string> const& lines, int heavy, int light) {
 boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
     if (debug) print("meta info", path.string());
 //     auto lines = import_head(path, 100) + import_tail(path, 100);
-    auto a = import_head(path, 100)
+    auto a = import_head(path, 100);
     if (debug) print(a.size());
     auto b = import_tail(path, 100);
     if (debug) print(b.size());
