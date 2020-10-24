@@ -15,7 +15,7 @@
 namespace hnl {
 
 namespace {
-bool const debug = false;
+bool const debug = true;
 }
 
 std::vector<std::string> split_line(std::string const& line) {
