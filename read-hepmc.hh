@@ -16,7 +16,7 @@ namespace hepmc {
 
 namespace {
 
-const bool debug = false;
+const bool debug = true;
 
 }
 
@@ -43,6 +43,7 @@ auto coupling(std::vector<std::string> const& lines, int heavy, int light) {
 
 
 boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
+    if(debug) print("meta info");
     auto lines = import_head(path, 100) + import_tail(path, 100);
     Meta meta;
     meta.mass = to_double(mass(lines));
