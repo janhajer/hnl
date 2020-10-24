@@ -41,11 +41,16 @@ auto coupling(std::vector<std::string> const& lines, int heavy, int light) {
     });
 }
 
-
 boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
-    if(debug) print("meta info", path.string());
-    auto lines = import_head(path, 100) + import_tail(path, 100);
-    if(debug) print(lines);
+    if (debug) print("meta info", path.string());
+//     auto lines = import_head(path, 100) + import_tail(path, 100);
+    auto a = import_head(path, 100)
+    if (debug) print(a.size());
+    auto b = import_tail(path, 100);
+    if (debug) print(b.size());
+    auto lines = a +b;
+    if (debug) print(lines.size());
+    if (debug) print(lines);
     Meta meta;
     meta.mass = to_double(mass(lines));
     if (meta.mass <= 0) return boost::none;
@@ -284,7 +289,7 @@ void save(std::vector<Meta> const& metas, std::string const& name) {
 void extract_metas(boost::filesystem::path const& path) {
     if (debug) print("extract meta", path.string());
     std::vector<Meta> metas;
-    for (auto const& file : files(path)) if (file.path().extension().string() == ".hep" || file.path().extension().string() == ".gz") if(auto meta = meta_info(file)) metas.emplace_back(*meta);
+    for (auto const& file : files(path)) if (file.path().extension().string() == ".hep" || file.path().extension().string() == ".gz") if (auto meta = meta_info(file)) metas.emplace_back(*meta);
     save(metas, "meta");
 }
 

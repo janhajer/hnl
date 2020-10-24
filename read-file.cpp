@@ -81,18 +81,12 @@ std::vector<std::string> import_head(boost::filesystem::path const& path, int nu
     std::ifstream file(path.string(), std::ios_base::in | std::ios_base::binary);
     std::vector<std::string> lines;
     if (path.extension().string() == ".gz") {
-        if(debug) print(1);
         boost::iostreams::filtering_streambuf<boost::iostreams::input> buffer;
-        if(debug) print(2);
         buffer.push(boost::iostreams::gzip_decompressor());
-        if(debug) print(3);
         buffer.push(file);
-        if(debug) print(4);
         std::istream instream(&buffer);
-        if(debug) print(5);
         std::copy_n(std::istream_iterator<Line>(instream), number, std::back_inserter(lines));
     } else std::copy_n(std::istream_iterator<Line>(file), number, std::back_inserter(lines));
-        if(debug) print(6);
     return lines;
 }
 
