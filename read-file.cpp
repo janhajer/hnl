@@ -44,7 +44,7 @@ std::vector<std::string> tail(FILE* file, int n) {
         if (std::fseek(file, --pos, SEEK_SET)) return lines;
         if (std::fgetc(file) == '\n') if (count++ == n) break;
     }
-    char string[2 * 1000];
+    char string[2 * 10000];
     while (std::fgets(string, sizeof(string), file)) lines.emplace_back(string);
     for (auto& line : lines) line.pop_back();
     return lines;
