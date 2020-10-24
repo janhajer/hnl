@@ -9,6 +9,7 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include "container.hh"
 #include "read-file.hh"
 #include "string.hh"
 
@@ -100,6 +101,7 @@ std::vector<std::string> import_tail(boost::filesystem::path const& path, int nu
     FILE* fp = std::fopen(path.string().c_str(), "r");
     auto back = tail(fp, number);
     if(debug) print("result",back.size());
+    if(debug) print("result",back);
     fclose(fp); ;
     return back;
 }
