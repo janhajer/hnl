@@ -35,16 +35,16 @@ std::string find_if(std::vector<std::string> const& lines, int pos, std::functio
 
 std::vector<std::string> tail(FILE* file, int n) {
     // TODO move from C to C++
-    print("tail",n);
+    if (debug) print("tail",n);
     std::vector<std::string> lines;
-    int count = 0;
-    char string[2 * 200];
     if (std::fseek(file, 0, SEEK_END)) return lines;
     auto pos = std::ftell(file);
+    int count = 0;
     while (pos) {
         if (std::fseek(file, --pos, SEEK_SET)) return lines;
         if (std::fgetc(file) == '\n') if (count++ == n) break;
     }
+    char string[2 * 1000];
     while (std::fgets(string, sizeof(string), file)) lines.emplace_back(string);
     for (auto& line : lines) line.pop_back();
     return lines;
