@@ -92,6 +92,7 @@ std::vector<std::string> import_head(boost::filesystem::path const& path, int nu
         if(debug) print(5);
         std::copy_n(std::istream_iterator<Line>(instream), number, std::back_inserter(lines));
     } else std::copy_n(std::istream_iterator<Line>(file), number, std::back_inserter(lines));
+        if(debug) print(6);
     return lines;
 }
 
