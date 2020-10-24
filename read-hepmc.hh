@@ -48,7 +48,7 @@ boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
     if (debug) print(a.size());
     auto b = import_tail(path, 100);
     if (debug) print(b.size());
-    auto lines = a +b;
+    auto lines = a + b;
     if (debug) print(lines.size());
     if (debug) print(lines);
     Meta meta;
