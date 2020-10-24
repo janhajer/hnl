@@ -111,3 +111,4 @@ if(graphic)
 endif(graphic)
 
 add_executable(test-slurm test-slurm.cpp)
+target_link_libraries(test-slurm ${hnl-libs-hep})

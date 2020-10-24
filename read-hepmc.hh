@@ -262,12 +262,29 @@ void save(std::vector<std::pair<double, int>> const& result, std::string const& 
 
 void read_simplified(boost::filesystem::path const& path, double coupling) {
     if (debug) print("read hep mc simp");
-//     auto meta = meta_info(path);
-//     if (!meta) return;
     auto result = read_simplified_det(path, coupling);
     save(result, path.stem().string() + "log");
 }
 
+void save(std::vector<Meta> const& metas, std::string const& name) {
+    std::ofstream file;
+    file.open(name + ".dat");
+    bool first = false;
+    for (auto const& meta : metas) {
+        if (first) {
+            file << "mass" << '\t' << "sigma" << '\t' << "coupling" << '\t' << "scaled sigma" << std::endl;
+            first = false;
+        }
+        file << std::scientific << meta << '\t' << meta.sigma / max(meta.couplings) << std::endl;
+    }
+}
+
+void extract_metas(boost::filesystem::path const& path) {
+    if (debug) print("extract meta");
+    std::vector<Meta> metas;
+    for (auto const& file : files(path)) if (file.path().extension().string() == ".hep" || file.path().extension().string() == ".gz") if(auto meta = meta_info(path)) metas.emplace_back(*meta);
+    save(metas, "meta");
+}
 
 }
 

@@ -126,5 +126,19 @@ Files files(boost::filesystem::path const& path) {
     return boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
 }
 
+std::ostream& operator<<(std::ostream& stream, const Meta& meta)
+{
+    return stream << meta.mass << '\t' << meta.sigma << '\t' << totalvalue(meta.couplings);
+}
+
+double totalvalue(const Couplings& couplings)
+{
+    double value = 0.;
+    for (auto const& first : couplings) for (auto const& second : first.second) value += second.second;
+    return value;
+}
+
+
+
 
 }

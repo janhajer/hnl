@@ -23,11 +23,15 @@ std::vector<std::string> import_tail(boost::filesystem::path const& path, int nu
 
 using Couplings = std::map<int, std::map<int, double>>;
 
+double totalvalue(Couplings const& couplings);
+
 struct Meta {
     double mass = 0;
     double sigma = 0;
     Couplings couplings;
 };
+
+std::ostream& operator<<(std::ostream& stream, Meta const& meta);
 
 double max(Couplings const& couplings);
 
