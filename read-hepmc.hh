@@ -284,7 +284,7 @@ void save(std::vector<Meta> const& metas, std::string const& name) {
 void extract_metas(boost::filesystem::path const& path) {
     if (debug) print("extract meta", path.string());
     std::vector<Meta> metas;
-    for (auto const& file : files(path)) if (file.path().extension().string() == ".hep" || file.path().extension().string() == ".gz") if(auto meta = meta_info(path)) metas.emplace_back(*meta);
+    for (auto const& file : files(path)) if (file.path().extension().string() == ".hep" || file.path().extension().string() == ".gz") if(auto meta = meta_info(file)) metas.emplace_back(*meta);
     save(metas, "meta");
 }
 
