@@ -43,7 +43,7 @@ auto coupling(std::vector<std::string> const& lines, int heavy, int light) {
 
 
 boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
-    if(debug) print("meta info");
+    if(debug) print("meta info", path.string());
     auto lines = import_head(path, 100) + import_tail(path, 100);
     if(debug) print(lines);
     Meta meta;
@@ -282,7 +282,7 @@ void save(std::vector<Meta> const& metas, std::string const& name) {
 }
 
 void extract_metas(boost::filesystem::path const& path) {
-    if (debug) print("extract meta");
+    if (debug) print("extract meta", path.string());
     std::vector<Meta> metas;
     for (auto const& file : files(path)) if (file.path().extension().string() == ".hep" || file.path().extension().string() == ".gz") if(auto meta = meta_info(path)) metas.emplace_back(*meta);
     save(metas, "meta");
