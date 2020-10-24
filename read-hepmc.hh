@@ -278,10 +278,10 @@ void read_simplified(boost::filesystem::path const& path, double coupling) {
 void save(std::vector<Meta> const& metas, std::string const& name) {
     std::ofstream file;
     file.open(name + ".dat");
-    bool first = false;
+    bool first = true;
     for (auto const& meta : metas) {
         if (first) {
-            file << "mass" << '\t' << "sigma" << '\t' << "coupling" << '\t' << "scaled sigma" << std::endl;
+            file << "mass [GeV]" << '\t' << "crosssection [mb]" << '\t' << "coupling" << '\t' << "scaled sigma" << std::endl;
             first = false;
         }
         file << std::scientific << meta << '\t' << meta.sigma / max(meta.couplings) << std::endl;
