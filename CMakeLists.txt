@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.4)
 project(HeavyNeutralLeptons)
 
 # use qt and cgal libs?
-set(graphic OFF)
+set(graphic ON)
 
 # hepmc
 include_directories("~/Development/HEPMC2/")

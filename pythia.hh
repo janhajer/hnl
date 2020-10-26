@@ -76,8 +76,8 @@ inline void set_pythia_mesons(Pythia8::Pythia& pythia, int id, double mass) {
     set_pythia_stable(pythia, id, mass);
     set_pythia_production(pythia);
     set_pythia_next_quiet(pythia);
-    pythia.readString("Main:numberOfEvents = 100000");
-//     pythia.readString("Main:numberOfEvents = 1000");
+//     pythia.readString("Main:numberOfEvents = 100000");
+    pythia.readString("Main:numberOfEvents = 1000");
 }
 
 inline void set_pythia_write_hepmc(Pythia8::Pythia& pythia, int id, double mass) {

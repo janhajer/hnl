@@ -43,15 +43,14 @@ auto get_polyhedron(std::vector<Point> const& points)
     make_face(polyhedron, points[5], points[6], points[2], points[1]);
     make_face(polyhedron, points[6], points[7], points[3], points[2]);
     make_face(polyhedron, points[7], points[4], points[0], points[3]);
+    print("detector volume", CGAL::Polygon_mesh_processing::volume(polyhedron), polyhedron.is_closed());
     return polyhedron;
 }
 
 auto get_polyhedron()
 {
     auto poly_points = get_points();
-    auto poly = get_polyhedron(poly_points);
-    print("detector volume", CGAL::Polygon_mesh_processing::volume(poly));
-    return poly;
+    return get_polyhedron(poly_points);
 }
 
 

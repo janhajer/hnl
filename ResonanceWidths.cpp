@@ -9,7 +9,7 @@ namespace hnl {
 
 namespace {
 
-const bool debug = true;
+const bool debug = false;
 
 enum class quark {up, down, strange, charm, bottom, top};
 
