@@ -9,14 +9,13 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "container.hh"
 #include "read-file.hh"
 #include "string.hh"
 
 namespace hnl {
 
 namespace {
-bool const debug = true;
+bool const debug = false;
 }
 
 std::vector<std::string> split_line(std::string const& line) {
@@ -28,7 +27,7 @@ std::vector<std::string> split_line(std::string const& line) {
 }
 
 std::string find_if(std::vector<std::string> const& lines, int pos, std::function<bool(std::vector<std::string>)> const& predicate) {
-    auto found = boost::range::find_if(lines, [&predicate](auto const & line) {
+    auto found = boost::range::find_if(lines, [&predicate](auto const& line) {
         return predicate(split_line(boost::trim_copy_if(line, boost::is_any_of("\t "))));
     });
     return found == lines.end() ? "value not found" : split_line(*found).at(pos);
@@ -36,21 +35,17 @@ std::string find_if(std::vector<std::string> const& lines, int pos, std::functio
 
 std::vector<std::string> tail(FILE* file, int n) {
     // TODO move from C to C++
-    if (debug) print("tail", n);
     std::vector<std::string> lines;
     if (std::fseek(file, 0, SEEK_END)) return lines;
+    int count = 0;
     auto pos = std::ftell(file);
-    long int count = 0;
     while (pos) {
         if (std::fseek(file, --pos, SEEK_SET)) return lines;
         if (std::fgetc(file) == '\n') if (count++ == n) break;
     }
-    if (debug)print(lines.size());
     char string[2 * 100];
     while (std::fgets(string, sizeof(string), file)) lines.emplace_back(string);
-    if (debug)print(lines.size());
     for (auto& line : lines) line.pop_back();
-    if (debug)print(lines.size());
     return lines;
 }
 
@@ -67,7 +62,7 @@ private:
 };
 
 std::vector<std::string> import_file(boost::filesystem::path const& path) {
-    if (debug) print("import file");
+    if(debug) print("import file");
     std::ifstream file(path.string(), std::ios_base::in | std::ios_base::binary);
 
     std::vector<std::string> lines;
@@ -82,7 +77,7 @@ std::vector<std::string> import_file(boost::filesystem::path const& path) {
 }
 
 std::vector<std::string> import_head(boost::filesystem::path const& path, int number) {
-    if (debug) print("import head", path.string(), path.extension().string());
+    if(debug) print("import head");
     std::ifstream file(path.string(), std::ios_base::in | std::ios_base::binary);
     std::vector<std::string> lines;
     if (path.extension().string() == ".gz") {
@@ -97,14 +92,11 @@ std::vector<std::string> import_head(boost::filesystem::path const& path, int nu
 
 std::vector<std::string> import_tail(boost::filesystem::path const& path, int number) {
     // TODO move from C to C++
-    if (debug) print("import tail");
+    if(debug) print("import tail");
     FILE* fp = std::fopen(path.string().c_str(), "r");
-    std::vector<std::string> back = tail(fp, number);
-    std::vector<std::string> test = back;
-    if (debug) print("result", test.size());
-    if (debug) print("result", test);
+    auto back = tail(fp, number);
     fclose(fp); ;
-    return test;
+    return back;
 }
 
 void save(Result const& result, std::string const& name) {
@@ -134,11 +126,13 @@ Files files(boost::filesystem::path const& path) {
     return boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
 }
 
-std::ostream& operator<<(std::ostream& stream, const Meta& meta) {
+std::ostream& operator<<(std::ostream& stream, const Meta& meta)
+{
     return stream << meta.mass << '\t' << meta.sigma << '\t' << totalvalue(meta.couplings);
 }
 
-double totalvalue(const Couplings& couplings) {
+double totalvalue(const Couplings& couplings)
+{
     double value = 0.;
     for (auto const& first : couplings) for (auto const& second : first.second) value += second.second;
     return value;
@@ -148,3 +142,4 @@ double totalvalue(const Couplings& couplings) {
 
 
 }
+

@@ -26,11 +26,17 @@ void save_data(BranchingRatios& result, hnl::Loop const& loop, double mass, int 
     }
 }
 
+void save_data(std::map<double,double>& result, hnl::Loop const& loop, double mass, int source) {
+    std::ofstream output_file(std::to_string(source) + "lifetime.dat");
+    output_file << "mass [GeV] " << '\t' << "Width [GeV]"  << '\n';
+    for (auto& row : result) output_file << std::scientific << row.first << '\t' << row.second << '\n';
+}
+
 BranchingRatios branching_ratio(Loop const& loop, double& mass_max, int source, int step) {
     print("id", source, "step", step, "of", loop.steps);
 //     print(meson_decay_table(neutrino_coupling(1), loop.mass(mass_max, step), heavy_neutrino, source));
 //     return {};
-    return hnl_branching_ratios(neutrino_coupling(1), loop.mass(mass_max, step), source, step);
+//     return hnl_branching_ratios(neutrino_coupling(1), loop.mass(mass_max, step), source, step);
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_branching_ratios(pythia);
     if (!is_heavy_neutral_lepton(source)) mass_max = pythia.particleData.m0(source);
@@ -64,6 +70,20 @@ BranchingRatios branching_ratio(Loop const& loop, double& mass_max, int source, 
     return result;
 }
 
+std::map<double,double> lifetime(Loop const& loop, double& mass_max, int source, int step) {
+    print("id", source, "step", step, "of", loop.steps);
+    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    set_pythia_branching_ratios(pythia);
+    if (!is_heavy_neutral_lepton(source)) mass_max = pythia.particleData.m0(source);
+    double coupling = 1;
+    is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), loop.mass(mass_max, step), source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
+    pythia.init();
+    std::map<double,double> result;
+    auto const& particle = *pythia.particleData.particleDataEntryPtr(source);
+    result[particle.m0()] = particle.mWidth();
+    return result;
+}
+
 void write_branching_ratios(int source) {
     BranchingRatios result;
     Loop loop(.1, 20);
@@ -77,10 +97,18 @@ void write_branching_ratios() {
 //     std::vector<int> sources{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
 //     std::vector<int> sources{431, 411, 421};
 //     std::vector<int> sources{511, 521, 531, 541};
-    std::vector<int> sources{511, 521, 531};
+//     std::vector<int> sources{511, 521, 531};
 //     std::vector<int> sources{443, 553};
-//     std::vector<int> sources{heavy_neutrino};
+    std::vector<int> sources{heavy_neutrino};
     for (auto source : sources) write_branching_ratios(source);
+}
+
+void write_lifetime() {
+    std::map<double,double> result;
+    Loop loop(.1, 100);
+    double mass_max = 6;
+    for (auto step = 0; step <= loop.steps; ++step) result += lifetime(loop, mass_max, heavy_neutrino, step);
+    save_data(result, loop, mass_max, heavy_neutrino);
 }
 
 }

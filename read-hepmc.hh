@@ -16,7 +16,7 @@ namespace hepmc {
 
 namespace {
 
-const bool debug = true;
+const bool debug = false;
 
 }
 
@@ -42,16 +42,12 @@ auto coupling(std::vector<std::string> const& lines, int heavy, int light) {
 }
 
 boost::optional<Meta> meta_info(boost::filesystem::path const& path) {
+    bool debug = true;
     if (debug) print("meta info", path.string());
 //     auto lines = import_head(path, 100) + import_tail(path, 100);
     auto a = import_head(path, 100);
-    if (debug) print(a.size());
-    if (debug) print(a);
     auto b = import_tail(path, 100);
-    if (debug) print(b.size());
-    if (debug) print(b);
     auto lines = a + b;
-    if (debug) print(lines.size());
     if (debug) print(lines);
     Meta meta;
     meta.mass = to_double(mass(lines));
@@ -287,6 +283,13 @@ void save(std::vector<Meta> const& metas, std::string const& name) {
         file << std::scientific << meta << '\t' << meta.sigma / max(meta.couplings) << std::endl;
     }
 }
+
+void extract_meta(boost::filesystem::path const& file) {
+    if (debug) print("extract meta", file.string());
+    std::vector<Meta> metas;
+    if (auto meta = meta_info(file)) save({*meta}, file.string());
+}
+
 
 void extract_metas(boost::filesystem::path const& path) {
     if (debug) print("extract meta", path.string());

@@ -3,6 +3,8 @@
 #include "cgal.hh"
 #include "container.hh"
 #include "range.hh"
+#include "io.hh"
+#include "CGAL/Polygon_mesh_processing/measure.h"
 
 namespace hnl
 {
@@ -47,8 +49,11 @@ auto get_polyhedron(std::vector<Point> const& points)
 auto get_polyhedron()
 {
     auto poly_points = get_points();
-    return get_polyhedron(poly_points);
+    auto poly = get_polyhedron(poly_points);
+    print("detector volume", CGAL::Polygon_mesh_processing::volume(poly));
+    return poly;
 }
+
 
 Transformation rotation_z(double angle)
 {
