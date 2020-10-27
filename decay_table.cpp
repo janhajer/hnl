@@ -8,7 +8,7 @@ namespace hnl {
 
 namespace {
 
-bool debug = true;
+bool debug = false;
 
 using Result = std::map<int, std::map<std::array<int, 5>, std::map<int, double>>>;
 

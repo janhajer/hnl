@@ -43,16 +43,18 @@ BranchingRatios branching_ratio(Loop const& loop, double& mass_max, int source, 
     double coupling = 1;
 
 
-//     is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), loop.mass(mass_max, step), source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
+    auto mass = loop.mass(mass_max, step);
+    set_pythia_stable(pythia,heavy_neutrino, mass);
+    is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), loop.mass(mass_max, step), source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
 
-    if(is_heavy_neutral_lepton(source)){
-        for (auto const& line : hnl_decay_table(neutrino_coupling(1), loop.mass(mass_max, step), source)) {
-        if(debug) print(line);
-        pythia.readString(line);
-    }
-    } else {
-            pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
-    }
+//     if(is_heavy_neutral_lepton(source)){
+//         for (auto const& line : hnl_decay_table(neutrino_coupling(1), loop.mass(mass_max, step), source)) {
+//         if(debug) print(line);
+//         pythia.readString(line);
+//     }
+//     } else {
+//             pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
+//     }
 
 
     pythia.init();
@@ -87,19 +89,19 @@ std::map<double,double> lifetime(Loop const& loop, double& mass_max, int source,
 void write_branching_ratios(int source) {
     BranchingRatios result;
     Loop loop(.1, 20);
-    double mass_max = 1;
+    double mass_max = 6.2;
     for (auto step = 0; step <= loop.steps; ++step) result += branching_ratio(loop, mass_max, source, step);
     save_data(result, loop, mass_max, source);
 }
 
 void write_branching_ratios() {
-
-//     std::vector<int> sources{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
+    std::vector<int> sources{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
+//     std::vector<int> sources{211, 130, 310, 321};
 //     std::vector<int> sources{431, 411, 421};
 //     std::vector<int> sources{511, 521, 531, 541};
 //     std::vector<int> sources{511, 521, 531};
 //     std::vector<int> sources{443, 553};
-    std::vector<int> sources{heavy_neutrino};
+//     std::vector<int> sources{heavy_neutrino};
     for (auto source : sources) write_branching_ratios(source);
 }
 
@@ -112,4 +114,3 @@ void write_lifetime() {
 }
 
 }
-

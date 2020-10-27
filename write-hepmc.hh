@@ -12,11 +12,12 @@ namespace hepmc {
 
 namespace {
 
-const bool debug = false;
+const bool debug = true;
 
 }
 
 std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> const& mesons) {
+    if(debug) print("get max width");
     double max_width = 0;
     int id = 0;
     for (auto meson : mesons) {
@@ -24,12 +25,14 @@ std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> c
         auto& particle = *pythia.particleData.particleDataEntryPtr(meson);
        for_each(particle, [&partial_width, meson](Pythia8::DecayChannel const& channel){
             if (has_neutrino(channel) && channel.bRatio() > 0.) {
+                if(debug) print(channel.bRatio());
                 partial_width += channel.bRatio();
                 if (debug) print(meson, channel.product(0), channel.product(1), channel.product(2));
             }
         });
 //         for (auto number : irange(particle.sizeChannels())) {
 //             auto& channel = particle.channel(number);
+//                 if(debug) print(channel.bRatio());
 //             if (has_neutrino(channel) && channel.bRatio() > 0.) {
 //                 partial_width += channel.bRatio();
 //                 if (debug) print(meson, channel.product(0), channel.product(1), channel.product(2));

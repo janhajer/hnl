@@ -4,6 +4,7 @@
 #include "container.hh"
 #include "range.hh"
 #include "io.hh"
+#include "CGAL/Kernel/global_functions_3.h"
 #include "CGAL/Polygon_mesh_processing/measure.h"
 
 namespace hnl
@@ -25,6 +26,12 @@ auto get_points()
     points.emplace_back(16.53, -2, 35.45); //5
     points.emplace_back(16.53, 1, 35.45); //6
     points.emplace_back(12.24, 1, 33.63); //7
+    auto v = 0.;
+    for(auto one : points) for(auto two : points) for(auto three : points) for(auto four : points){
+        auto c = CGAL::volume(one,two,three,four);
+        if(c > v) v = c;
+    }
+    print("volume",v);
     return points;
 }
 
@@ -43,7 +50,12 @@ auto get_polyhedron(std::vector<Point> const& points)
     make_face(polyhedron, points[5], points[6], points[2], points[1]);
     make_face(polyhedron, points[6], points[7], points[3], points[2]);
     make_face(polyhedron, points[7], points[4], points[0], points[3]);
-    print("detector volume", CGAL::Polygon_mesh_processing::volume(polyhedron), polyhedron.is_closed());
+    print("detector volume", CGAL::Polygon_mesh_processing::volume(polyhedron), polyhedron.is_pure_trivalent(), polyhedron.is_pure_triangle(), polyhedron.is_closed());
+//     cgal::Tree tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
+//     tree.accelerate_distance_queries();
+//     print(CGAL::Polygon_mesh_processing::volume(tree));
+//     cgal::TriangleMeshSide mesh(tree);
+//     print(CGAL::Polygon_mesh_processing::volume(mesh));
     return polyhedron;
 }
 

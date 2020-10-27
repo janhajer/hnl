@@ -36,11 +36,12 @@ int main(int argc, char** argv) {
     using namespace hnl;
     using namespace mapp;
     using namespace cgal;
-    auto polyhedron = get_polyhedron();
     QApplication application(argc, argv);
     Viewer viewer(application.activeWindow());
-    for (auto const& polyhedron : get_polyhedrons()) viewer.add(polyhedron);
-    add_pipe(viewer);
+//     for (auto const& polyhedron : get_polyhedrons()) viewer.add(polyhedron);
+    auto polyhedron = get_polyhedron();
+    viewer.add(polyhedron);
+//     add_pipe(viewer);
   // draw(viewer, test_points);
     execute(application, viewer);
     return 0;

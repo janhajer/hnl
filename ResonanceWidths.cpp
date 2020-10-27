@@ -155,11 +155,11 @@ std::vector<int> MesonResonance::mesons() {
 
 bool MesonResonance::allowCalc() {
     if (debug) print("allowCalc");
-    particlePtr->clearChannels();
+//     particlePtr->clearChannels();
     add_two_body();
     for (auto meson : mesons()) add_three_body(meson);
-    return false;
     return true;
+    return false;
 }
 
 void MesonResonance::initConstants() {
@@ -318,13 +318,13 @@ void check_channel(Pythia8::DecayChannel const& channel) {
 
 void MesonResonance::calcWidth(bool test) {
     if (debug) print("calcWidth", idRes, id1Abs, id2Abs, id3Abs, "with mass", particleDataPtr->m0(id1Abs));
-    print("multiplicity", mult);
+    if (debug) print("multiplicity", mult);
     auto id_lep = mult == 2 ? id2Abs : id3Abs;
     preFac = neutrino_coupling(id1Abs, id_lep + 1) * sqr(couplingsPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
     if (debug) print("preFac", preFac, neutrino_coupling(id1Abs, id_lep + 1), sqr(couplingsPtr->GF()), Pythia8::pow3(mHat));
     widNow = 0.;
     if (preFac <= 0.) {
-        print("zero prefactor", idRes, id1Abs, id2Abs, id3Abs);
+        if (debug) print("zero prefactor", idRes, id1Abs, id2Abs, id3Abs);
         particlePtr->setHasChanged(sum > 0.);
         return;
     }
