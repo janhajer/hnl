@@ -166,7 +166,8 @@ std::vector<std::pair<double,int>> read_beta_gamma(boost::filesystem::path const
         }
         for (auto line = 0; line < pythia.event.size(); ++line) {
             auto const& particle = pythia.event[line];
-            if (is_heavy_neutral_lepton(particle.id())) betagammas.emplace_back(betagamma(particle.p()));
+            if (!is_heavy_neutral_lepton(particle.id())) continue;
+            betagammas.emplace_back(betagamma(particle.p()));
             ++good;
             break;
         }

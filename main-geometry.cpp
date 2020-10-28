@@ -16,8 +16,7 @@ hep::FourVector four_vector(Point const& point) {
     return {point.x(), point.y(), point.z(), 0};
 }
 
-void print_max_eta_phi()
-{
+void print_max_eta_phi() {
     auto poly_points = mapp::get_points();
     auto min_eta = four_vector(poly_points.front()).eta();
     auto max_eta = four_vector(poly_points.front()).eta();
@@ -61,15 +60,14 @@ void print_max_eta_phi()
     print(four_vector(*res3).phi(), four_vector(*res4).phi());
 }
 
-
 }
 
 }
 
 int main() {
 
-   using namespace hnl;
-   using namespace cgal;
+    using namespace hnl;
+    using namespace cgal;
 
     auto analysis = mapp::analysis();
 // hep::FourVector vector(0,0,0,0);
