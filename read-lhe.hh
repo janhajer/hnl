@@ -181,7 +181,7 @@ void read_simplified(boost::filesystem::path const& path, double coupling) {
     auto meta = meta_info(path);
     if(!meta) return;
     auto result = read_beta_gamma(path, *meta, coupling);
-    save(result, path.stem().string() + "log");
+    save(result, std::to_string(meta->mass) + "_log");
 }
 
 double read(boost::filesystem::path const& path, double coupling) {
