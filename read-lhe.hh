@@ -135,7 +135,7 @@ double three(Pythia8::Vec4 const& vector) {
 }
 
 double betagamma(Pythia8::Vec4 const& vector) {
-    return vector.mCalc() / three(vector);
+    return three(vector) / vector.mCalc();
 }
 
 std::vector<std::pair<double,int>> read_beta_gamma(boost::filesystem::path const& path, Meta const& meta, double coupling) {
@@ -156,7 +156,6 @@ std::vector<std::pair<double,int>> read_beta_gamma(boost::filesystem::path const
     int total = 0;
     int good = 0;
     int events_max = 1e6;
-    auto analysis = mapp::analysis();
     std::vector<double> betagammas;
     for (auto event_number = 0; event_number < events_max; ++event_number) {
         ++total;
@@ -173,7 +172,6 @@ std::vector<std::pair<double,int>> read_beta_gamma(boost::filesystem::path const
         }
     }
     pythia.stat();
-
     return histogram(betagammas);
 }
 

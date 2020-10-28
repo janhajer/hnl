@@ -196,7 +196,7 @@ double three(HepMC::FourVector const& vector) {
 }
 
 double betagamma(HepMC::FourVector const& vector) {
-    return vector.m() / three(vector);
+    return three(vector) / vector.m();
 }
 
 std::vector<std::pair<double, int>> read_simplified_det(boost::filesystem::path const& path, double coupling) {
@@ -214,8 +214,6 @@ std::vector<std::pair<double, int>> read_simplified_det(boost::filesystem::path 
         betas.emplace_back(betagamma(neutrino.momentum()));
         return betas.size() > events_max;
     });
-
-
     return histogram(betas);
 }
 
