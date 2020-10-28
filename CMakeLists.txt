@@ -84,6 +84,9 @@ target_link_libraries(read-hepmc ${hnl-libs-hep})
 add_executable(read-hepmc-simplified main-read-hepmc-simplifed.cpp)
 target_link_libraries(read-hepmc-simplified ${hnl-libs-hep})
 
+add_executable(read-lhe-simplified main-read-lhe-simplifed.cpp)
+target_link_libraries(read-lhe-simplified ${hnl-libs-hep})
+
 add_executable(scan-hepmc main-scan-hepmc.cpp)
 target_link_libraries(scan-hepmc ${hnl-libs-hep})
 
