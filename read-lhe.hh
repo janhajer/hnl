@@ -129,6 +129,62 @@ double read(boost::filesystem::path const& path, Meta const& meta, double coupli
     return result;
 }
 
+
+double three(Pythia8::Vec4 const& vector) {
+    return std::sqrt(sqr(vector.px()) + sqr(vector.py()) + sqr(vector.pz()));
+}
+
+double betagamma(Pythia8::Vec4 const& vector) {
+    return vector.mCalc() / three(vector);
+}
+
+std::vector<std::pair<double,int>> read_beta_gamma(boost::filesystem::path const& path, Meta const& meta, double coupling) {
+    print(path.string(), "with", coupling);
+    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    set_pythia_read_lhe(pythia, path.string());
+
+    auto couplings = [&meta, coupling](int heavy, int light) {
+        return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
+    };
+    for (auto const& line : hnl_decay_table(couplings, meta.mass, heavy_neutrino)) {
+        if(debug) print(line);
+        pythia.readString(line);
+    }
+
+    pythia.init();
+
+    int total = 0;
+    int good = 0;
+    int events_max = 1e6;
+    auto analysis = mapp::analysis();
+    std::vector<double> betagammas;
+    for (auto event_number = 0; event_number < events_max; ++event_number) {
+        ++total;
+        if (!pythia.next()) {
+            if (pythia.info.atEndOfFile()) break;
+            print("Pythia encountered a problem");
+            continue;
+        }
+        for (auto line = 0; line < pythia.event.size(); ++line) {
+            auto const& particle = pythia.event[line];
+            if (is_heavy_neutral_lepton(particle.id())) betagammas.emplace_back(betagamma(particle.p()));
+            ++good;
+            break;
+        }
+    }
+    pythia.stat();
+
+    return histogram(betagammas);
+}
+
+void read_simplified(boost::filesystem::path const& path, double coupling) {
+    if (debug) print("read hep mc simp");
+    auto meta = meta_info(path);
+    if(!meta) return;
+    auto result = read_beta_gamma(path, *meta, coupling);
+    save(result, path.stem().string() + "log");
+}
+
 double read(boost::filesystem::path const& path, double coupling) {
     auto meta = meta_info(path);
     return meta ? read(path, *meta, coupling) : 0.;

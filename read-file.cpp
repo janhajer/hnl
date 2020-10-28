@@ -11,6 +11,7 @@
 
 #include "read-file.hh"
 #include "string.hh"
+#include "math.hh"
 
 namespace hnl {
 
@@ -27,7 +28,7 @@ std::vector<std::string> split_line(std::string const& line) {
 }
 
 std::string find_if(std::vector<std::string> const& lines, int pos, std::function<bool(std::vector<std::string>)> const& predicate) {
-    auto found = boost::range::find_if(lines, [&predicate](auto const& line) {
+    auto found = boost::range::find_if(lines, [&predicate](auto const & line) {
         return predicate(split_line(boost::trim_copy_if(line, boost::is_any_of("\t "))));
     });
     return found == lines.end() ? "value not found" : split_line(*found).at(pos);
@@ -62,7 +63,7 @@ private:
 };
 
 std::vector<std::string> import_file(boost::filesystem::path const& path) {
-    if(debug) print("import file");
+    if (debug) print("import file");
     std::ifstream file(path.string(), std::ios_base::in | std::ios_base::binary);
 
     std::vector<std::string> lines;
@@ -77,7 +78,7 @@ std::vector<std::string> import_file(boost::filesystem::path const& path) {
 }
 
 std::vector<std::string> import_head(boost::filesystem::path const& path, int number) {
-    if(debug) print("import head");
+    if (debug) print("import head");
     std::ifstream file(path.string(), std::ios_base::in | std::ios_base::binary);
     std::vector<std::string> lines;
     if (path.extension().string() == ".gz") {
@@ -92,7 +93,7 @@ std::vector<std::string> import_head(boost::filesystem::path const& path, int nu
 
 std::vector<std::string> import_tail(boost::filesystem::path const& path, int number) {
     // TODO move from C to C++
-    if(debug) print("import tail");
+    if (debug) print("import tail");
     FILE* fp = std::fopen(path.string().c_str(), "r");
     auto back = tail(fp, number);
     fclose(fp); ;
@@ -126,20 +127,44 @@ Files files(boost::filesystem::path const& path) {
     return boost::make_iterator_range(boost::filesystem::directory_iterator(path), {});
 }
 
-std::ostream& operator<<(std::ostream& stream, const Meta& meta)
-{
+std::ostream& operator<<(std::ostream& stream, const Meta& meta) {
     return stream << meta.mass << '\t' << meta.sigma << '\t' << totalvalue(meta.couplings);
 }
 
-double totalvalue(const Couplings& couplings)
-{
+double totalvalue(const Couplings& couplings) {
     double value = 0.;
     for (auto const& first : couplings) for (auto const& second : first.second) value += second.second;
     return value;
 }
 
-
-
-
+std::vector< std::pair< double, int > > histogram(const std::vector< double >& data, int bins) {
+    if (debug) print("histogram");
+    auto const [min, max] = std::minmax_element(begin(data), end(data));
+    std::vector<std::pair<double, int>> histogram(bins, {0., 0});
+    for (auto i = 0; i < bins; ++i) histogram[i].first = log_value(*min, *max, i, bins);
+    for (auto point : data) {
+        int i = static_cast<int>(std::floor(log_step(*min, *max, point, bins)));
+        if (i == bins) --i;
+        if (i < 0 || i >= bins) print("going to access", i);
+        histogram[i].second++;
+    }
+    return histogram;
 }
 
+void save(const std::vector<std::pair<double, int>>& result, const std::string& name) {
+    std::ofstream file;
+    file.open(name + ".dat");
+    bool first = false;
+    for (auto const& line : result) {
+        if (first) {
+            file << "mass" << '\t';
+            file << std::scientific << line.first << '\t' << line.second;
+            file << std::endl;
+            first = false;
+        }
+        file << std::scientific << line.first << '\t' << line.second;
+        file << std::endl;
+    }
+}
+
+}

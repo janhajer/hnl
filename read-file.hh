@@ -43,4 +43,8 @@ using Files = boost::iterator_range<boost::filesystem::directory_iterator>;
 
 Files files(boost::filesystem::path const& path);
 
+std::vector<std::pair<double, int>> histogram(std::vector<double> const& data, int bins = 100);
+
+void save(std::vector<std::pair<double, int>> const& result, std::string const& name);
+
 }

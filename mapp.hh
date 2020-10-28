@@ -6,17 +6,15 @@
 #include "io.hh"
 #include "CGAL/Kernel/global_functions_3.h"
 #include "CGAL/Polygon_mesh_processing/measure.h"
+#include "CGAL/convex_hull_3.h"
 
-namespace hnl
-{
+namespace hnl {
 
-namespace mapp
-{
+namespace mapp {
 
 using namespace cgal;
 
-auto get_points()
-{
+auto get_points() {
     std::vector<Point> points;
     points.emplace_back(3.27, -2, 52.83); //0
     points.emplace_back(4, -2, 61.39); //1
@@ -27,22 +25,20 @@ auto get_points()
     points.emplace_back(16.53, 1, 35.45); //6
     points.emplace_back(12.24, 1, 33.63); //7
     auto v = 0.;
-    for(auto one : points) for(auto two : points) for(auto three : points) for(auto four : points){
-        auto c = CGAL::volume(one,two,three,four);
-        if(c > v) v = c;
-    }
-    print("volume",v);
+    for (auto one : points) for (auto two : points) for (auto three : points) for (auto four : points) {
+                    auto c = CGAL::volume(one, two, three, four);
+                    if (c > v) v = c;
+                }
+    print("volume", v);
     return points;
 }
 
-void make_face(Polyhedron& polyhedron, Point const& one, Point const& two, Point const& three, Point const& four)
-{
+void make_face(Polyhedron& polyhedron, Point const& one, Point const& two, Point const& three, Point const& four) {
     polyhedron.make_triangle(one, two, three);
     polyhedron.make_triangle(one, four, three);
 }
 
-auto get_polyhedron(std::vector<Point> const& points)
-{
+auto get_polyhedron(std::vector<Point> const& points) {
     Polyhedron polyhedron;
     make_face(polyhedron, points[0], points[1], points[2], points[3]);
     make_face(polyhedron, points[4], points[5], points[1], points[0]);
@@ -59,29 +55,29 @@ auto get_polyhedron(std::vector<Point> const& points)
     return polyhedron;
 }
 
-auto get_polyhedron()
-{
+auto get_polyhedron() {
     auto poly_points = get_points();
+    Polyhedron polyhedron;
+    CGAL::convex_hull_3(poly_points.begin(), poly_points.end(), polyhedron);
+    print("detector volume", CGAL::Polygon_mesh_processing::volume(polyhedron), polyhedron.is_pure_trivalent(), polyhedron.is_pure_triangle(), polyhedron.is_closed());
+    return polyhedron;
     return get_polyhedron(poly_points);
 }
 
 
-Transformation rotation_z(double angle)
-{
+Transformation rotation_z(double angle) {
     auto cosa = std::cos(angle);
     auto sina = std::sin(angle);
     return {cosa, -sina, 0, sina, cosa, 0, 0, 0, 1};
 }
 
-Transformation reflection_z()
-{
+Transformation reflection_z() {
     auto cosa = std::cos(M_PI);
     auto sina = std::sin(M_PI);
     return {1, 0, 0, 0, cosa, -sina, 0, sina, cosa};
 }
 
-auto rotated_poly(double angle, bool reflect)
-{
+auto rotated_poly(double angle, bool reflect) {
     auto rotation = rotation_z(angle);
     auto reflection = reflect ? reflection_z() : Transformation(CGAL::Identity_transformation());
     std::vector<Point> transformed = transform(get_points(), [&rotation, &reflection](Point const & point) -> Point {
@@ -90,8 +86,7 @@ auto rotated_poly(double angle, bool reflect)
     return get_polyhedron(transformed);
 }
 
-auto get_polyhedrons()
-{
+auto get_polyhedrons() {
     std::vector<Polyhedron> polyhedrons;
     for (int i = 0; i < 8; ++i) {
         polyhedrons.emplace_back(rotated_poly(M_PI_4 * i, false));
@@ -104,25 +99,22 @@ struct Analysis {
     Analysis(std::vector<cgal::Polyhedron> const& polyhedrons_) :
         name("MAPP"),
         polyhedrons(polyhedrons_),
-        trees(get_trees(polyhedrons))
-    {
+        trees(get_trees(polyhedrons)) {
         for (auto& tree : trees) tree.accelerate_distance_queries();
         detectors = get_detectors(trees);
     }
-    std::deque<cgal::Tree> get_trees(std::vector<cgal::Polyhedron> const& polyhedrons_) const
-    {
+    std::deque<cgal::Tree> get_trees(std::vector<cgal::Polyhedron> const& polyhedrons_) const {
         std::deque<cgal::Tree> trees_;
         for (auto const& polyhedron : polyhedrons_) trees_.emplace_back(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
         return trees_;
     }
-    std::vector<cgal::TriangleMeshSide> get_detectors(std::deque<cgal::Tree> const& trees_) const
-    {
+    std::vector<cgal::TriangleMeshSide> get_detectors(std::deque<cgal::Tree> const& trees_) const {
         return transform(trees_, [](cgal::Tree const & tree) -> cgal::TriangleMeshSide {
             return cgal::TriangleMeshSide{tree};
         });
     }
     bool is_inside(Point const& point) const {
-        return boost::algorithm::any_of(detectors, [&point](auto const& detector) {
+        return boost::algorithm::any_of(detectors, [&point](auto const & detector) {
             return mapp::is_inside(point, detector);
         });
     }
@@ -132,8 +124,7 @@ struct Analysis {
     std::vector<cgal::TriangleMeshSide> detectors;
 };
 
-auto analysis() -> Analysis
-{
+auto analysis() -> Analysis {
     return {get_polyhedrons()};
 }
 

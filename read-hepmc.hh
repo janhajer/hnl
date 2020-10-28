@@ -199,34 +199,8 @@ double betagamma(HepMC::FourVector const& vector) {
     return vector.m() / three(vector);
 }
 
-// auto russian() {
-//     double l1 = 5; // m
-//     double l2 = 7; // m
-//     double beta = 1; // m
-//     return std::exp(l1 / beta) - std::exp(l2 / beta);
-// }
-
-std::vector<std::pair<double, int>> histogram(std::vector<double> const& data) {
-    if (debug) print("histogram");
-    auto const [min, max] = std::minmax_element(begin(data), end(data));
-    int bins = 100;
-    std::vector<std::pair<double, int>> histogram(bins, {0., 0});
-    for (auto i = 0; i < bins; ++i) histogram[i].first = log_value(*min, *max, i, bins);
-    for (auto point : data) {
-        int i = static_cast<int>(std::floor(log_step(*min, *max, point, bins)));
-        if (i == bins) --i;
-        if (i < 0 || i >= bins) print("going to acces", i);
-        histogram[i].second++;
-    }
-    return histogram;
-}
-
 std::vector<std::pair<double, int>> read_simplified_det(boost::filesystem::path const& path, double coupling) {
     if (debug) print("read hep mc", path.string(), "with", coupling);
-
-//     auto couplings = [&meta, coupling](int heavy, int light) {
-//         return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
-//     };
 
     if (debug) print("trying to open", path.string());
     HepMC::IO_GenEvent events(path.string(), std::ios::in);
@@ -243,22 +217,6 @@ std::vector<std::pair<double, int>> read_simplified_det(boost::filesystem::path 
 
 
     return histogram(betas);
-}
-
-void save(std::vector<std::pair<double, int>> const& result, std::string const& name) {
-    std::ofstream file;
-    file.open(name + ".dat");
-    bool first = false;
-    for (auto const& line : result) {
-        if (first) {
-            file << "mass" << '\t';
-            file << std::scientific << line.first << '\t' << line.second;
-            file << std::endl;
-            first = false;
-        }
-        file << std::scientific << line.first << '\t' << line.second;
-        file << std::endl;
-    }
 }
 
 void read_simplified(boost::filesystem::path const& path, double coupling) {
