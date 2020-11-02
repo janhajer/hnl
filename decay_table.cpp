@@ -49,7 +49,7 @@ BranchingRatios hnl_branching_ratios(std::function<double (int heavy, int light)
     if (debug) print("hnl branching ratios", mass);
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_passive(pythia);
-    if (!is_heavy_neutral_lepton(id)) set_pythia_stable(pythia, heavy_neutrino, mass);
+    if (!is_heavy_neutral_lepton(id)) set_pythia_stable(pythia, heavy_neutral_lepton, mass);
     pythia.init();
     BranchingRatios branching_ratios;
     print("Init mes res");

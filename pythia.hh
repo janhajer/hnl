@@ -76,8 +76,7 @@ inline void set_pythia_mesons(Pythia8::Pythia& pythia, int id, double mass) {
     set_pythia_stable(pythia, id, mass);
     set_pythia_production(pythia);
     set_pythia_next_quiet(pythia);
-//     pythia.readString("Main:numberOfEvents = 100000");
-    pythia.readString("Main:numberOfEvents = 1000");
+    pythia.readString("Main:numberOfEvents = " + std::to_string(1000));
 }
 
 inline void set_pythia_write_hepmc(Pythia8::Pythia& pythia, int id, double mass) {
@@ -85,11 +84,6 @@ inline void set_pythia_write_hepmc(Pythia8::Pythia& pythia, int id, double mass)
     pythia.readString("Bottomonium:all = on");
     if (mass < 1.96849) pythia.readString("Charmonium:all = on");
     if (mass < .493677) pythia.readString("HardQCD:all = on");
-//     pythia.readString("Onia:all(3S1) = on");
-//     pythia.readString("SoftQCD:nonDiffractive = on");
-//     pythia.readString("HardQCD:qqbar2ccbar  = on");
-//     pythia.readString("HardQCD:gg2bbbar  = on");
-//     pythia.readString("PhaseSpace:pTHatMin = .1");
 }
 
 inline void set_pythia_minimum_bias(Pythia8::Pythia& pythia, int id, double mass) {

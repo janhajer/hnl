@@ -7,24 +7,51 @@
 
 namespace hnl {
 
-const int heavy_neutrino = 9900012;
+const int heavy_neutral_electron = 9900012;
+const int heavy_neutral_muon = 9900014;
+const int heavy_neutral_tau = 9900016;
+const int heavy_neutral_lepton = heavy_neutral_muon;
+
+inline bool is_heavy_neutral_lepton(int id) {
+    return id == heavy_neutral_electron || id == heavy_neutral_muon || id == heavy_neutral_tau;
+}
+
+inline bool is_lepton(int id) {
+    return id > 10 && id < 20;
+}
+
+inline bool is_light_neutrino(int id) {
+    return is_lepton(id) && id % 2 == 0;
+}
+
+auto neutrino_coupling = [](double factor) {
+    return [factor](int id_heavy, int id_light) -> double {
+        if (!is_heavy_neutral_lepton(id_heavy)) {
+            print(id_heavy, "is not a heavy neutrino");
+            return 0;
+        }
+        if (!is_light_neutrino(id_light)) {
+            print(id_light, "is not a light neutrino");
+            return 0;
+        }
+        auto id = id_heavy - 9900000 - id_light;
+        return id == 0 ? factor : 0;
+        return id == 0 || std::abs(id) == 2 || std::abs(id) == 4 ? factor : 0;
+    };
+};
+
+inline std::vector<int> heavy_neutral_leptons() {
+    return {heavy_neutral_electron, heavy_neutral_muon, heavy_neutral_tau};
+}
 
 inline std::string pythia_hnl_name(int hnl) {
     switch (hnl) {
-        case 9900012 : return "nu_Re";
-        case 9900014 : return "nu_Rmu";
-        case 9900016 : return "nu_Rtau";
+        case heavy_neutral_electron : return "nu_Re";
+        case heavy_neutral_muon : return "nu_Rmu";
+        case heavy_neutral_tau : return "nu_Rtau";
         default : print("not an hnl");
     }
     return "";
-}
-
-inline std::vector<int> heavy_neutral_leptons() {
-    return {9900012, 9900014, 9900016};
-}
-
-inline bool is_heavy_neutral_lepton(int id) {
-    return id == 9900012 || id == 9900014 || id == 9900016;
 }
 
 inline std::vector<int> light_neutrinos() {
@@ -59,16 +86,8 @@ inline std::vector<int> fermions() {
     return quarks() + leptons();
 }
 
-inline bool is_lepton(int id) {
-    return id > 10 && id < 20;
-}
-
 inline bool is_charge_lepton(int id) {
     return is_lepton(id) && id % 2 == 1;
-}
-
-inline bool is_light_neutrino(int id) {
-    return is_lepton(id) && id % 2 == 0;
 }
 
 inline bool is_quark(int id) {
@@ -154,21 +173,5 @@ inline bool is_eta(int id) {
 inline bool is_neutral_Kaon(int id) {
     return id == 130 || id == 310 || id == 311;
 }
-
-auto neutrino_coupling = [](double factor) {
-    return [factor](int id_heavy, int id_light) -> double {
-        if (!is_heavy_neutral_lepton(id_heavy)) {
-            print(id_heavy, "is not a heavy neutrino");
-            return 0;
-        }
-        if (!is_light_neutrino(id_light)) {
-            print(id_light, "is not a light neutrino");
-            return 0;
-        }
-        auto id = id_heavy - 9900000 - id_light;
-        return id == 0 ? factor : 0;
-        return id == 0 || std::abs(id) == 2 || std::abs(id) == 4 ? factor : 0;
-    };
-};
 
 }

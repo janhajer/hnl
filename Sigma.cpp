@@ -1,6 +1,7 @@
 #include "Sigma.hh"
 #include "math.hh"
 #include "io.hh"
+#include "id.hh"
 
 namespace hnl {
 
@@ -70,28 +71,20 @@ double Sigma::weightDecay(Pythia8::Event&, int iResBeg, int iResEnd) {
 
 std::string switch_heavy(int heavy) {
     switch (heavy) {
-        case 9900012 :
-            return "N1";
-        case 9900014 :
-            return "N2";
-        case 9900016 :
-            return "N3";
-        default :
-            print("Sigma", "name", "do not end up here");
+        case heavy_neutral_electron : return "N1";
+        case heavy_neutral_muon : return "N2";
+        case heavy_neutral_tau : return "N3";
+        default : print("Sigma", "name", "do not end up here");
     }
     return "";
 }
 
 std::string switch_light(int light) {
     switch (light) {
-        case 12 :
-            return "e";
-        case 14 :
-            return "mu";
-        case 16 :
-            return "tau";
-        default :
-            print("Sigma", "name", "do not end up here");
+        case 12 : return "e";
+        case 14 : return "mu";
+        case 16 : return "tau";
+        default : print("Sigma", "name", "do not end up here");
     }
     return "";
 }

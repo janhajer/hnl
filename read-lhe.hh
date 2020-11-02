@@ -19,7 +19,7 @@ const bool debug = false;
 auto mass(std::vector<std::string> const& lines) {
      if(debug) print("mass");
     return find_if(lines, 1, [](auto const & strings) {
-        return strings.size() > 2 && strings.at(0) == std::to_string(heavy_neutrino) && strings.at(2) == "#" && strings.at(3) == "mn1";
+        return strings.size() > 2 && strings.at(0) == std::to_string(heavy_neutral_lepton) && strings.at(2) == "#" && strings.at(3) == "mn1";
     });
 }
 
@@ -32,9 +32,9 @@ auto sigma(std::vector<std::string> const& lines) {
 
 std::string parameter_heavy(int heavy){
     switch (heavy){
-        case 9900012 : return "n1";
-        case 9900014 : return "n2";
-        case 9900016 : return "n3";
+        case heavy_neutral_electron : return "n1";
+        case heavy_neutral_muon : return "n2";
+        case heavy_neutral_tau : return "n3";
         default : print("not a heavy neutrino");
     }
     return "";
@@ -84,7 +84,7 @@ double read(boost::filesystem::path const& path, Meta const& meta, double coupli
     auto couplings = [&meta, coupling](int heavy, int light) {
         return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
     };
-    for (auto const& line : hnl_decay_table(couplings, meta.mass, heavy_neutrino)) {
+    for (auto const& line : hnl_decay_table(couplings, meta.mass, heavy_neutral_lepton)) {
         if(debug) print(line);
         pythia.readString(line);
     }
@@ -143,13 +143,13 @@ std::vector<std::pair<double,int>> read_beta_gamma(boost::filesystem::path const
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_read_lhe(pythia, path.string());
 
-    auto couplings = [&meta, coupling](int heavy, int light) {
-        return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
-    };
-    for (auto const& line : hnl_decay_table(couplings, meta.mass, heavy_neutrino)) {
-        if(debug) print(line);
-        pythia.readString(line);
-    }
+//     auto couplings = [&meta, coupling](int heavy, int light) {
+//         return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
+//     };
+//     for (auto const& line : hnl_decay_table(couplings, meta.mass, heavy_neutrino)) {
+//         if(debug) print(line);
+//         pythia.readString(line);
+//     }
 
     pythia.init();
 
@@ -181,7 +181,7 @@ void read_simplified(boost::filesystem::path const& path, double coupling) {
     auto meta = meta_info(path);
     if(!meta) return;
     auto result = read_beta_gamma(path, *meta, coupling);
-    save(result, std::to_string(meta->mass) + "_log");
+    save(result, to_string(meta->mass) + "_log");
 }
 
 double read(boost::filesystem::path const& path, double coupling) {

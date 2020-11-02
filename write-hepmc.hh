@@ -48,7 +48,7 @@ std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> c
 
 auto get_optimal_coupling(double mass, std::vector<int> const& mesons) {
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
-    set_pythia_write_hepmc(pythia,heavy_neutrino, mass);
+    set_pythia_write_hepmc(pythia, heavy_neutral_lepton, mass);
     set_pythia_init_quiet(pythia);
     for (auto meson : mesons) pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(1), meson));
     pythia.init();
@@ -131,7 +131,7 @@ void write_hepmc(double mass) {
     print("Use U^2 =", coupling);
 
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
-    set_pythia_write_hepmc(pythia,heavy_neutrino, mass);
+    set_pythia_write_hepmc(pythia, heavy_neutral_lepton, mass);
     for (auto meson : mesons) pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), meson));
 
     pythia.init();
@@ -160,8 +160,8 @@ void calculate_sigma(double mass) {
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_sigma(pythia);
     pythia.readString("Main:numberOfEvents = 100");
-    pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), mass, heavy_neutrino));
-    pythia.setSigmaPtr(std::make_unique<Sigma>(neutrino_coupling(coupling), heavy_neutrino, 12).get());
+    pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), mass, heavy_neutral_lepton));
+    pythia.setSigmaPtr(std::make_unique<Sigma>(neutrino_coupling(coupling), heavy_neutral_lepton, 12).get());
     pythia.init();
     for (auto event_number = 0; event_number < pythia.mode("Main:numberOfEvents"); ++event_number) if (!pythia.next()) print("Error in event", event_number);
     pythia.stat();
@@ -178,8 +178,8 @@ void write_sigma(double mass) {
     set_pythia_sigma(pythia);
     pythia.readString("Main:numberOfEvents = 100000");
 
-    pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), mass, heavy_neutrino));
-    pythia.setSigmaPtr(std::make_unique<Sigma>(neutrino_coupling(coupling), heavy_neutrino, 12).get());
+    pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), mass, heavy_neutral_lepton));
+    pythia.setSigmaPtr(std::make_unique<Sigma>(neutrino_coupling(coupling), heavy_neutral_lepton, 12).get());
 
     pythia.init();
 
@@ -201,7 +201,7 @@ void write_sigmas() {
 
 auto get_optimal_coupling_2(double mass, std::vector<int> const& mesons) {
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
-    set_pythia_minimum_bias(pythia,heavy_neutrino, mass);
+    set_pythia_minimum_bias(pythia, heavy_neutral_lepton, mass);
     set_pythia_init_quiet(pythia);
     for (auto meson : mesons) pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(1), meson));
     pythia.init();
@@ -226,7 +226,7 @@ void write_minimum_bias(double mass) {
     print("Use U^2 =", coupling);
 
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
-    set_pythia_minimum_bias(pythia,heavy_neutrino, mass);
+    set_pythia_minimum_bias(pythia, heavy_neutral_lepton, mass);
     for (auto meson : mesons) pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), meson));
 
     pythia.init();

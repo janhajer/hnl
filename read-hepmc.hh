@@ -110,10 +110,10 @@ double read(boost::filesystem::path const& path, Meta const& meta, double coupli
     auto couplings = [&meta, coupling](int heavy, int light) {
         return meta.couplings.at(heavy).at(light) > 0 ? coupling : 0.;
     };
-    pythia.setResonancePtr(new NeutrinoResonance(pythia, couplings, meta.mass, heavy_neutrino));
+    pythia.setResonancePtr(new NeutrinoResonance(pythia, couplings, meta.mass, heavy_neutral_lepton));
     pythia.init();
 
-    auto lifetime = pythia.particleData.tau0(heavy_neutrino);
+    auto lifetime = pythia.particleData.tau0(heavy_neutral_lepton);
     if (debug) print("trying to open", path.string());
     HepMC::IO_GenEvent events(path.string(), std::ios::in);
     if (debug) print("with result", events.error_message());

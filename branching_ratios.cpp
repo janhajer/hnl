@@ -44,7 +44,7 @@ BranchingRatios branching_ratio(Loop const& loop, double& mass_max, int source, 
 
 
     auto mass = loop.mass(mass_max, step);
-    set_pythia_stable(pythia,heavy_neutrino, mass);
+    set_pythia_stable(pythia, heavy_neutral_lepton, mass);
     is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), loop.mass(mass_max, step), source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
 
 //     if(is_heavy_neutral_lepton(source)){
@@ -109,8 +109,8 @@ void write_lifetime() {
     std::map<double,double> result;
     Loop loop(.1, 100);
     double mass_max = 6;
-    for (auto step = 0; step <= loop.steps; ++step) result += lifetime(loop, mass_max, heavy_neutrino, step);
-    save_data(result, loop, mass_max, heavy_neutrino);
+    for (auto step = 0; step <= loop.steps; ++step) result += lifetime(loop, mass_max, heavy_neutral_lepton, step);
+    save_data(result, loop, mass_max, heavy_neutral_lepton);
 }
 
 }
