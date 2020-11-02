@@ -10,7 +10,7 @@ namespace hnl {
 const int heavy_neutral_electron = 9900012;
 const int heavy_neutral_muon = 9900014;
 const int heavy_neutral_tau = 9900016;
-const int heavy_neutral_lepton = heavy_neutral_muon;
+const int heavy_neutral_lepton = heavy_neutral_tau;
 
 inline bool is_heavy_neutral_lepton(int id) {
     return id == heavy_neutral_electron || id == heavy_neutral_muon || id == heavy_neutral_tau;
