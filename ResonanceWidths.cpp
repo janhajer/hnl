@@ -338,28 +338,6 @@ void MesonResonance::calcWidth(bool test) {
         particlePtr->setHasChanged(sum > 0.);
         return;
     }
-
-    if (idRes == 24) { // Not used at the moment
-        print("do the W");
-        auto thetaWRat = 1. / (12. * couplingsPtr->sin2thetaW());
-        alpEM = couplingsPtr->alphaEM(sqr(mHat));
-        alpS = couplingsPtr->alphaS(sqr(mHat));
-        colQ = 3. * (1. + alpS / M_PI);
-        preFac = alpEM * thetaWRat * mHat;
-        print(alpEM, alpS, colQ);
-        if (ps == 0.) return;
-        if (is_heavy_neutral_lepton(id1Abs)) {
-            auto id_lep = mult == 2 ? id2Abs : id3Abs;
-            auto bL = 1.18921 * particleDataPtr->m0(23) * std::sqrt(couplingsPtr->GF()) * neutrino_coupling(id1Abs, id_lep + 1);
-            widNow = mRes * std::sqrt(lambda(1, mf1, mf2)) / 24. / M_PI / mRes * sqr(bL) * ((2. - sqr(mr1 - mr2) - mr1 - mr2) - 6. * mr1 * mr2);
-            return;
-        }
-        if ((id1Abs > 5 && id1Abs < 11) || id1Abs > 16) return;
-        widNow = preFac * ps * (1. - 0.5 * (mr1 + mr2) - 0.5 * sqr(mr1 - mr2));
-        if (id1Abs < 6) widNow *= colQ * couplingsPtr->V2CKMid(id1Abs, id2Abs);
-        return;
-    }
-
     switch (mult) {
         case 2 :
             if (is_heavy_neutral_lepton(id1Abs) && id2Abs > 10 && id2Abs < 17) {

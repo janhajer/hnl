@@ -88,20 +88,20 @@ std::map<double,double> lifetime(Loop const& loop, double& mass_max, int source,
 
 void write_branching_ratios(int source) {
     BranchingRatios result;
-    Loop loop(.1, 20);
+    Loop loop(.1, 100);
     double mass_max = 6.2;
     for (auto step = 0; step <= loop.steps; ++step) result += branching_ratio(loop, mass_max, source, step);
     save_data(result, loop, mass_max, source);
 }
 
 void write_branching_ratios() {
-    std::vector<int> sources{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
+//     std::vector<int> sources{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};
 //     std::vector<int> sources{211, 130, 310, 321};
 //     std::vector<int> sources{431, 411, 421};
 //     std::vector<int> sources{511, 521, 531, 541};
 //     std::vector<int> sources{511, 521, 531};
 //     std::vector<int> sources{443, 553};
-//     std::vector<int> sources{heavy_neutrino};
+    std::vector<int> sources{heavy_neutral_electron};
     for (auto source : sources) write_branching_ratios(source);
 }
 
