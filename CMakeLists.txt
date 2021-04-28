@@ -39,3 +39,6 @@ target_link_libraries(write-BRs ${hnl-libs})
 
 add_executable(write-lifetime main-write-lifetime.cpp)
 target_link_libraries(write-lifetime ${hnl-libs-hep})
+
+add_executable(write-hepmc main-write-hepmc.cpp)
+target_link_libraries(write-hepmc ${hnl-libs-hep})
