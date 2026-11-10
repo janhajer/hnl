@@ -327,7 +327,7 @@ double zq2n(int n, double zq2, double zq2N3) {
 
 double MesonThreeBodyWidth::B_form_factor(double q2, bool charged) const {
     double zq2 = z(q2);
-    int N = 2;
+    int N = 3;
     double zq2N3 = cube(zq2) / N;
     double sum = 0.;
     for (int n = 0; n < N; ++n) sum += a(n, id_to, charged) * zq2n(n, zq2, zq2N3);
