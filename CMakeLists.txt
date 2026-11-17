@@ -24,7 +24,7 @@ include_directories(${Boost_INCLUDE_DIR})
 set(boost-libs ${Boost_LIBRARIES})
 
 # lib
-add_library(hnl ResonanceWidths.cpp ThreeBodyWidth.cpp decay_table.cpp branching_ratios.cpp)
+add_library(hnl ResonanceWidths.cpp ThreeBodyWidth.cpp MesonDecays.cpp decay_table.cpp branching_ratios.cpp)
 
 # libs
 set(hnl-libs hnl pythia8 ${boost-libs} ${CMAKE_DL_LIBS} z)
@@ -42,3 +42,6 @@ target_link_libraries(write-lifetime ${hnl-libs-hep})
 
 add_executable(write-hepmc main-write-hepmc.cpp)
 target_link_libraries(write-hepmc ${hnl-libs-hep})
+
+add_executable(b-mesons main-b-mesons.cpp)
+target_link_libraries(b-mesons ${hnl-libs})
