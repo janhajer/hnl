@@ -217,6 +217,15 @@ double MesonThreeBodyWidth::get_width(int from_id_, int neutrino_id, int to_id_,
     return integrate(width, sqr(y_l + y_N), sqr(1. - y_h), 1e-3 * y_N) ? width : 0.;
 }
 
+std::array<double, 4> MesonThreeBodyWidth::form_factors(int from_id_, int to_id_, double q2) {
+    id_from = std::abs(from_id_);
+    id_to = std::abs(to_id_);
+    mHat = particle_data->m0(id_from);
+    m_to = particle_data->m0(id_to);
+    if (is_vector(id_to)) return {g(q2), ff(q2), ap(q2), am(q2)};
+    return {form_factor_plus(q2), form_factor_0(q2), 0., 0.};
+}
+
 double lambda(int id_from, int id_to, bool charged) {
     if (is_neutral_Kaon(id_from) && id_to == 211) return charged ? 0.0267 : 0.0117;
     if (id_from == 321 && id_to == 111) return charged ? 0.0277 : 0.0183;
