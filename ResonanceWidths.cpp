@@ -129,7 +129,8 @@ void MesonResonance::add_two_body() {
 
 void MesonResonance::add_three_body(int meson) {
     if (!can_three_body(meson)) return;
-    for (auto neutrino : heavy_neutral_leptons()) for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, particlePtr->chargeType() == 0 ? lepton : - lepton, meson);
+    if (particleDataPtr->hasAnti(meson)) meson = -meson; // positive mesons decay via W+, e.g. B+ -> anti-D0 l+ N
+    for (auto neutrino : heavy_neutral_leptons()) for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, - lepton, meson);
 }
 
 std::vector<int> MesonResonance::mesons() {
