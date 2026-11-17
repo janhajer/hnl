@@ -517,7 +517,7 @@ double MesonThreeBodyWidth::g(double q2) const {
 }
 
 double MesonThreeBodyWidth::am(double q2) const {
-    return (A2(q2, id_from, id_to) * (mHat - m_to) - A1(q2, id_from, id_to) * (mHat - m_to) + 2 * A0(q2, id_from, id_to) * m_to) / q2;
+    return (A2(q2, id_from, id_to) * (mHat - m_to) - A1(q2, id_from, id_to) * (mHat + m_to) + 2 * A0(q2, id_from, id_to) * m_to) / q2;
 }
 
 double MesonThreeBodyWidth::ff(double q2) const {
