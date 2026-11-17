@@ -107,9 +107,9 @@ MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (in
     width_sm = particlePtr->mWidth();
 }
 
-bool MesonResonance::init(Pythia8::Info* infoPtrIn, Pythia8::Settings* settingsPtrIn, Pythia8::ParticleData* particleDataPtrIn, Pythia8::Couplings* couplingsPtrIn) {
+bool MesonResonance::init(Pythia8::Info* infoPtrIn) {
     sum = 0.;
-    if (!ResonanceWidths::init(infoPtrIn, settingsPtrIn, particleDataPtrIn, couplingsPtrIn)) return false;
+    if (!ResonanceWidths::init(infoPtrIn)) return false;
     // Pythia lists some decays separately for particle and antiparticle (onMode 2 and 3) and init() adds up all channels.
     // Width: SM plus HNL channels. Branching ratios: the channels open for the particle add up to one, as in Pythia.
     double width = (tau0_sm > 0. ? tau_to_Gamma(tau0_sm) : width_sm) + sum;

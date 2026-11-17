@@ -14,7 +14,7 @@ namespace hnl
 struct MesonResonance : public Pythia8::ResonanceWidths {
     MesonResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from);
     Pythia8::ParticleDataEntry & calculate_widths();
-    bool init(Pythia8::Info* infoPtrIn, Pythia8::Settings* settingsPtrIn, Pythia8::ParticleData* particleDataPtrIn, Pythia8::Couplings* couplingsPtrIn) override;
+    bool init(Pythia8::Info* infoPtrIn) override;
 protected:
     virtual bool initBSM() override;
     virtual bool allowCalc() override;
