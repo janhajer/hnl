@@ -33,6 +33,8 @@ private:
     MesonThreeBodyWidth three_body_width;
     double sum = 0.;
     bool channels_added = false;
+    double tau0_sm;
+    double width_sm;
 };
 
 struct NeutrinoResonance : public Pythia8::ResonanceWidths {

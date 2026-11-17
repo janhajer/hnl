@@ -110,6 +110,9 @@ MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (in
     if (debug) print("Meson Resonance for", id_from);
     initBasic(id_from);
     particlePtr = pythia.particleData.particleDataEntryPtr(idRes);
+    particlePtr->rescaleBR(); // the B meson tables add up to more than one
+    tau0_sm = particlePtr->tau0();
+    width_sm = particlePtr->mWidth();
     std::vector<BRatio> vector;
     for_each(*particlePtr, [&vector](Pythia8::DecayChannel & channel) {
         channel.meMode(101);
@@ -130,6 +133,8 @@ MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (in
 bool MesonResonance::initBSM() {
     if (debug) print("initBSM");
     if (idRes == 311) print("do not use", 311);
+    particlePtr->setTau0(tau0_sm); // the previous init() has changed them
+    particlePtr->setMWidth(width_sm);
     if (particlePtr->mWidth() == 0. || particlePtr->tau0() > 0.) particlePtr->setMWidth(tau_to_Gamma(particlePtr->tau0()));
     else if (particlePtr->mWidth() > 0. || particlePtr->tau0() == 0.) particlePtr->setTau0(Gamma_to_tau(particlePtr->mWidth()));
     else print("that was unexpectet");
