@@ -156,8 +156,10 @@ std::vector<int> MesonResonance::mesons() {
 bool MesonResonance::allowCalc() {
     if (debug) print("allowCalc");
 //     particlePtr->clearChannels();
+    if (channels_added) return true; // init() runs twice: in the constructor and in pythia.init()
     add_two_body();
     for (auto meson : mesons()) add_three_body(meson);
+    channels_added = true;
     return true;
     return false;
 }

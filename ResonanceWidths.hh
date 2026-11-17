@@ -32,6 +32,7 @@ private:
     std::function<double (int id_heavy, int id_light)> neutrino_coupling;
     MesonThreeBodyWidth three_body_width;
     double sum = 0.;
+    bool channels_added = false;
 };
 
 struct NeutrinoResonance : public Pythia8::ResonanceWidths {
