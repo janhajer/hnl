@@ -110,6 +110,8 @@ MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (in
     if (debug) print("Meson Resonance for", id_from);
     initBasic(id_from);
     particlePtr = pythia.particleData.particleDataEntryPtr(idRes);
+    tau0_sm = particlePtr->tau0();
+    width_sm = particlePtr->mWidth();
     std::vector<BRatio> vector;
     for_each(*particlePtr, [&vector](Pythia8::DecayChannel & channel) {
         channel.meMode(101);
@@ -127,9 +129,23 @@ MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (in
     }
 }
 
+bool MesonResonance::init(Pythia8::Info* infoPtrIn, Pythia8::Settings* settingsPtrIn, Pythia8::ParticleData* particleDataPtrIn, Pythia8::Couplings* couplingsPtrIn) {
+    sum = 0.;
+    if (!ResonanceWidths::init(infoPtrIn, settingsPtrIn, particleDataPtrIn, couplingsPtrIn)) return false;
+    // Pythia lists some decays separately for particle and antiparticle (onMode 2 and 3) and init() adds up all channels.
+    // Width: SM plus HNL channels. Branching ratios: the channels open for the particle add up to one, as in Pythia.
+    double width = (tau0_sm > 0. ? tau_to_Gamma(tau0_sm) : width_sm) + sum;
+    particlePtr->rescaleBR(particlePtr->mWidth() / width);
+    particlePtr->setMWidth(width, false);
+    particlePtr->setTau0(Gamma_to_tau(width));
+    return true;
+}
+
 bool MesonResonance::initBSM() {
     if (debug) print("initBSM");
     if (idRes == 311) print("do not use", 311);
+    particlePtr->setTau0(tau0_sm); // the previous init() has changed them
+    particlePtr->setMWidth(width_sm);
     if (particlePtr->mWidth() == 0. || particlePtr->tau0() > 0.) particlePtr->setMWidth(tau_to_Gamma(particlePtr->tau0()));
     else if (particlePtr->mWidth() > 0. || particlePtr->tau0() == 0.) particlePtr->setTau0(Gamma_to_tau(particlePtr->mWidth()));
     else print("that was unexpectet");
@@ -156,8 +172,10 @@ std::vector<int> MesonResonance::mesons() {
 bool MesonResonance::allowCalc() {
     if (debug) print("allowCalc");
 //     particlePtr->clearChannels();
+    if (channels_added) return true; // init() runs twice: in the constructor and in pythia.init()
     add_two_body();
     for (auto meson : mesons()) add_three_body(meson);
+    channels_added = true;
     return true;
     return false;
 }
