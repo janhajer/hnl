@@ -400,8 +400,8 @@ Pythia8::ParticleDataEntry & MesonResonance::calculate_widths() {
     return *particlePtr;
 }
 
-NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id) :
-    neutrino_coupling(coupling) {
+NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id, bool majorana_) :
+    neutrino_coupling(coupling), majorana(majorana_) {
     if (debug) print("NeutrinoResonance", id);
     initBasic(id);
     particlePtr = pythia.particleData.particleDataEntryPtr(idRes);
@@ -456,7 +456,20 @@ bool NeutrinoResonance::allowCalc() {
     particlePtr->clearChannels();
     if (mHat < 1) for (auto meson : mesons()) add_two_body(meson);
     add_three_body();
+    if (majorana) add_charge_conjugates();
     return true;
+}
+
+void NeutrinoResonance::add_charge_conjugates() {
+    auto size = particlePtr->sizeChannels();
+    for (int pos = 0; pos < size; ++pos) {
+        std::array<int, 3> products{};
+        for (int i = 0; i < particlePtr->channel(pos).multiplicity(); ++i) {
+            auto product = particlePtr->channel(pos).product(i);
+            products.at(i) = particleDataPtr->hasAnti(product) ? -product : product;
+        }
+        particlePtr->addChannel(1, 0., 0, products[0], products[1], products[2]);
+    }
 }
 
 void NeutrinoResonance::initConstants() {

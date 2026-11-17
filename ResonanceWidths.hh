@@ -40,7 +40,8 @@ private:
 };
 
 struct NeutrinoResonance : public Pythia8::ResonanceWidths {
-    NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id);
+    // majorana: also the charge conjugated decays, which doubles the width; otherwise only N -> l- X+ and N -> nu X
+    NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id, bool majorana_ = true);
     Pythia8::ParticleDataEntry & calculate_widths();
 protected:
     virtual bool initBSM() override;
@@ -54,6 +55,7 @@ private:
     bool can_three_body();
     void add_three_body();
     void add_two_body(int id);
+    void add_charge_conjugates();
     std::vector<int> mesons();
     double CKM2(int meson);
     double CKM2(int up, int down);
@@ -65,6 +67,7 @@ private:
 private:
     std::function<double (int id_heavy, int id_light)> neutrino_coupling;
     NeutrinoThreeBodyWidth three_body_width;
+    bool majorana;
     Pythia8::ParticleDataEntryPtr particlePtr; // the base class only keeps a weak_ptr
     double sum = 0.;
 };
