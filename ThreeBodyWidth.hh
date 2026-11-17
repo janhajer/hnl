@@ -40,6 +40,7 @@ private:
     double K_form_factor(double q2, bool charged) const;
     double D_form_factor(double q2, bool charged) const;
     double B_form_factor(double q2, bool charged) const;
+    double B_c_form_factor(double q2, bool charged) const;
     double z(double q2) const;
     double g(double q2) const;
     double am(double q2) const;

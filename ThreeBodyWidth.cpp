@@ -343,11 +343,17 @@ double MesonThreeBodyWidth::B_form_factor(double q2, bool charged) const {
     return m_pole_prefactor(q2, id_to, charged) * sum;
 }
 
+// B_c -> eta_c: single pole as in HNLCalc (arXiv:2405.07330), with m(B_c*) = 6.4 GeV
+double MesonThreeBodyWidth::B_c_form_factor(double q2, bool charged) const {
+    return 0.76 / (1. - q2 / sqr(charged ? 6.4 : particle_data->m0(541)));
+}
+
 double MesonThreeBodyWidth::form_factor(double q2, bool charged) const {
     if (is_K(id_from)) return K_form_factor(q2, charged);
     if (is_D(id_from)) return D_form_factor(q2, charged);
     if (is_D_s(id_from)) return D_s_form_factor(q2, charged);
     if (is_B(id_from) || is_B_s(id_from)) return B_form_factor(q2, charged);
+    if (is_B_c(id_from)) return B_c_form_factor(q2, charged);
     print("not a proper pseudoscalar decay", id_from, id_to, charged, q2);
     return 0.;
 }
@@ -500,23 +506,33 @@ double MV(int id_from, int id_to) { // GeV
     return 0;
 }
 
+// B_c -> J/psi as in HNLCalc (arXiv:2405.07330): f(0) / (1 - q^2/m^2 - delta q^4/m^4)
+double B_c_J_psi(double q2, double f0, double m, double delta) {
+    double ratio = q2 / sqr(m);
+    return f0 / (1. - ratio - delta * sqr(ratio));
+}
+
 double V(double q2, int id_from, int id_to) {
+    if (is_B_c(id_from)) return B_c_J_psi(q2, 0.96, 5.65, 0.0013);
     double ratio = q2 / sqr(MV(id_from, id_to));
     return fV(id_from, id_to) / (1. - ratio) / (1. - sigmaV(id_from, id_to) * ratio - xiV(id_from, id_to) * sqr(ratio));
 }
 
 double A0(double q2, int id_from, int id_to) {
+    if (is_B_c(id_from)) return B_c_J_psi(q2, 0.68, 8.20, 1.40);
     double ratioP = q2 / sqr(MP(id_from, id_to));
     double ratioV = q2 / sqr(MV(id_from, id_to));
     return fA0(id_from, id_to) / (1. - ratioP) / (1. - sigmaA0(id_from, id_to) * ratioV - xiA0(id_from, id_to) * sqr(ratioV));
 }
 
 double A1(double q2, int id_from, int id_to) {
+    if (is_B_c(id_from)) return B_c_J_psi(q2, 0.68, 5.91, 0.052);
     double ratio = q2 / sqr(MV(id_from, id_to));
     return fA1(id_from, id_to) / (1. - sigmaA1(id_from, id_to) * ratio - xiA1(id_from, id_to) * sqr(ratio));
 }
 
 double A2(double q2, int id_from, int id_to) {
+    if (is_B_c(id_from)) return B_c_J_psi(q2, -0.004, 5.67, -0.004);
     double ratio = q2 / sqr(MV(id_from, id_to));
     return fA2(id_from, id_to) / (1. - sigmaA2(id_from, id_to) * ratio - xiA2(id_from, id_to) * sqr(ratio));
 }

@@ -107,7 +107,7 @@ inline bool is_meson(int id) {
 }
 
 inline bool is_vector(int id) {
-    return id == 113 || id == 213 || id == 313 || id == 323 || id == 413 || id == 423 || id == 433;
+    return id == 113 || id == 213 || id == 313 || id == 323 || id == 413 || id == 423 || id == 433 || id == 443;
 }
 
 inline bool is_B_c_star(int id) {

@@ -36,7 +36,7 @@ std::pair<quark, quark> quarks(int id) {
         case 111 : return {quark::down, quark::down};
         case 221 : return {quark::up, quark::strange};
         case 331 : return {quark::up, quark::strange};
-        case 441 : return {quark::charm, quark::strange};
+        case 441 : return {quark::charm, quark::charm};
 
         case 311 : return {quark::down, quark::strange};
         case 511 : return {quark::down, quark::bottom};
@@ -77,6 +77,7 @@ bool MesonResonance::can_two_body() {
 }
 
 bool MesonResonance::can_three_body(int meson) {
+    if (meson == 443 || meson == 441) return idRes == 541;
     if (idRes == meson) return false;
     if (idRes == 443) return false;
     if (idRes == 411 && meson == 213) return false;
@@ -145,7 +146,7 @@ void MesonResonance::add_three_body(int meson) {
 }
 
 std::vector<int> MesonResonance::mesons() {
-    return {111, 211, 311, 321, 411, 421, 431, 113, 213, 313, 323, 413, 423, 433, 221};
+    return {111, 211, 311, 321, 411, 421, 431, 113, 213, 313, 323, 413, 423, 433, 221, 441, 443};
 }
 
 bool MesonResonance::allowCalc() {
