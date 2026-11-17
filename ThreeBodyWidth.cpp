@@ -575,12 +575,12 @@ double MesonThreeBodyWidth::function(double xi) const {
         double Gpxi = Gp(xi);
         double apq2 = ap(q2);
         double amq2 = am(q2);
-        double term1 = mHat2 * mr_h / 3. / xi2 * g(q2) * Lambdaxi * Fxi * (2 * xi2 - Gpxi);
+        double term1 = mHat2 * mr_h / 3. / xi2 * sqr(g(q2)) * Lambdaxi * Fxi * (2 * xi2 - Gpxi);
         double term2 = 1. / 24. / mHat2 / xi3 * sqr(fq2) * Lambdaxi * (3. * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi) + 12. * mr_h * xi * (2 * xi2 - Gpxi));
         double term3 = mHat2 / 24. / xi3 * sqr(apq2) * Lambdaxi * Fxi * (Fxi * (2 * xi2 - Gpxi) + 3. * Gmxi * sqr(1. - mr_h));
         double term4 = mHat2 / 8. / xi * sqr(amq2) * Lambdaxi * Fxi * Gmxi;
         double term5 = 1. / 12. / xi3 * fq2 * apq2 * Lambdaxi * (3 * xi * Fxi * Gmxi + (1 - xi - mr_h) * (3 * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi)));
-        double term6 = 1. / 4. / xi2 / fq2 * amq2 * Lambdaxi * Fxi * Gmxi;
+        double term6 = 1. / 4. / xi2 * fq2 * amq2 * Lambdaxi * Fxi * Gmxi;
         double term7 = mHat2 / 4. / xi2 * apq2 * amq2 * Lambdaxi * Fxi * Gmxi * (1. - mr_h);
         return term1 + term2 + term3 + term4 + term5 + term6 + term7;
     }
