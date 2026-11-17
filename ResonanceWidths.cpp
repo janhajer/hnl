@@ -103,9 +103,20 @@ MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (in
     if (debug) print("Meson Resonance for", id_from);
     initBasic(id_from);
     particlePtr = pythia.particleData.particleDataEntryPtr(idRes);
-    particlePtr->rescaleBR(); // the B meson tables add up to more than one
     tau0_sm = particlePtr->tau0();
     width_sm = particlePtr->mWidth();
+}
+
+bool MesonResonance::init(Pythia8::Info* infoPtrIn, Pythia8::Settings* settingsPtrIn, Pythia8::ParticleData* particleDataPtrIn, Pythia8::Couplings* couplingsPtrIn) {
+    sum = 0.;
+    if (!ResonanceWidths::init(infoPtrIn, settingsPtrIn, particleDataPtrIn, couplingsPtrIn)) return false;
+    // Pythia lists some decays separately for particle and antiparticle (onMode 2 and 3) and init() adds up all channels.
+    // Width: SM plus HNL channels. Branching ratios: the channels open for the particle add up to one, as in Pythia.
+    double width = (tau0_sm > 0. ? tau_to_Gamma(tau0_sm) : width_sm) + sum;
+    particlePtr->rescaleBR(particlePtr->mWidth() / width);
+    particlePtr->setMWidth(width, false);
+    particlePtr->setTau0(Gamma_to_tau(width));
+    return true;
 }
 
 bool MesonResonance::initBSM() {
