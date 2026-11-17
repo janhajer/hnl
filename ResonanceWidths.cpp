@@ -66,13 +66,6 @@ bool is_down_type(quark q) {
     return q == quark::down || q == quark::strange || q == quark::bottom;
 }
 
-struct BRatio {
-    BRatio(int a, double b, int c) : onMode(a), bRatio(b), meMode(c) {};
-    int onMode;
-    double bRatio;
-    int meMode;
-};
-
 }
 
 bool MesonResonance::can_two_body() {
@@ -113,21 +106,6 @@ MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (in
     particlePtr->rescaleBR(); // the B meson tables add up to more than one
     tau0_sm = particlePtr->tau0();
     width_sm = particlePtr->mWidth();
-    std::vector<BRatio> vector;
-    for_each(*particlePtr, [&vector](Pythia8::DecayChannel & channel) {
-        channel.meMode(101);
-        vector.emplace_back(channel.onMode(), channel.bRatio(), 101);
-    });
-// for (auto pos = 0; pos < particlePtr->sizeChannels(); ++pos) {
-// particlePtr->channel(pos).meMode(101);
-// vector.emplace_back(particlePtr->channel(pos).onMode(), particlePtr->channel(pos).bRatio(), 101);
-// }
-    init(&pythia.info, &pythia.settings, &pythia.particleData, pythia.couplingsPtr);
-    for (std::size_t pos = 0; pos < vector.size(); ++pos) {
-        particlePtr->channel(pos).bRatio(vector.at(pos).bRatio);
-        particlePtr->channel(pos).meMode(vector.at(pos).meMode);
-        particlePtr->channel(pos).onMode(vector.at(pos).onMode);
-    }
 }
 
 bool MesonResonance::initBSM() {
@@ -200,10 +178,10 @@ double decay_constant(int id) { // GeV
 
 double NeutrinoResonance::correction_factor(int id) {
     switch (id) {
-        case 113 : return 1 - 2 * couplingsPtr->sin2thetaW();
-        case 223 : return couplingsPtr->sin2thetaW() * 4 / 3;
-        case 333 : return couplingsPtr->sin2thetaW() * 4 / 3 - 1;
-        case 443 : return 1 - couplingsPtr->sin2thetaW() * 8 / 3;
+        case 113 : return 1 - 2 * coupSMPtr->sin2thetaW();
+        case 223 : return coupSMPtr->sin2thetaW() * 4 / 3;
+        case 333 : return coupSMPtr->sin2thetaW() * 4 / 3 - 1;
+        case 443 : return 1 - coupSMPtr->sin2thetaW() * 8 / 3;
         default : print("correction_factor for meson", id, "not known");
     }
     return 0.;
@@ -235,7 +213,7 @@ double clebsch_gordan_2(int id) {
 
 double MesonResonance::CKM2(int id) {
     std::pair<int, int> pair = quark_pair(id);
-    return couplingsPtr->V2CKMgen(pair.first, pair.second);
+    return coupSMPtr->V2CKMgen(pair.first, pair.second);
 }
 
 auto get_up_type(std::array<quark, 4> const& quarks) {
@@ -295,14 +273,14 @@ int down_idx(int down) {
 }
 
 double MesonResonance::CKM2(int id_1, int id_2) {
-    if (id_1 == 431 && id_2 == 221) return couplingsPtr->VCKMgen(2, 2);
+    if (id_1 == 431 && id_2 == 221) return coupSMPtr->VCKMgen(2, 2);
     auto pair_1 = quarks(id_1);
     auto pair_2 = quarks(id_2);
     auto up = get_up_type({pair_1.first, pair_1.second, pair_2.first, pair_2.second});
     auto down = get_down_type({pair_1.first, pair_1.second, pair_2.first, pair_2.second});
 
     if (debug) print("In", idRes, id1Abs, id2Abs, id3Abs, "take CKM", up_idx(up), down_idx(down));
-    return couplingsPtr->V2CKMgen(up_idx(up), down_idx(down));
+    return coupSMPtr->V2CKMgen(up_idx(up), down_idx(down));
 }
 
 void MesonResonance::calcPreFac(bool) {
@@ -326,9 +304,13 @@ void check_channel(Pythia8::DecayChannel const& channel) {
 void MesonResonance::calcWidth(bool test) {
     if (debug) print("calcWidth", idRes, id1Abs, id2Abs, id3Abs, "with mass", particleDataPtr->m0(id1Abs));
     if (debug) print("multiplicity", mult);
+    if (!has_neutrino(particlePtr->channel(iChannel))) { // SM channel, keeps its meMode
+        widNow = GammaRes * particlePtr->channel(iChannel).bRatio();
+        return;
+    }
     auto id_lep = mult == 2 ? id2Abs : id3Abs;
-    preFac = neutrino_coupling(id1Abs, id_lep + 1) * sqr(couplingsPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
-    if (debug) print("preFac", preFac, neutrino_coupling(id1Abs, id_lep + 1), sqr(couplingsPtr->GF()), Pythia8::pow3(mHat));
+    preFac = neutrino_coupling(id1Abs, id_lep + 1) * sqr(coupSMPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
+    if (debug) print("preFac", preFac, neutrino_coupling(id1Abs, id_lep + 1), sqr(coupSMPtr->GF()), Pythia8::pow3(mHat));
     widNow = 0.;
     if (preFac <= 0.) {
         if (debug) print("zero prefactor", idRes, id1Abs, id2Abs, id3Abs);
@@ -351,8 +333,8 @@ void MesonResonance::calcWidth(bool test) {
                 preFac *= (mr1 + mr2 - sqr(mr2 - mr1)) * std::sqrt(lambda(1., mr1, mr2));
                 if (debug) print("preFac", preFac);
                 if (idRes == 443 || idRes == 553) {
-                    preFac *= 27. * mHat / 8. / M_PI / sqr(couplingsPtr->alphaEM(sqr(mHat)));
-                    auto term = 4. / 3. * couplingsPtr->sin2thetaW();
+                    preFac *= 27. * mHat / 8. / M_PI / sqr(coupSMPtr->alphaEM(sqr(mHat)));
+                    auto term = 4. / 3. * coupSMPtr->sin2thetaW();
                     if (idRes == 443) {
                         preFac *= sqr(1. - 2 * term) / 4.;
                         auto channel = particlePtr->channel(1);
@@ -414,7 +396,6 @@ NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<doub
     particlePtr->setM0(mass);
     particlePtr->setMMin(mass / 2);
     particlePtr->setMMax(mass * 2);
-    init(&pythia.info, &pythia.settings, &pythia.particleData, pythia.couplingsPtr);
     if (debug) print("Particle", idRes, particlePtr->name(), "mass", particlePtr->m0(), "tau", particlePtr->tau0(), particlePtr->mWidth());
 }
 
@@ -459,6 +440,7 @@ std::vector<int> NeutrinoResonance::mesons() {
 
 bool NeutrinoResonance::allowCalc() {
     if (debug) print("allowCalc");
+    mHat = particlePtr->m0(); // init() sets it only after allowCalc()
     particlePtr->clearChannels();
     if (mHat < 1) for (auto meson : mesons()) add_two_body(meson);
     add_three_body();
@@ -472,11 +454,11 @@ void NeutrinoResonance::initConstants() {
 
 double NeutrinoResonance::CKM2(int meson) {
     std::pair<int, int> pair = quark_pair(meson);
-    return couplingsPtr->V2CKMgen(pair.first, pair.second);
+    return coupSMPtr->V2CKMgen(pair.first, pair.second);
 }
 
 double NeutrinoResonance::CKM2(int up, int down) {
-    return couplingsPtr->V2CKMgen(up_idx(up), down_idx(down));
+    return coupSMPtr->V2CKMgen(up_idx(up), down_idx(down));
 }
 
 double NeutrinoResonance::NW(int up, int down) {
@@ -492,14 +474,14 @@ double L(double x2) {
 double NeutrinoResonance::Cf1(int neutrino, int fermion) {
     double first = is_quark(fermion) ? (is_up_type(fermion) ? 2. : 1.) / 3. : (fermion + 1 == neutrino ? -1 : 1);
     double second = is_quark(fermion) ? (is_up_type(fermion) ? 4. : 1.) / 9. : 1.;
-    return 1. / 4. * (1. - 4. * first * couplingsPtr->sin2thetaW() + 8. * second * sqr(couplingsPtr->sin2thetaW()));
+    return 1. / 4. * (1. - 4. * first * coupSMPtr->sin2thetaW() + 8. * second * sqr(coupSMPtr->sin2thetaW()));
 }
 
 double NeutrinoResonance::Cf2(int neutrino, int fermion) {
     double first = is_quark(fermion) ? (is_up_type(fermion) ? 1. : 1. / 2.) / 3. : 1. / 2.;
     double second = is_quark(fermion) ? (is_up_type(fermion) ? 4. : 2.) / 3. : 2.;
     double third = is_quark(fermion) ? 1. : (fermion + 1 == neutrino ? -1. : 1.);
-    return first * couplingsPtr->sin2thetaW() * (second * couplingsPtr->sin2thetaW() - third);
+    return first * coupSMPtr->sin2thetaW() * (second * coupSMPtr->sin2thetaW() - third);
 }
 
 double NeutrinoResonance::NZ(int fermion) {
@@ -541,7 +523,7 @@ void NeutrinoResonance::calcWidth(bool) {
         return;
     }
     widNow = 0.;
-    preFac = sqr(couplingsPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
+    preFac = sqr(coupSMPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
     preFac *= neutrino_coupling(idRes, id1Abs % 2 == 0 ? id1Abs : id1Abs + 1);
 
     if (preFac <= 0.) {
@@ -599,7 +581,7 @@ void NeutrinoResonance::calcWidth(bool) {
         default : print("multiplicity", mult, "not implemented");
     }
     if (is_quark(id2Abs) && is_quark(id3Abs)) {
-        alpS = couplingsPtr->alphaS(sqr(mHat));
+        alpS = coupSMPtr->alphaS(sqr(mHat));
         auto mod = alpS / M_PI;
         widNow *= 1. + mod + 5.2 * sqr(mod) + 26.4 * cube(mod);
     }

@@ -31,6 +31,7 @@ private:
 private:
     std::function<double (int id_heavy, int id_light)> neutrino_coupling;
     MesonThreeBodyWidth three_body_width;
+    Pythia8::ParticleDataEntryPtr particlePtr; // the base class only keeps a weak_ptr
     double sum = 0.;
     bool channels_added = false;
     double tau0_sm;
@@ -63,6 +64,7 @@ private:
 private:
     std::function<double (int id_heavy, int id_light)> neutrino_coupling;
     NeutrinoThreeBodyWidth three_body_width;
+    Pythia8::ParticleDataEntryPtr particlePtr; // the base class only keeps a weak_ptr
     double sum = 0.;
 };
 

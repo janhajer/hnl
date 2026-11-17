@@ -24,7 +24,7 @@ inline bool is_light_neutrino(int id) {
     return is_lepton(id) && id % 2 == 0;
 }
 
-auto neutrino_coupling = [](double factor) {
+inline auto neutrino_coupling = [](double factor) {
     return [factor](int id_heavy, int id_light) -> double {
         if (!is_heavy_neutral_lepton(id_heavy)) {
             print(id_heavy, "is not a heavy neutrino");
