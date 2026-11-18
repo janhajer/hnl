@@ -151,7 +151,7 @@ bool MesonDecays::three_body(int id_from, int id_to, double m_from, double m_to,
     auto random_weight = [&]() {
         return weight(id_from, id_to, m_from, m_to, m_l, m_N, q2_min + (q2_max - q2_min) * rndm->flat(), 2. * rndm->flat() - 1., 2. * M_PI * rndm->flat(), p_to, k_l, k_N);
     };
-    auto key = std::make_tuple(std::abs(id_from), std::abs(id_to), int(1e4 * m_l), int(1e4 * m_N));
+    auto key = std::make_tuple(std::abs(id_from), std::abs(id_to), int(1e2 * m_to), int(1e4 * m_l), int(1e4 * m_N)); // m_to varies for rho, K*
     if (!max_weight.count(key)) {
         double max = 0.;
         for (int point = 0; point < 10000; ++point) max = std::max(max, random_weight());

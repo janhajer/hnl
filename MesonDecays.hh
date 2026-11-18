@@ -33,7 +33,7 @@ private:
     Pythia8::Rndm* rndm;
     std::vector<int> mesons;
     MesonThreeBodyWidth three_body_width;
-    std::map<std::tuple<int, int, int, int>, double> max_weight;
+    std::map<std::tuple<int, int, int, int, int>, double> max_weight;
     std::vector<std::tuple<Pythia8::ParticleDataEntryPtr, int, int>> switched_off;
 };
 
