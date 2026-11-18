@@ -17,8 +17,10 @@ namespace hnl
 // The HNL channels stay in the decay tables: the channel is picked here as Pythia would, SM channels go back to Pythia.
 struct MesonDecays : public Pythia8::DecayHandler {
     MesonDecays(Pythia8::Pythia& pythia, std::vector<int> const& mesons_);
-    bool decay(std::vector<int>& ids, std::vector<double>& masses, std::vector<Pythia8::Vec4>& momenta, int, Pythia8::Event const&) override;
+    bool decay(std::vector<int>& ids, std::vector<double>& masses, std::vector<Pythia8::Vec4>& momenta, int line, Pythia8::Event const&) override;
     std::vector<int> handledParticles() override;
+    // event line of a meson that has to decay into HNLs (0: none)
+    int forced = 0;
     // |M|^2 / (4 G_F^2 |V|^2 |U|^2) of meson(p) -> daughter(p_to) lepton(k_l) N(k_N)
     double matrix_element(int id_from, int id_to, Pythia8::Vec4 const& p, Pythia8::Vec4 const& p_to, Pythia8::Vec4 const& k_l, Pythia8::Vec4 const& k_N);
     // density in (q2, cos_theta, phi) at rest; sets the momenta

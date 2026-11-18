@@ -52,10 +52,14 @@ void MesonDecays::restore() {
     switched_off.clear();
 }
 
-bool MesonDecays::decay(std::vector<int>& ids, std::vector<double>& masses, std::vector<Pythia8::Vec4>& momenta, int, Pythia8::Event const&) {
+bool MesonDecays::decay(std::vector<int>& ids, std::vector<double>& masses, std::vector<Pythia8::Vec4>& momenta, int line, Pythia8::Event const&) {
     restore();
     int id = ids[0];
     auto entry = particle_data->particleDataEntryPtr(id);
+    if (line == forced) for (int pos = 0; pos < entry->sizeChannels(); ++pos) if (!has_neutrino(entry->channel(pos))) {
+        switched_off.emplace_back(entry, pos, entry->channel(pos).onMode());
+        entry->channel(pos).onMode(0);
+    }
     if (!entry->preparePick(id, masses[0])) return false;
     auto const& channel = entry->pickChannel();
     if (!has_neutrino(channel)) { // SM decay: Pythia picks again, without the HNL channels
