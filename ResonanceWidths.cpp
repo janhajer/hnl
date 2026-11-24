@@ -562,7 +562,7 @@ void NeutrinoResonance::calcWidth(bool) {
                 } else if (is_light_neutrino(id1Abs)) {
                     preFac /= 2;
                     if (is_vector(id2Abs)) {
-                        preFac *= sqr(correction_factor(id2Abs)) / sqr(mr2); // dimension of form factor
+                        preFac *= sqr(correction_factor(id2Abs)) / sqr(mf2); // dimension of form factor
                         widNow = preFac * (1 + 2 * mr2) * sqr(1 - mr2);
                     } else {
                         widNow = preFac * sqr(1 - mr2);
