@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "Pythia8/ResonanceWidths.h"
+#include "Pythia8/StandardModel.h"
 #include "ThreeBodyWidth.hh"
 
 namespace Pythia8{
@@ -51,25 +52,27 @@ protected:
     virtual void calcWidth(bool called_from_init = false) override;
 private:
     double get_mass(int id);
-    bool can_two_body(int meson);
-    bool can_three_body();
-    void add_three_body();
-    void add_two_body(int id);
     void add_charge_conjugates();
-    std::vector<int> mesons();
-    double CKM2(int meson);
     double CKM2(int up, int down);
-    double NW(int up, int down);
     double NZ(int id2Abs);
     double Cf1(int neutrino, int fermion);
     double Cf2(int neutrino, int fermion);
     double correction_factor(int id);
+    double coupling(int neutrino);
+    double qcd_factor();
+    double width_charged_meson(int lepton, int meson);
+    double width_neutral_meson(int neutrino, int meson);
+    double width_charged_fermions(int lepton, int up, int down);
+    double width_neutral_fermions(int neutrino, int fermion);
+    double width_invisible(int neutrino, int neutrino_2);
+    double remainder_charged(int lepton, int up, int down);
+    double remainder_neutral(int neutrino, int quark);
 private:
     std::function<double (int id_heavy, int id_light)> neutrino_coupling;
     NeutrinoThreeBodyWidth three_body_width;
+    Pythia8::AlphaStrong alpha_strong;
     bool majorana;
     Pythia8::ParticleDataEntryPtr particlePtr; // the base class only keeps a weak_ptr
-    double sum = 0.;
 };
 
 }

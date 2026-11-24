@@ -184,17 +184,26 @@ double decay_constant(int id) { // GeV
         case 223 : return 0.153;
         case 333 : return 0.234;
         case 443 : return 1.29;
+        // not in 1805.08567; from tau decays with the l V formula (eq. 40) and Pythia's CKM, as g_rho there:
+        case 323 : return 0.1795; // BR(tau -> K* nu) / BR(tau -> pi nu) = 1.20 / 10.82 %
+        case 20213 : return 0.2861; // BR(tau -> 3 pi nu) / BR(tau -> pi nu) = (9.31 + 9.26) / 10.82 %, m_a1 = 1.23 GeV
+        case 20113 : return 0.2861;
         default : print("decay_constant for meson", id, "not known");
     }
     return 0.;
 }
 
+// kappa of <0|J^Z|V> = kappa g_V / sqrt(2) eps (1805.08567): sqrt(2) sum_q c_q (T3_q - 2 Q_q sin^2 theta_W), with the quark
+// content c_q of rho0, omega = (u ubar -+ d dbar) / sqrt(2), phi = s sbar, J/psi = c cbar, for which the g_V of 1805.08567
+// are the standard decay constants (f m). This gives its kappa for rho0; its table has 2x (omega) and sqrt(2)x (phi, J/psi)
+// these values. J/psi -> nu nubar in MesonResonance uses the same (1 - 8/3 sin^2 theta_W) / 2.
 double NeutrinoResonance::correction_factor(int id) {
     switch (id) {
         case 113 : return 1 - 2 * coupSMPtr->sin2thetaW();
-        case 223 : return coupSMPtr->sin2thetaW() * 4 / 3;
-        case 333 : return coupSMPtr->sin2thetaW() * 4 / 3 - 1;
-        case 443 : return 1 - coupSMPtr->sin2thetaW() * 8 / 3;
+        case 223 : return coupSMPtr->sin2thetaW() * 2 / 3;
+        case 333 : return (1 - coupSMPtr->sin2thetaW() * 4 / 3) / M_SQRT2;
+        case 443 : return (1 - coupSMPtr->sin2thetaW() * 8 / 3) / M_SQRT2;
+        case 20113 : return 1; // isovector axial current without electromagnetic part (appendix C of 1805.08567)
         default : print("correction_factor for meson", id, "not known");
     }
     return 0.;
@@ -419,44 +428,176 @@ bool NeutrinoResonance::initBSM() {
     return true;
 }
 
-bool NeutrinoResonance::can_two_body(int meson) {
-    if (particlePtr->m0() < particleDataPtr->m0(meson)) return false;
-    return true;
+// HNL decays (1805.08567, section 3). Leptons as there. Hadrons (rewritten 24 Nov 2026):
+// - one meson at all masses, with the single-meson widths of section 3.2: l- P+ (pi, K, D, D_s, B, B_c),
+//   l- V+ (rho, K*, D*, D_s*, a_1), nu P0 (pi0, eta, eta', eta_c), nu V0 (rho0, omega, phi, J/psi, a_1^0);
+// - for each quark current, the remainder of the inclusive width (quarks times 1 + Delta_QCD) over the one-meson
+//   widths of that current, if positive and if the hadronic system can be heavier than the lightest states the
+//   mesons above do not cover. The q qbar' pair is colour connected and fragments in Pythia's hadron level: meMode 94
+//   (V-A, products in the order dbar u l-) for the charged current, 93 for the neutral one.
+// At m_tau this reproduces tau decays: pi, rho and a_1 give 89% of the non-strange hadronic width, the remainder the rest.
+
+namespace {
+
+const double alpha_s_mZ = 0.118;
+
+bool spin_one(int id) {
+    return id % 10 == 3;
 }
 
-bool NeutrinoResonance::can_three_body() {
-    return true;
-}
-
-void NeutrinoResonance::add_three_body() {
-    if (!can_three_body()) return;
-    for (auto lepton : charge_leptons()) {
-        if (mHat >= 1) for (auto up : up_type()) for (auto down : down_type()) particlePtr->addChannel(1, 0., 0, lepton, up, -down);
-        for (auto neutrino : neutral_leptons()) for (auto lepton_2 : charge_leptons()) if (lepton_2 != lepton && lepton_2 + 1 == neutrino) particlePtr->addChannel(1, 0., 0, lepton, neutrino, -lepton_2);
+// the up- and down-type quarks of the charged current that makes a meson
+std::pair<int, int> current_of(int meson) {
+    switch (meson) {
+        case 211 : case 213 : case 20213 : return {2, 1};
+        case 321 : case 323 : return {2, 3};
+        case 411 : case 413 : return {4, 1};
+        case 431 : case 433 : return {4, 3};
+        case 521 : return {2, 5};
+        case 541 : return {4, 5};
+        default : print("no charged current for meson", meson);
     }
-    for (auto neutrino : neutral_leptons()) {
-        for (auto neutrino_2 : neutral_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, neutrino_2, neutrino_2);
-        for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, lepton, -lepton);
-        if (mHat >= 1) for (auto quark : quarks()) particlePtr->addChannel(1, 0., 0, neutrino, quark, -quark);
+    return {0, 0};
+}
+
+std::vector<int> charged_current_mesons(int up, int down) {
+    for (auto meson : {211, 321, 411, 431, 521, 541}) if (current_of(meson) == std::make_pair(up, down)) {
+        switch (meson) {
+            case 211 : return {211, 213, 20213};
+            case 321 : return {321, 323};
+            case 411 : return {411, 413};
+            case 431 : return {431, 433};
+            default : return {meson};
+        }
+    }
+    return {};
+}
+
+// neutral-current mesons of a quark flavour; u ubar and d dbar share the light ones (listed under d)
+std::vector<int> neutral_current_mesons(int quark) {
+    switch (quark) {
+        case 1 : return {111, 221, 331, 113, 223, 20113};
+        case 3 : return {333};
+        case 4 : return {441, 443};
+        default : return {};
     }
 }
 
-void NeutrinoResonance::add_two_body(int meson) {
-    if (!can_two_body(meson)) return;
-    if (particleDataPtr->chargeType(meson) == 0) for (auto lepton : neutral_leptons()) particlePtr->addChannel(1, 1., 0, lepton, meson);
-    else for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 1., 0, lepton, meson);
+// Lightest hadronic mass [GeV] of the states that the mesons of a current do not cover. Light currents: tau spectral
+// functions are saturated by pi, pi pi and 3 pi below about 1 GeV; s sbar by the phi below about 1.5 GeV; heavy
+// currents: D pi, D K, B pi, B_c pi and D Dbar, B Bbar thresholds.
+double remainder_threshold(int up, int down) {
+    if (up == 4) return down == 1 ? 2.01 : down == 3 ? 2.36 : 6.42;
+    return down == 5 ? 5.42 : 1.;
 }
 
-std::vector<int> NeutrinoResonance::mesons() {
-    return {111, 211, 321, 411, 431, 113, 213, 413, 433, 221};
+double remainder_threshold(int quark) {
+    switch (quark) {
+        case 1 : case 2 : return 1.;
+        case 3 : return 1.5;
+        case 4 : return 3.74;
+        default : return 10.56;
+    }
+}
+
+}
+
+double L(double x2) {
+    if (x2 < 0.000026112) return -21.; // The log becomes complex for electrons; this approximate value is irrelevant as it will be multiplied by a very small number.
+    auto sqrt = std::sqrt(1. - 4. * x2);
+    return std::log((1. - 3. * x2 - (1. - x2) * sqrt) / x2 / (1. + sqrt));
+}
+
+double NeutrinoResonance::coupling(int neutrino) {
+    return neutrino_coupling(idRes, neutrino);
+}
+
+double NeutrinoResonance::qcd_factor() { // Delta_QCD of 1805.08567 with alpha_s(M_N) at three loops, frozen below m_tau where it is tested
+    auto alpha = alpha_strong.alphaS(sqr(std::max(mHat, particleDataPtr->m0(15)))) / M_PI;
+    return 1. + alpha + 5.2 * sqr(alpha) + 26.4 * cube(alpha);
+}
+
+double NeutrinoResonance::width_charged_meson(int lepton, int meson) {
+    auto m_l = particleDataPtr->m0(lepton);
+    auto m_h = particleDataPtr->m0(meson);
+    if (mHat <= m_l + m_h) return 0.;
+    auto x_l = sqr(m_l / mHat);
+    auto x_h = sqr(m_h / mHat);
+    auto [up, down] = current_of(meson);
+    auto width = sqr(coupSMPtr->GF() * decay_constant(meson)) * CKM2(up, down) * Pythia8::pow3(mHat) / 16. / M_PI
+        * std::sqrt(lambda(1., x_h, x_l)) * coupling(lepton + 1);
+    if (spin_one(meson)) return width / sqr(m_h) * (sqr(1. - x_l) + x_h * (1. + x_l) - 2. * sqr(x_h));
+    return width * (sqr(1. - x_l) - x_h * (1. + x_l));
+}
+
+double NeutrinoResonance::width_neutral_meson(int neutrino, int meson) {
+    auto m_h = particleDataPtr->m0(meson);
+    if (mHat <= m_h) return 0.;
+    auto x_h = sqr(m_h / mHat);
+    auto width = sqr(coupSMPtr->GF() * decay_constant(meson)) * Pythia8::pow3(mHat) / 32. / M_PI * sqr(1. - x_h)
+        * coupling(neutrino);
+    if (spin_one(meson)) return width * sqr(correction_factor(meson) / m_h) * (1. + 2. * x_h);
+    return width;
+}
+
+// N -> l_alpha- U Dbar: quarks with N_c |V|^2 and the QCD factor, or leptons U = nu_beta, D = l_beta
+double NeutrinoResonance::width_charged_fermions(int lepton, int up, int down) {
+    if (mHat <= get_mass(lepton) + get_mass(up) + get_mass(down)) return 0.;
+    auto width = sqr(coupSMPtr->GF()) * Pythia8::pow5(mHat) / 192. / Pythia8::pow3(M_PI) * coupling(lepton + 1)
+        * three_body_width.get_width(idRes, lepton, up, down);
+    return is_quark(up) ? width * 3. * CKM2(up, down) * qcd_factor() : width;
+}
+
+// N -> nu_alpha f fbar through the neutral current, and the charged current for f = l_alpha
+double NeutrinoResonance::width_neutral_fermions(int neutrino, int fermion) {
+    auto x = sqr(get_mass(fermion) / mHat);
+    if (4. * x >= 1.) return 0.;
+    auto root = std::sqrt(1. - 4. * x);
+    auto term_1 = (1. - 14. * x - 2. * sqr(x) - 12. * cube(x)) * root + 12. * sqr(x) * (sqr(x) - 1.) * L(x);
+    auto term_2 = x * (2. + 10. * x - 12 * sqr(x)) * root + 6 * sqr(x) * (1. - 2. * x + 2 * sqr(x)) * L(x);
+    auto width = sqr(coupSMPtr->GF()) * Pythia8::pow5(mHat) / 192. / Pythia8::pow3(M_PI) * coupling(neutrino) * NZ(fermion)
+        * (Cf1(neutrino, fermion) * term_1 + 4. * Cf2(neutrino, fermion) * term_2);
+    return is_quark(fermion) ? width * qcd_factor() : width;
+}
+
+// N -> nu_alpha nu_beta nubar_beta, one of the three
+double NeutrinoResonance::width_invisible(int neutrino, int neutrino_2) {
+    return sqr(coupSMPtr->GF()) * Pythia8::pow5(mHat) / 192. / Pythia8::pow3(M_PI) * coupling(neutrino) / 4.
+        * (neutrino == neutrino_2 ? 2. : 1.);
+}
+
+double NeutrinoResonance::remainder_charged(int lepton, int up, int down) {
+    if (mHat - particleDataPtr->m0(lepton) < remainder_threshold(up, down)) return 0.;
+    auto rest = width_charged_fermions(lepton, up, down);
+    for (auto meson : charged_current_mesons(up, down)) rest -= width_charged_meson(lepton, meson);
+    return std::max(rest, 0.);
+}
+
+double NeutrinoResonance::remainder_neutral(int neutrino, int quark) {
+    if (mHat < remainder_threshold(quark)) return 0.;
+    auto family = quark == 2 ? 1 : quark;
+    auto inclusive = width_neutral_fermions(neutrino, family) + (family == 1 ? width_neutral_fermions(neutrino, 2) : 0.);
+    auto rest = inclusive;
+    for (auto meson : neutral_current_mesons(family)) rest -= width_neutral_meson(neutrino, meson);
+    return rest > 0. ? rest * width_neutral_fermions(neutrino, quark) / inclusive : 0.;
 }
 
 bool NeutrinoResonance::allowCalc() {
     if (debug) print("allowCalc");
     mHat = particlePtr->m0(); // init() sets it only after allowCalc()
     particlePtr->clearChannels();
-    if (mHat < 1) for (auto meson : mesons()) add_two_body(meson);
-    add_three_body();
+    for (auto lepton : charge_leptons()) {
+        for (auto lepton_2 : charge_leptons()) if (lepton_2 != lepton) particlePtr->addChannel(1, 0., 94, -lepton_2, lepton_2 + 1, lepton);
+        for (auto up : {2, 4}) for (auto down : {1, 3, 5}) {
+            for (auto meson : charged_current_mesons(up, down)) particlePtr->addChannel(1, 0., 0, lepton, meson);
+            particlePtr->addChannel(1, 0., 94, -down, up, lepton);
+        }
+    }
+    for (auto neutrino : neutral_leptons()) {
+        for (auto neutrino_2 : neutral_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, neutrino_2, -neutrino_2);
+        for (auto lepton : charge_leptons()) particlePtr->addChannel(1, 0., 0, neutrino, lepton, -lepton);
+        for (auto quark : {1, 3, 4}) for (auto meson : neutral_current_mesons(quark)) particlePtr->addChannel(1, 0., 0, neutrino, meson);
+        for (auto quark : {1, 2, 3, 4, 5}) particlePtr->addChannel(1, 0., 93, neutrino, quark, -quark);
+    }
     if (majorana) add_charge_conjugates();
     return true;
 }
@@ -464,37 +605,24 @@ bool NeutrinoResonance::allowCalc() {
 void NeutrinoResonance::add_charge_conjugates() {
     auto size = particlePtr->sizeChannels();
     for (int pos = 0; pos < size; ++pos) {
+        auto const& channel = particlePtr->channel(pos);
         std::array<int, 3> products{};
-        for (int i = 0; i < particlePtr->channel(pos).multiplicity(); ++i) {
-            auto product = particlePtr->channel(pos).product(i);
+        for (int i = 0; i < channel.multiplicity(); ++i) {
+            auto product = channel.product(i);
             products.at(i) = particleDataPtr->hasAnti(product) ? -product : product;
         }
-        particlePtr->addChannel(1, 0., 0, products[0], products[1], products[2]);
+        particlePtr->addChannel(1, 0., channel.meMode(), products[0], products[1], products[2]);
     }
 }
 
 void NeutrinoResonance::initConstants() {
     if (debug) print("initConstants");
     three_body_width.set_pointers(particleDataPtr, settingsPtr);
-}
-
-double NeutrinoResonance::CKM2(int meson) {
-    std::pair<int, int> pair = quark_pair(meson);
-    return coupSMPtr->V2CKMgen(pair.first, pair.second);
+    alpha_strong.init(alpha_s_mZ, 3, 6, false);
 }
 
 double NeutrinoResonance::CKM2(int up, int down) {
     return coupSMPtr->V2CKMgen(up_idx(up), down_idx(down));
-}
-
-double NeutrinoResonance::NW(int up, int down) {
-    return is_quark(up) && is_quark(down) ? 3. * CKM2(up, down) : 1.;
-}
-
-double L(double x2) {
-    if (x2 < 0.000026112) return -21.; // The log becomes complex for electrons; this approximate value is irrelevant as it will be multiplied by a very small number.
-    auto sqrt = std::sqrt(1. - 4. * x2);
-    return std::log((1. - 3. * x2 - (1. - x2) * sqrt) / x2 / (1. + sqrt));
 }
 
 double NeutrinoResonance::Cf1(int neutrino, int fermion) {
@@ -531,90 +659,15 @@ double NeutrinoResonance::get_mass(int id) {
 }
 
 void NeutrinoResonance::calcWidth(bool) {
-    if (debug) print("calcWidth", idRes, id1Abs, id2Abs, id3Abs);
-
-    auto id1Abs = std::abs(particlePtr->channel(iChannel).product(0));
-
-    auto id2Abs = std::abs(particlePtr->channel(iChannel).product(1));
-    auto id3Abs = std::abs(particlePtr->channel(iChannel).product(2));
-
-    auto mf1 = get_mass(id1Abs);
-    auto mf2 = get_mass(id2Abs);
-    auto mf3 = get_mass(id3Abs);
-
-    auto mr1 = sqr(mf1 / mHat);
-    auto mr2 = sqr(mf2 / mHat);
-    if (!is_lepton(id1Abs)) {
-        print("the second daughter should be a lepton", idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
-        return;
-    }
-    widNow = 0.;
-    preFac = sqr(coupSMPtr->GF()) * Pythia8::pow3(mHat) / 8. / M_PI;
-    preFac *= neutrino_coupling(idRes, id1Abs % 2 == 0 ? id1Abs : id1Abs + 1);
-
-    if (preFac <= 0.) {
-        if (debug) print("preFac", preFac, idRes, "to", id1Abs, id2Abs, mult > 2 ? id3Abs : 0);
-        return;
-    }
-
-    if (mHat < mf1 + mf2 + (mult == 2 ? 0 : mf3)) {
-        if (debug) print("no phase space", idRes, "to", id1Abs, id2Abs, id3Abs, "mass", mHat, "sum", mf1 + mf2 + mf3, mf1 + mf2);
-        return;
-    }
-
-    switch (mult) {
-        case 2 :
-            if (is_meson(id2Abs)) {
-                preFac *= sqr(decay_constant(id2Abs)) / 2;
-                if (is_charge_lepton(id1Abs)) {
-                    preFac *= CKM2(id2Abs);
-                    if (is_vector(id2Abs)) {
-                        preFac /= sqr(mf2); // dimension of form factor
-                        widNow = preFac * (sqr(1 - mr1) + mr2 * (1 + mr1) - 2 * sqr(mr2)) * std::sqrt(lambda(1, mr2, mr1));
-                    } else {
-                        widNow = preFac * (sqr(1 - mr1) - mr2 * (1 + mr1)) * std::sqrt(lambda(1, mr2, mr1));
-                    }
-                } else if (is_light_neutrino(id1Abs)) {
-                    preFac /= 2;
-                    if (is_vector(id2Abs)) {
-                        preFac *= sqr(correction_factor(id2Abs)) / sqr(mr2); // dimension of form factor
-                        widNow = preFac * (1 + 2 * mr2) * sqr(1 - mr2);
-                    } else {
-                        widNow = preFac * sqr(1 - mr2);
-                    }
-                } else print("Two-body not implemented", id1Abs, id2Abs, id3Abs);
-            } else print("Two-body not implemented", id1Abs, id2Abs, id3Abs);
-            break;
-        case 3 :
-            preFac *= sqr(mHat) / 24. / sqr(M_PI);
-            if (is_charge_lepton(id1Abs)) {
-                preFac *= NW(id2Abs, id3Abs);
-                if (debug) print("preFac", preFac);
-                widNow = preFac * three_body_width.get_width(idRes, id1Abs, id2Abs, id3Abs);
-            } else if (is_light_neutrino(id1Abs) && id2Abs == id3Abs) {
-                if (is_light_neutrino(id2Abs)) {
-                    preFac /= 4.;
-                    widNow = preFac * (1. + (id1Abs == id2Abs ? 1. : 0.));
-                } else {
-                    preFac *= NZ(id2Abs);
-// if (mr2 <= 1E-8) print("bad mass", mr2, idRes, id1Abs, id2Abs, id3Abs);
-                    auto term_1 = (1. - 14. * mr2 - 2. * sqr(mr2) - 12. * cube(mr2)) * std::sqrt(1. - 4. * mr2) + 12. * sqr(mr2) * (sqr(mr2) - 1.) * L(mr2);
-                    auto term_2 = mr2 * (2. + 10. * mr2 - 12 * sqr(mr2)) * std::sqrt(1. - 4. * mr2) + 6 * sqr(mr2) * (1. - 2. * mr2 + 2 * sqr(mr2)) * L(mr2);
-                    widNow = preFac * (Cf1(id1Abs, id2Abs) * term_1 + 4. * Cf2(id1Abs, id2Abs) * term_2);
-                }
-            } else print("this is unexpectet");
-            break;
-        default : print("multiplicity", mult, "not implemented");
-    }
-    if (is_quark(id2Abs) && is_quark(id3Abs)) {
-        alpS = coupSMPtr->alphaS(sqr(mHat));
-        auto mod = alpS / M_PI;
-        widNow *= 1. + mod + 5.2 * sqr(mod) + 26.4 * cube(mod);
-    }
-    if (debug) sum += widNow;
-    if (debug) print("Calculated", widNow, "for", idRes, "to", id1Abs, "and", id2Abs, "and", id3Abs, "with", preFac, "compare to", tau_to_Gamma(particlePtr->tau0()), particlePtr->mWidth(), sum);
-    if (debug) print(minWidth, particlePtr->isResonance(), particlePtr->mayDecay(), particlePtr->doExternalDecay(), particlePtr->isVisible(), particlePtr->doForceWidth(), particlePtr->mWidth());
-    if (debug) print(sum, Gamma_to_tau(sum));
+    auto const& channel = particlePtr->channel(iChannel);
+    std::array<int, 3> ids{};
+    for (int i = 0; i < channel.multiplicity(); ++i) ids.at(i) = std::abs(channel.product(i));
+    if (channel.multiplicity() == 2) widNow = is_light_neutrino(ids[0]) ? width_neutral_meson(ids[0], ids[1]) : width_charged_meson(ids[0], ids[1]);
+    else if (channel.meMode() == 94) widNow = is_quark(ids[1]) ? remainder_charged(ids[2], ids[1], ids[0]) : width_charged_fermions(ids[2], ids[1], ids[0]);
+    else if (is_quark(ids[1])) widNow = remainder_neutral(ids[0], ids[1]);
+    else if (is_light_neutrino(ids[1])) widNow = width_invisible(ids[0], ids[1]);
+    else widNow = width_neutral_fermions(ids[0], ids[1]);
+    if (debug) print("Calculated", widNow, "for", idRes, "to", ids[0], ids[1], ids[2]);
 }
 
 Pythia8::ParticleDataEntry & NeutrinoResonance::calculate_widths() {
