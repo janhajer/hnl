@@ -24,7 +24,7 @@ include_directories(${Boost_INCLUDE_DIR})
 set(boost-libs ${Boost_LIBRARIES})
 
 # lib
-add_library(hnl ResonanceWidths.cpp ThreeBodyWidth.cpp MesonDecays.cpp decay_table.cpp branching_ratios.cpp)
+add_library(hnl ResonanceWidths.cpp ThreeBodyWidth.cpp MesonDecays.cpp BaryonDecays.cpp decay_table.cpp branching_ratios.cpp)
 
 # libs
 set(hnl-libs hnl pythia8 ${boost-libs} ${CMAKE_DL_LIBS} z)

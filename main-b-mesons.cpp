@@ -1,4 +1,4 @@
-// HNLs from B meson decays in pp collisions at 14 TeV with Pythia 8.3.
+// HNLs from B meson and Lambda_b decays in pp collisions at 14 TeV with Pythia 8.3.
 // b-mesons <m_N [GeV]> <|U_mu|^2> <events> <mode> [seed]
 // Writes b-mesons-<m_N>.csv, one line per HNL from a B meson: weight [pb], parent, HNL four-momentum [GeV], production and decay vertex [mm].
 // mode 0: SM branching ratios, the weight is the cross section per event.
@@ -13,6 +13,7 @@
 
 #include "Pythia8/Pythia.h"
 
+#include "BaryonDecays.hh"
 #include "MesonDecays.hh"
 #include "ResonanceWidths.hh"
 #include "pythia.hh"
@@ -37,9 +38,12 @@ int main(int argc, char** argv) {
         pythia.readString("Random:setSeed = on");
         pythia.readString("Random:seed = " + arguments.at(4));
     }
-    std::vector<int> mesons{511, 521, 531, 541};
+    std::vector<int> mesons{511, 521, 531, 541, 5122}; // 5122: Lambda_b -> Lambda_c l N
     pythia.addResonancePtr(std::make_shared<hnl::NeutrinoResonance>(pythia, hnl::neutrino_coupling(coupling), mass, hnl::heavy_neutral_muon));
-    for (auto meson : mesons) pythia.addResonancePtr(std::make_shared<hnl::MesonResonance>(pythia, hnl::neutrino_coupling(coupling), meson));
+    for (auto meson : mesons) {
+        if (meson == 5122) pythia.addResonancePtr(std::make_shared<hnl::BaryonResonance>(pythia, hnl::neutrino_coupling(coupling), meson));
+        else pythia.addResonancePtr(std::make_shared<hnl::MesonResonance>(pythia, hnl::neutrino_coupling(coupling), meson));
+    }
     auto decays = std::make_shared<hnl::MesonDecays>(pythia, mesons);
     pythia.setDecayPtr(decays);
     if (!pythia.init()) return 1;

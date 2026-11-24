@@ -13,7 +13,7 @@ namespace Pythia8{
 namespace hnl
 {
 
-// Meson decays into HNLs with the matrix element instead of phase space.
+// Meson (and Lambda_b) decays into HNLs with the matrix element instead of phase space.
 // The HNL channels stay in the decay tables: the channel is picked here as Pythia would, SM channels go back to Pythia.
 struct MesonDecays : public Pythia8::DecayHandler {
     MesonDecays(Pythia8::Pythia& pythia, std::vector<int> const& mesons_);

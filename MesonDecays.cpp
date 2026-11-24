@@ -1,6 +1,7 @@
 #include "Pythia8/Pythia.h"
 
 #include "MesonDecays.hh"
+#include "BaryonDecays.hh"
 #include "id.hh"
 #include "math.hh"
 #include "pythia.hh"
@@ -107,6 +108,7 @@ bool MesonDecays::decay(std::vector<int>& ids, std::vector<double>& masses, std:
 }
 
 double MesonDecays::matrix_element(int id_from, int id_to, Pythia8::Vec4 const& p, Pythia8::Vec4 const& p_to, Pythia8::Vec4 const& k_l, Pythia8::Vec4 const& k_N) {
+    if (std::abs(id_from) == 5122) return lambda_b_matrix_element(p, p_to, k_l, k_N); // Lambda_b -> Lambda_c l N
     auto P = p + p_to;
     auto q = p - p_to;
     auto form_factors = three_body_width.form_factors(id_from, id_to, q.m2Calc());

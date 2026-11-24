@@ -17,6 +17,7 @@
 * `NeutrinoResonance`: HNL mass, widths and decays (Majorana by default),
 * `MesonResonance` for each meson: HNL channels added to its decay table, widths from arXiv:1805.08567,
 * `MesonDecays`: decay handler that generates the HNL channels with the matrix element instead of phase space.
+* `BaryonResonance`: Lambda_b -> Lambda_c l N with the lattice QCD form factors of arXiv:1503.01421; |M|^2 from Dirac traces, for any lepton and HNL masses. In the SM limit it gives their Gamma / |V_cb|^2 for e, mu and tau (21.5, 21.5, 7.15 ps^-1).
 
 ## HNL decays
 
