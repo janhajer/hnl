@@ -217,6 +217,15 @@ double MesonThreeBodyWidth::get_width(int from_id_, int neutrino_id, int to_id_,
     return integrate(width, sqr(y_l + y_N), sqr(1. - y_h), 1e-3 * y_N) ? width : 0.;
 }
 
+std::array<double, 4> MesonThreeBodyWidth::form_factors(int from_id_, int to_id_, double q2) {
+    id_from = std::abs(from_id_);
+    id_to = std::abs(to_id_);
+    mHat = particle_data->m0(id_from);
+    m_to = particle_data->m0(id_to);
+    if (is_vector(id_to)) return {g(q2), ff(q2), ap(q2), am(q2)};
+    return {form_factor_plus(q2), form_factor_0(q2), 0., 0.};
+}
+
 double lambda(int id_from, int id_to, bool charged) {
     if (is_neutral_Kaon(id_from) && id_to == 211) return charged ? 0.0267 : 0.0117;
     if (id_from == 321 && id_to == 111) return charged ? 0.0277 : 0.0183;
@@ -334,11 +343,17 @@ double MesonThreeBodyWidth::B_form_factor(double q2, bool charged) const {
     return m_pole_prefactor(q2, id_to, charged) * sum;
 }
 
+// B_c -> eta_c: single pole as in HNLCalc (arXiv:2405.07330), with m(B_c*) = 6.4 GeV
+double MesonThreeBodyWidth::B_c_form_factor(double q2, bool charged) const {
+    return 0.76 / (1. - q2 / sqr(charged ? 6.4 : particle_data->m0(541)));
+}
+
 double MesonThreeBodyWidth::form_factor(double q2, bool charged) const {
     if (is_K(id_from)) return K_form_factor(q2, charged);
     if (is_D(id_from)) return D_form_factor(q2, charged);
     if (is_D_s(id_from)) return D_s_form_factor(q2, charged);
     if (is_B(id_from) || is_B_s(id_from)) return B_form_factor(q2, charged);
+    if (is_B_c(id_from)) return B_c_form_factor(q2, charged);
     print("not a proper pseudoscalar decay", id_from, id_to, charged, q2);
     return 0.;
 }
@@ -491,23 +506,33 @@ double MV(int id_from, int id_to) { // GeV
     return 0;
 }
 
+// B_c -> J/psi as in HNLCalc (arXiv:2405.07330): f(0) / (1 - q^2/m^2 - delta q^4/m^4)
+double B_c_J_psi(double q2, double f0, double m, double delta) {
+    double ratio = q2 / sqr(m);
+    return f0 / (1. - ratio - delta * sqr(ratio));
+}
+
 double V(double q2, int id_from, int id_to) {
+    if (is_B_c(id_from)) return B_c_J_psi(q2, 0.96, 5.65, 0.0013);
     double ratio = q2 / sqr(MV(id_from, id_to));
     return fV(id_from, id_to) / (1. - ratio) / (1. - sigmaV(id_from, id_to) * ratio - xiV(id_from, id_to) * sqr(ratio));
 }
 
 double A0(double q2, int id_from, int id_to) {
+    if (is_B_c(id_from)) return B_c_J_psi(q2, 0.68, 8.20, 1.40);
     double ratioP = q2 / sqr(MP(id_from, id_to));
     double ratioV = q2 / sqr(MV(id_from, id_to));
     return fA0(id_from, id_to) / (1. - ratioP) / (1. - sigmaA0(id_from, id_to) * ratioV - xiA0(id_from, id_to) * sqr(ratioV));
 }
 
 double A1(double q2, int id_from, int id_to) {
+    if (is_B_c(id_from)) return B_c_J_psi(q2, 0.68, 5.91, 0.052);
     double ratio = q2 / sqr(MV(id_from, id_to));
     return fA1(id_from, id_to) / (1. - sigmaA1(id_from, id_to) * ratio - xiA1(id_from, id_to) * sqr(ratio));
 }
 
 double A2(double q2, int id_from, int id_to) {
+    if (is_B_c(id_from)) return B_c_J_psi(q2, -0.004, 5.67, -0.004);
     double ratio = q2 / sqr(MV(id_from, id_to));
     return fA2(id_from, id_to) / (1. - sigmaA2(id_from, id_to) * ratio - xiA2(id_from, id_to) * sqr(ratio));
 }
@@ -517,7 +542,7 @@ double MesonThreeBodyWidth::g(double q2) const {
 }
 
 double MesonThreeBodyWidth::am(double q2) const {
-    return (A2(q2, id_from, id_to) * (mHat - m_to) - A1(q2, id_from, id_to) * (mHat - m_to) + 2 * A0(q2, id_from, id_to) * m_to) / q2;
+    return (A2(q2, id_from, id_to) * (mHat - m_to) - A1(q2, id_from, id_to) * (mHat + m_to) + 2 * A0(q2, id_from, id_to) * m_to) / q2;
 }
 
 double MesonThreeBodyWidth::ff(double q2) const {
@@ -575,12 +600,12 @@ double MesonThreeBodyWidth::function(double xi) const {
         double Gpxi = Gp(xi);
         double apq2 = ap(q2);
         double amq2 = am(q2);
-        double term1 = mHat2 * mr_h / 3. / xi2 * g(q2) * Lambdaxi * Fxi * (2 * xi2 - Gpxi);
+        double term1 = mHat2 * mr_h / 3. / xi2 * sqr(g(q2)) * Lambdaxi * Fxi * (2 * xi2 - Gpxi);
         double term2 = 1. / 24. / mHat2 / xi3 * sqr(fq2) * Lambdaxi * (3. * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi) + 12. * mr_h * xi * (2 * xi2 - Gpxi));
         double term3 = mHat2 / 24. / xi3 * sqr(apq2) * Lambdaxi * Fxi * (Fxi * (2 * xi2 - Gpxi) + 3. * Gmxi * sqr(1. - mr_h));
         double term4 = mHat2 / 8. / xi * sqr(amq2) * Lambdaxi * Fxi * Gmxi;
         double term5 = 1. / 12. / xi3 * fq2 * apq2 * Lambdaxi * (3 * xi * Fxi * Gmxi + (1 - xi - mr_h) * (3 * Fxi * (xi2 - sqr(mr_l - mr_N)) - sqr(Lambdaxi)));
-        double term6 = 1. / 4. / xi2 / fq2 * amq2 * Lambdaxi * Fxi * Gmxi;
+        double term6 = 1. / 4. / xi2 * fq2 * amq2 * Lambdaxi * Fxi * Gmxi;
         double term7 = mHat2 / 4. / xi2 * apq2 * amq2 * Lambdaxi * Fxi * Gmxi * (1. - mr_h);
         return term1 + term2 + term3 + term4 + term5 + term6 + term7;
     }

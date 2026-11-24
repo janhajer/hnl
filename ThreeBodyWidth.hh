@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <vector>
 
 namespace Pythia8{
@@ -24,6 +25,8 @@ protected:
 struct MesonThreeBodyWidth : public ThreeBodyWidth {
     void set_pointers(Pythia8::ParticleData* particleDataPtrIn);
     double get_width(int from_id_, int neutrino_id, int to_id_, int lepton_id_);
+    // {f_+, f_0} for pseudoscalar daughters, {g, f, a_+, a_-} for vector ones (eqs. 22-24 of 1805.08567)
+    std::array<double, 4> form_factors(int from_id_, int to_id_, double q2);
 protected:
     double function(double integrand) const override;
 private:
@@ -37,6 +40,7 @@ private:
     double K_form_factor(double q2, bool charged) const;
     double D_form_factor(double q2, bool charged) const;
     double B_form_factor(double q2, bool charged) const;
+    double B_c_form_factor(double q2, bool charged) const;
     double z(double q2) const;
     double g(double q2) const;
     double am(double q2) const;

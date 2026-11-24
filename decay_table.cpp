@@ -31,18 +31,20 @@ std::vector< std::string > meson_decay_table(std::function< double (int heavy, i
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_stable(pythia, id, mass);
     set_pythia_passive(pythia);
-    auto resonance = MesonResonance(pythia, coupling, meson_id);
+    auto resonance = std::make_shared<MesonResonance>(pythia, coupling, meson_id);
+    pythia.addResonancePtr(resonance);
     pythia.init();
-    return decay_table(resonance.calculate_widths());
+    return decay_table(resonance->calculate_widths());
 }
 
 std::vector<std::string> hnl_decay_table(std::function<double (int heavy, int light) > const& coupling, double mass, int id) {
     if (debug) print("hnl decay table");
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_passive(pythia);
+    auto resonance = std::make_shared<NeutrinoResonance>(pythia, coupling, mass, id);
+    pythia.addResonancePtr(resonance);
     pythia.init();
-    auto resonance = NeutrinoResonance(pythia, coupling, mass, id);
-    return decay_table(resonance.calculate_widths(), 101);
+    return decay_table(resonance->calculate_widths(), 101);
 }
 
 BranchingRatios hnl_branching_ratios(std::function<double (int heavy, int light) > const& coupling, double mass, int id, int step) {
@@ -50,14 +52,15 @@ BranchingRatios hnl_branching_ratios(std::function<double (int heavy, int light)
     Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
     set_pythia_passive(pythia);
     if (!is_heavy_neutral_lepton(id)) set_pythia_stable(pythia, heavy_neutral_lepton, mass);
-    pythia.init();
     BranchingRatios branching_ratios;
     print("Init mes res");
-    auto res = MesonResonance(pythia, coupling, id);
+    auto res = std::make_shared<MesonResonance>(pythia, coupling, id);
+    pythia.addResonancePtr(res);
+    pythia.init();
     print("got res starting calculate_widths");
     auto& particle =
 //     is_heavy_neutral_lepton(id) ? NeutrinoResonance(pythia, coupling, mass, id).calculate_widths() :
-    res.calculate_widths();
+    res->calculate_widths();
     for_each(particle, [&branching_ratios, id, step](Pythia8::DecayChannel const & channel) {
 //         if (channel.bRatio() > 0.
 //             && (has_neutrino(channel) || is_heavy_neutral_lepton(id))

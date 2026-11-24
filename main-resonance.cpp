@@ -12,7 +12,7 @@ std::vector<std::string> get_table(std::function<double (int id_heavy, int id_li
     pythia.readString("Beams:idB = 2212");
     pythia.readString("Beams:eCM = 14000.");
     pythia.readString("Bottomonium:all = on");
-    pythia.setResonancePtr(new NeutrinoResonance(pythia, coupling, mass, heavy_neutral_lepton));
+    pythia.addResonancePtr(std::make_shared<NeutrinoResonance>(pythia, coupling, mass, heavy_neutral_lepton));
     pythia.init();
     auto& particle = *pythia.particleData.particleDataEntryPtr(id);
     std::vector<std::string> vector({std::to_string(id) + ":all = nu void " + std::to_string(2) + " " + std::to_string(0) + " " + std::to_string(0) + " " + std::to_string(mass) + " " + std::to_string(particle.mWidth()) + " " + std::to_string(mass / 2) + " " + std::to_string(mass * 2) + " " + std::to_string(particle.tau0())});

@@ -45,7 +45,7 @@ BranchingRatios branching_ratio(Loop const& loop, double& mass_max, int source, 
 
     auto mass = loop.mass(mass_max, step);
     set_pythia_stable(pythia, heavy_neutral_lepton, mass);
-    is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), loop.mass(mass_max, step), source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
+    is_heavy_neutral_lepton(source) ? pythia.addResonancePtr(std::make_shared<NeutrinoResonance>(pythia, neutrino_coupling(coupling), loop.mass(mass_max, step), source)) : pythia.addResonancePtr(std::make_shared<MesonResonance>(pythia, neutrino_coupling(coupling), source));
 
 //     if(is_heavy_neutral_lepton(source)){
 //         for (auto const& line : hnl_decay_table(neutrino_coupling(1), loop.mass(mass_max, step), source)) {
@@ -53,7 +53,7 @@ BranchingRatios branching_ratio(Loop const& loop, double& mass_max, int source, 
 //         pythia.readString(line);
 //     }
 //     } else {
-//             pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
+//             pythia.addResonancePtr(std::make_shared<MesonResonance>(pythia, neutrino_coupling(coupling), source));
 //     }
 
 
@@ -78,7 +78,7 @@ std::map<double,double> lifetime(Loop const& loop, double& mass_max, int source,
     set_pythia_branching_ratios(pythia);
     if (!is_heavy_neutral_lepton(source)) mass_max = pythia.particleData.m0(source);
     double coupling = 1;
-    is_heavy_neutral_lepton(source) ? pythia.setResonancePtr(new NeutrinoResonance(pythia, neutrino_coupling(coupling), loop.mass(mass_max, step), source)) : pythia.setResonancePtr(new MesonResonance(pythia, neutrino_coupling(coupling), source));
+    is_heavy_neutral_lepton(source) ? pythia.addResonancePtr(std::make_shared<NeutrinoResonance>(pythia, neutrino_coupling(coupling), loop.mass(mass_max, step), source)) : pythia.addResonancePtr(std::make_shared<MesonResonance>(pythia, neutrino_coupling(coupling), source));
     pythia.init();
     std::map<double,double> result;
     auto const& particle = *pythia.particleData.particleDataEntryPtr(source);
