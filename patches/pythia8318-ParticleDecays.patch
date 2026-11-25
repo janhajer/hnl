@@ -1,0 +1,49 @@
+--- a/src/ParticleDecays.cc
++++ b/src/ParticleDecays.cc
+@@ -254,6 +254,12 @@
+         // Extract and store the decay products in local arrays.
+         hasPartons = false;
+         int nNormalPartons = 0;
++        // Without partons in the event record, quarks and diquarks still
++        // set the flavours of the hadrons; only gluons need the random
++        // q qbar pair below (e.g. onium -> g g g).
++        bool keepFlavours = !allowPartons;
++        for (int i = 0; i < mult; ++i)
++          if (abs(channel.product(i)) == 21) keepFlavours = false;
+         for (int i = 0; i < mult; ++i) {
+           int idNow = channel.product(i);
+           int idAbs = abs(idNow);
+@@ -263,15 +269,21 @@
+           bool isSpecialParton = idAbs > 80 && idAbs < 84;
+           if (isNormalParton || isSpecialParton) hasPartons = true;
+           if (idDec < 0 && particleDataPtr->hasAnti(idNow)) idNow = -idNow;
+-          if (allowPartons || !isNormalParton) {
++          if (allowPartons || keepFlavours || !isNormalParton) {
+             double mNow = particleDataPtr->mSel(idNow);
+             idProd.push_back( idNow);
+             mProd.push_back( mNow);
+           }
+         }
++
++        // Kept flavours: as with allowPartons, except that partons meant
++        // for the event record (meMode 91 - 100) become hadrons right away.
++        if (keepFlavours && nNormalPartons > 0) {
++          if (keepPartons) meMode = 42;
++          keepPartons = false;
+ 
+         // Normal partons converted to simple q qbar pair when desired.
+-        if (!allowPartons && nNormalPartons > 0) {
++        } else if (!allowPartons && nNormalPartons > 0) {
+           meMode = 42;
+           keepPartons = false;
+           mult = mult - nNormalPartons + 2;
+@@ -1017,7 +1029,9 @@
+     // Replace generic random flavour by a randomly selected one.
+     } else if (idPart == 82 || idPart == 83) {
+       double mFlav;
++      int nTryFlav = 0;
+       do {
++        if (++nTryFlav > NTRYPICK) return false;
+         int idDummy = -flavSelPtr->pickLightQ();
+         FlavContainer flavDummy(idDummy, idPart - 82);
+         do idNew = flavSelPtr->pick(flavDummy).id;
