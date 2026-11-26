@@ -29,3 +29,5 @@ Widths of arXiv:1805.08567. Hadronic decays:
 At m_N = m_tau the charged-current channels reproduce tau decays (pi : rho : a_1 : rest).
 
 Decay HNLs with `next()` or `forceHadronLevel()`. `moreDecays()` with its default `allowPartons = false` replaces the quark pair by a random-flavour pair: the charge is not conserved, and below 1.45 GeV `ParticleDecays::pickHadrons` loops forever.
+
+`patches/pythia8318-ParticleDecays.patch` fixes this in Pythia 8.318 (`patch -p1 < .../pythia8318-ParticleDecays.patch` in the Pythia directory, then `make`): `moreDecays(false)` keeps the quark flavours and the flavour loop has a try limit; `next()` is not affected. HNL decays at 0.5-4.5 GeV then conserve the charge and never hang; so do SM decays, where unpatched `moreDecays()` gives the wrong charge in 43% of B+ and 23% of Lambda_b decays. Up to m_N = 2 GeV the multiplicity agrees with `forceHadronLevel()` to 2%; above, `moreDecays()` picks the hadrons by phase space (charged multiplicity +22% at 3 GeV), so `forceHadronLevel()` stays the better choice there.
