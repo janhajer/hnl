@@ -7,7 +7,7 @@
 using namespace hnl;
 
 std::vector<std::string> get_table(std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id) {
-    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    Pythia8::Pythia pythia(hnl::xml_dir(), false);
     pythia.readString("Beams:idA = 2212");
     pythia.readString("Beams:idB = 2212");
     pythia.readString("Beams:eCM = 14000.");

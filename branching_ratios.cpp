@@ -37,7 +37,7 @@ BranchingRatios branching_ratio(Loop const& loop, double& mass_max, int source, 
 //     print(meson_decay_table(neutrino_coupling(1), loop.mass(mass_max, step), heavy_neutrino, source));
 //     return {};
 //     return hnl_branching_ratios(neutrino_coupling(1), loop.mass(mass_max, step), source, step);
-    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    Pythia8::Pythia pythia(hnl::xml_dir(), false);
     set_pythia_branching_ratios(pythia);
     if (!is_heavy_neutral_lepton(source)) mass_max = pythia.particleData.m0(source);
     double coupling = 1;
@@ -74,7 +74,7 @@ BranchingRatios branching_ratio(Loop const& loop, double& mass_max, int source, 
 
 std::map<double,double> lifetime(Loop const& loop, double& mass_max, int source, int step) {
     print("id", source, "step", step, "of", loop.steps);
-    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    Pythia8::Pythia pythia(hnl::xml_dir(), false);
     set_pythia_branching_ratios(pythia);
     if (!is_heavy_neutral_lepton(source)) mass_max = pythia.particleData.m0(source);
     double coupling = 1;

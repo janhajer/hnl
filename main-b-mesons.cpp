@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     int events = std::stoi(arguments.at(2));
     int mode = std::stoi(arguments.at(3));
 
-    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    Pythia8::Pythia pythia(hnl::xml_dir(), false);
     hnl::set_pythia_production(pythia);
     hnl::set_pythia_quiet(pythia);
     pythia.readString("SoftQCD:nonDiffractive = on");

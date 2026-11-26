@@ -38,7 +38,7 @@ std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> c
 }
 
 auto get_optimal_coupling(double mass, std::vector<int> const& mesons) {
-    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    Pythia8::Pythia pythia(hnl::xml_dir(), false);
     set_pythia_write_hepmc(pythia, heavy_neutral_lepton, mass);
     set_pythia_init_quiet(pythia);
     for (auto meson : mesons) pythia.addResonancePtr(std::make_shared<MesonResonance>(pythia, neutrino_coupling(1), meson));
@@ -121,7 +121,7 @@ void write_hepmc(double mass) {
     auto coupling = get_optimal_coupling(mass, mesons);
     print("Use U^2 =", coupling);
 
-    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    Pythia8::Pythia pythia(hnl::xml_dir(), false);
     set_pythia_write_hepmc(pythia, heavy_neutral_lepton, mass);
     for (auto meson : mesons) pythia.addResonancePtr(std::make_shared<MesonResonance>(pythia, neutrino_coupling(coupling), meson));
 

@@ -28,7 +28,7 @@ std::vector<std::string> decay_table(Pythia8::ParticleDataEntry const& particle,
 }
 
 std::vector< std::string > meson_decay_table(std::function< double (int heavy, int light) > const& coupling, double mass, int id, int meson_id) {
-    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    Pythia8::Pythia pythia(hnl::xml_dir(), false);
     set_pythia_stable(pythia, id, mass);
     set_pythia_passive(pythia);
     auto resonance = std::make_shared<MesonResonance>(pythia, coupling, meson_id);
@@ -39,7 +39,7 @@ std::vector< std::string > meson_decay_table(std::function< double (int heavy, i
 
 std::vector<std::string> hnl_decay_table(std::function<double (int heavy, int light) > const& coupling, double mass, int id) {
     if (debug) print("hnl decay table");
-    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    Pythia8::Pythia pythia(hnl::xml_dir(), false);
     set_pythia_passive(pythia);
     auto resonance = std::make_shared<NeutrinoResonance>(pythia, coupling, mass, id);
     pythia.addResonancePtr(resonance);
@@ -49,7 +49,7 @@ std::vector<std::string> hnl_decay_table(std::function<double (int heavy, int li
 
 BranchingRatios hnl_branching_ratios(std::function<double (int heavy, int light) > const& coupling, double mass, int id, int step) {
     if (debug) print("hnl branching ratios", mass);
-    Pythia8::Pythia pythia("../share/Pythia8/xmldoc", false);
+    Pythia8::Pythia pythia(hnl::xml_dir(), false);
     set_pythia_passive(pythia);
     if (!is_heavy_neutral_lepton(id)) set_pythia_stable(pythia, heavy_neutral_lepton, mass);
     BranchingRatios branching_ratios;

@@ -6,7 +6,16 @@
 #include "range.hh"
 #include "math.hh"
 
+#ifndef PYTHIA8_XMLDOC
+#define PYTHIA8_XMLDOC "../share/Pythia8/xmldoc"
+#endif
+
 namespace hnl {
+
+// Pythia's data directory, set by CMake; the environment variable PYTHIA8DATA takes precedence inside Pythia
+inline std::string xml_dir() {
+    return PYTHIA8_XMLDOC;
+}
 
 inline void set_pythia_init_quiet(Pythia8::Pythia& pythia) {
     pythia.readString("Init:showChangedParticleData = off");

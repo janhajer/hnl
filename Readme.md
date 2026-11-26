@@ -2,13 +2,22 @@
 
 ## Dependencies
 
-* Pythia 8.3
-* Boost
-    * Filesystem
-    * Range
-    * Optional
-    * Algorithm
-    * Io
+* Pythia 8.3 (tested with 8.318)
+* Boost headers (Range, Optional, Algorithm), e.g. `libboost-dev`
+* CMake >= 3.15
+* HepMC2, optional, only for `write-hepmc`
+
+## Build
+
+```
+mkdir build && cd build
+cmake .. -DPYTHIA8_DIR=<pythia prefix>   # default: $PYTHIA8, else ~/Development/pythia
+make -j
+```
+
+Add `-DHEPMC2_DIR=<prefix>` to build `write-hepmc`.
+
+The executables read Pythia's data from `<pythia prefix>/share/Pythia8/xmldoc`, fixed at build time; the environment variable `PYTHIA8DATA` overrides it.
 
 ## HNLs from B mesons
 
