@@ -2,6 +2,7 @@
 
 #include <string>
 #include <sstream>
+#include <type_traits>
 
 #include "io.hh"
 
@@ -21,6 +22,19 @@ inline double to_double(std::string const& string) {
     } catch (...) {
         print("The string:", string, ", is not a number");
         return 0.;
+    }
+}
+
+// strict: the whole string has to be a number
+template<typename Number>
+bool parse(std::string const& string, Number& number) {
+    try {
+        std::size_t end = 0;
+        if constexpr (std::is_integral_v<Number>) number = std::stoi(string, &end);
+        else number = std::stod(string, &end);
+        return end == string.size();
+    } catch (...) {
+        return false;
     }
 }
 

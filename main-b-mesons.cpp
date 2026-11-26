@@ -12,7 +12,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <type_traits>
 
 #include "Pythia8/Pythia.h"
 
@@ -22,22 +21,7 @@
 #include "pythia.hh"
 #include "string.hh"
 
-namespace {
-
-// the whole string has to be a number
-template<typename Number>
-bool parse(std::string const& string, Number& number) {
-    try {
-        std::size_t end = 0;
-        if constexpr (std::is_integral_v<Number>) number = std::stoi(string, &end);
-        else number = std::stod(string, &end);
-        return end == string.size();
-    } catch (...) {
-        return false;
-    }
-}
-
-}
+using hnl::parse;
 
 int main(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);

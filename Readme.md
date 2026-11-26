@@ -5,7 +5,7 @@
 * Pythia 8.3 (tested with 8.318)
 * Boost headers (Range, Optional, Algorithm), e.g. `libboost-dev`
 * CMake >= 3.15
-* HepMC2, optional, only for `write-hepmc`
+* HepMC3, optional, only for `write-hepmc`, e.g. `libhepmc3-dev`
 
 ## Build
 
@@ -15,9 +15,29 @@ cmake .. -DPYTHIA8_DIR=<pythia prefix>   # default: $PYTHIA8, else ~/Development
 make -j
 ```
 
-Add `-DHEPMC2_DIR=<prefix>` to build `write-hepmc`.
+`write-hepmc` is built if CMake finds HepMC3; otherwise add `-DHepMC3_DIR=<prefix>/share/HepMC3/cmake`.
 
 The executables read Pythia's data from `<pythia prefix>/share/Pythia8/xmldoc`, fixed at build time; the environment variable `PYTHIA8DATA` overrides it.
+
+## HNLs in HepMC3
+
+`write-hepmc <m_N> <|U_mu|^2> <flavour> [events] [seed]` (`write-hepmc.hh`) writes `<m_N>-<flavour>.hepmc` (HepMC3 ascii) with `events` (default 1000) events in which an HNL (`nu_Rmu`, mixing with nu_mu only, stable) from a parent of the given flavour has 1.4 < |eta| < 3.5:
+
+| flavour | parents |
+|---|---|
+| `b` | B0, B+, Bs, Bc, Lambda_b, Upsilon |
+| `c` | D0, D+, Ds, J/psi |
+| `s` | K+, K_L, K_S |
+| `pi` | pi+ |
+
+Events are inclusive pp collisions (`SoftQCD:nonDiffractive`, as in `b-mesons`); as in mode 2 of `b-mesons`, one parent per event decays into an HNL, picked according to the branching ratios, and the event weight is the sum of these branching ratios. Only parents present after `next()` are found, so a parent must not come from the decay of another: the flavours are separate runs, and in the `c` run the b hadrons decay as in the SM and their D mesons are parents. The total is the sum over the flavours.
+
+* Run info: the attributes `hnl_id`, `hnl_mass_GeV`, `hnl_U2` and `parent_flavour`.
+* Events: the weight and the cross section [pb] of HNLs in the acceptance so far, sigma_gen sum(weights) / (generated events), with the numbers of saved and generated events; the last event has the final value.
+
+Weights and cross section are proportional to |U|^2 while the branching ratios are small. They use Pythia's meson production: for b hadrons it is about 1.5x above the measured cross section, with too few Lambda_b. The parent of the HNL is in the event record, so the events can be reweighted to data.
+
+Validation against counting the HNLs of events in which the parents decay as in the SM (with their HNL channels): b (m_N = 1 GeV, |U|^2 = 10), c (1 GeV, 1), s (0.3 GeV, 0.1) and pi (0.02 GeV, 0.1) agree to -2.0, +3.6, -3.3 and -1.3 %, within the statistical uncertainties of 2-4 %.
 
 ## HNLs from B mesons
 

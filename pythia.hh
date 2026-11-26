@@ -88,13 +88,7 @@ inline void set_pythia_mesons(Pythia8::Pythia& pythia, int id, double mass) {
     pythia.readString("Main:numberOfEvents = " + std::to_string(1000));
 }
 
-inline void set_pythia_write_hepmc(Pythia8::Pythia& pythia, int id, double mass) {
-    set_pythia_mesons(pythia, id, mass);
-    pythia.readString("Bottomonium:all = on");
-    if (mass < 1.96849) pythia.readString("Charmonium:all = on");
-    if (mass < .493677) pythia.readString("HardQCD:all = on");
-}
-
+// inclusive pp collisions (sigma_gen about 57 mb), all mesons in their natural proportions
 inline void set_pythia_minimum_bias(Pythia8::Pythia& pythia, int id, double mass) {
     set_pythia_mesons(pythia, id, mass);
     pythia.readString("SoftQCD:nonDiffractive = on");
