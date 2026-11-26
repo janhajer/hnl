@@ -12,6 +12,9 @@ namespace Pythia8{
 namespace hnl
 {
 
+// decay constant of a meson in the conventions of 1805.08567: f [GeV] of the pseudoscalars, g_V = f_V m_V [GeV^2] of the vectors
+double decay_constant(int id);
+
 struct MesonResonance : public Pythia8::ResonanceWidths {
     MesonResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from);
     Pythia8::ParticleDataEntry & calculate_widths();

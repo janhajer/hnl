@@ -21,6 +21,8 @@ struct MesonDecays : public Pythia8::DecayHandler {
     std::vector<int> handledParticles() override;
     // event line of a meson that has to decay into HNLs (0: none)
     int forced = 0;
+    // all tau leptons decay into HNLs (needs TauResonance and 15 among the handled particles)
+    bool force_tau = false;
     // |M|^2 / (4 G_F^2 |V|^2 |U|^2) of meson(p) -> daughter(p_to) lepton(k_l) N(k_N)
     double matrix_element(int id_from, int id_to, Pythia8::Vec4 const& p, Pythia8::Vec4 const& p_to, Pythia8::Vec4 const& k_l, Pythia8::Vec4 const& k_N);
     // density in (q2, cos_theta, phi) at rest; sets the momenta
@@ -29,6 +31,8 @@ struct MesonDecays : public Pythia8::DecayHandler {
     bool three_body(int id_from, int id_to, double m_from, double m_to, double m_l, double m_N, Pythia8::Vec4& p_to, Pythia8::Vec4& k_l, Pythia8::Vec4& k_N);
 private:
     void restore();
+    // tau at rest -> N h, N l nubar_l or nu_tau l N (products as in the decay table), with the V-A matrix element
+    bool tau_decay(std::vector<int> const& products, double m_tau, std::vector<double>& product_masses, std::vector<Pythia8::Vec4>& product_momenta);
     Pythia8::ParticleData* particle_data;
     Pythia8::Rndm* rndm;
     std::vector<int> mesons;

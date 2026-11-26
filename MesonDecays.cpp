@@ -2,6 +2,7 @@
 
 #include "MesonDecays.hh"
 #include "BaryonDecays.hh"
+#include "TauResonance.hh"
 #include "id.hh"
 #include "math.hh"
 #include "pythia.hh"
@@ -57,7 +58,7 @@ bool MesonDecays::decay(std::vector<int>& ids, std::vector<double>& masses, std:
     restore();
     int id = ids[0];
     auto entry = particle_data->particleDataEntryPtr(id);
-    if (line == forced) for (int pos = 0; pos < entry->sizeChannels(); ++pos) if (!has_neutrino(entry->channel(pos))) {
+    if (line == forced || (force_tau && std::abs(id) == 15)) for (int pos = 0; pos < entry->sizeChannels(); ++pos) if (!has_neutrino(entry->channel(pos))) {
         switched_off.emplace_back(entry, pos, entry->channel(pos).onMode());
         entry->channel(pos).onMode(0);
     }
@@ -74,6 +75,19 @@ bool MesonDecays::decay(std::vector<int>& ids, std::vector<double>& masses, std:
     for (int pos = 0; pos < channel.multiplicity(); ++pos) {
         int product = channel.product(pos);
         products.push_back(id < 0 && particle_data->hasAnti(product) ? -product : product);
+    }
+    if (std::abs(id) == 15) {
+        std::vector<double> product_masses;
+        std::vector<Pythia8::Vec4> product_momenta;
+        if (!tau_decay(products, masses[0], product_masses, product_momenta)) return false;
+        for (std::size_t pos = 0; pos < products.size(); ++pos) {
+            product_momenta[pos].bst(momenta[0], masses[0]);
+            ids.push_back(products[pos]);
+            masses.push_back(product_masses[pos]);
+            momenta.push_back(product_momenta[pos]);
+        }
+        if (debug) print("decayed", id, "to", products);
+        return true;
     }
     int id_N = 0, id_l = 0, id_to = 0;
     for (auto product : products) {
@@ -170,6 +184,64 @@ bool MesonDecays::three_body(int id_from, int id_to, double m_from, double m_to,
         double theta = std::acos(2. * rndm->flat() - 1.);
         double phi = 2. * M_PI * rndm->flat();
         for (auto* momentum : {&p_to, &k_l, &k_N}) momentum->rot(theta, phi);
+        return true;
+    }
+    return false;
+}
+
+bool MesonDecays::tau_decay(std::vector<int> const& products, double m_tau, std::vector<double>& product_masses, std::vector<Pythia8::Vec4>& product_momenta) {
+    if (products.size() == 2) { // N h, isotropic
+        double m_N = particle_data->m0(products[0]);
+        for (int tries = 0; tries < 10; ++tries) {
+            double m_h = particle_data->mSel(products[1]); // rho, K*: Breit-Wigner
+            if (m_tau <= m_N + m_h) continue;
+            auto [k_N, k_h] = rndm->phaseSpace2(m_tau, m_N, m_h);
+            product_masses = {m_N, m_h};
+            product_momenta = {k_N, k_h};
+            return true;
+        }
+        return false;
+    }
+    // a and b come from the W, c recoils; |M|^2 = 64 (p.k_c)(k_a.k_b); uniform in m_ab^2 and in the a b rest frame angles
+    double m_a = particle_data->m0(products[0]), m_b = particle_data->m0(products[1]), m_c = particle_data->m0(products[2]);
+    if (m_tau <= m_a + m_b + m_c) return false;
+    double low = sqr(m_a + m_b), high = sqr(m_tau - m_c);
+    Pythia8::Vec4 p(0., 0., 0., m_tau), k_a, k_b, k_c;
+    auto random_weight = [&]() {
+        double m_ab2 = low + (high - low) * rndm->flat();
+        double m_ab = std::sqrt(m_ab2);
+        double p_c = std::sqrt(std::max(0., kallen(sqr(m_tau), m_ab2, sqr(m_c)))) / (2. * m_tau);
+        double p_a = std::sqrt(std::max(0., kallen(m_ab2, sqr(m_a), sqr(m_b)))) / (2. * m_ab);
+        double cos_theta = 2. * rndm->flat() - 1.;
+        double sin_theta = std::sqrt(1. - sqr(cos_theta));
+        double phi = 2. * M_PI * rndm->flat();
+        k_c = Pythia8::Vec4(0., 0., p_c, std::sqrt(sqr(p_c) + sqr(m_c)));
+        k_a = Pythia8::Vec4(p_a * sin_theta * std::cos(phi), p_a * sin_theta * std::sin(phi), p_a * cos_theta, std::sqrt(sqr(p_a) + sqr(m_a)));
+        k_b = Pythia8::Vec4(-k_a.px(), -k_a.py(), -k_a.pz(), std::sqrt(sqr(p_a) + sqr(m_b)));
+        Pythia8::Vec4 ab(0., 0., -p_c, std::sqrt(sqr(p_c) + m_ab2));
+        k_a.bst(ab);
+        k_b.bst(ab);
+        return tau_leptonic_matrix_element(p, k_a, k_b, k_c) * p_c * p_a / m_ab;
+    };
+    auto key = std::make_tuple(15, std::abs(products[0]), std::abs(products[2]), int(1e4 * m_b), int(1e4 * (m_a + m_c)));
+    if (!max_weight.count(key)) {
+        double max = 0.;
+        for (int point = 0; point < 10000; ++point) max = std::max(max, random_weight());
+        max_weight[key] = 1.5 * max;
+    }
+    auto& max = max_weight[key];
+    for (int tries = 0; tries < 100000; ++tries) {
+        double now = random_weight();
+        if (now > max) {
+            print("MesonDecays: weight", now, "above maximum", max, "for tau ->", products);
+            max = 1.2 * now;
+        }
+        if (now < max * rndm->flat()) continue;
+        double theta = std::acos(2. * rndm->flat() - 1.);
+        double phi = 2. * M_PI * rndm->flat();
+        for (auto* momentum : {&k_a, &k_b, &k_c}) momentum->rot(theta, phi);
+        product_masses = {m_a, m_b, m_c};
+        product_momenta = {k_a, k_b, k_c};
         return true;
     }
     return false;

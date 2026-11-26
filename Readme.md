@@ -46,12 +46,13 @@ Validation against counting the HNLs of events in which the parents decay as in 
 
 ## HNLs from B mesons
 
-`b-mesons <m_N> <|U_mu|^2> <events> <mode>` (`main-b-mesons.cpp`; mode 0: SM branching ratios, 1: all B into HNLs, 2: one B per event into HNLs) shows the setup:
+`b-mesons <m_N> <|U|^2> <events> <mode> [seed] [e|mu|tau]` (`main-b-mesons.cpp`; mode 0: SM branching ratios, 1: all B into HNLs, 2: one B per event into HNLs, 3: every tau into HNLs with all hadrons decaying as in the SM; the last argument is the neutrino the HNL mixes with, mu by default) shows the setup:
 
 * `NeutrinoResonance`: HNL mass, widths and decays (Majorana by default),
 * `MesonResonance` for each meson: HNL channels added to its decay table, widths from arXiv:1805.08567 with the inputs below,
 * `MesonDecays`: decay handler that generates the HNL channels with the matrix element instead of phase space.
 * `BaryonResonance`: Lambda_b -> Lambda_c l N with the lattice QCD form factors of arXiv:1503.01421; |M|^2 from Dirac traces, for any lepton and HNL masses. In the SM limit it gives their Gamma / |V_cb|^2 for e, mu and tau (21.5, 21.5, 7.15 ps^-1).
+* `TauResonance`: tau -> N pi, N K, N rho, N K*, N l nubar (mixing with nu_tau) and tau -> nu_tau l N (mixing with nu_e, nu_mu), l = e, mu, widths of arXiv:1805.08567; `MesonDecays` generates the three-body decays with the V-A matrix element. The tau decays as usual otherwise (Pythia's `TauDecays`). Below m_tau this adds the HNLs from taus of D_s and B decays, the main source for mixing with nu_tau.
 
 ## HNL decays
 
