@@ -20,7 +20,7 @@ make -j
 
 ## Tests
 
-`ctest` in `build/` runs `tests/`: the form factors against values published with their fits, the kinematic constraints at q^2 = 0, and the SM limit of the widths (HNL of negligible mass, |U|^2 = 1) against measured branching ratios and lattice QCD rates. `-DBUILD_TESTING=OFF` skips them.
+`ctest` in `build/` runs `tests/`: the form factors against values published with their fits, the kinematic constraints at q^2 = 0, and the SM limit of the widths (HNL of negligible mass, |U|^2 = 1) against measured branching ratios and lattice QCD rates, and the B -> D(*) l N widths of a heavy HNL against their zero-recoil limit (unpublished calculation by S. Biondini and J. Hajer). `-DBUILD_TESTING=OFF` skips them.
 
 The executables read Pythia's data from `<pythia prefix>/share/Pythia8/xmldoc`, fixed at build time; the environment variable `PYTHIA8DATA` overrides it.
 
