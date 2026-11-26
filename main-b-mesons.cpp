@@ -1,6 +1,7 @@
 // HNLs from B meson and Lambda_b decays in pp collisions at 14 TeV with Pythia 8.3.
 // b-mesons <m_N [GeV]> <|U_mu|^2> <events> <mode> [seed]
-// Writes b-mesons-<m_N>.csv, one line per HNL from a B meson: weight [pb], parent, HNL four-momentum [GeV], production and decay vertex [mm].
+// Writes b-mesons-<m_N>.csv, one line per HNL from a B meson: weight [pb], parent, HNL four-momentum [GeV], production and decay vertex [mm],
+// parent four-momentum [GeV].
 // mode 0: SM branching ratios, the weight is the cross section per event.
 // mode 1: all B mesons decay into HNLs, each HNL is weighted with the branching ratio of its parent;
 //         fine for HNL distributions, but the other B of the event does not decay as in the SM.
@@ -60,7 +61,7 @@ int main(int argc, char** argv) {
     }
 
     std::ofstream file("b-mesons-" + arguments.at(0) + ".csv");
-    file << "weight_pb,parent,E,px,py,pz,x,y,z,t,x_dec,y_dec,z_dec,t_dec\n";
+    file << "weight_pb,parent,E,px,py,pz,x,y,z,t,x_dec,y_dec,z_dec,t_dec,parent_E,parent_px,parent_py,parent_pz\n";
     for (int event = 0; event < events; ++event) {
         if (!pythia.next()) continue;
         double sum = 0.;
@@ -90,7 +91,8 @@ int main(int argc, char** argv) {
             auto const& p = particle.p();
             auto const& v = particle.vProd();
             auto const& d = particle.vDec();
-            file << weight << ',' << parent << ',' << p.e() << ',' << p.px() << ',' << p.py() << ',' << p.pz() << ',' << v.px() << ',' << v.py() << ',' << v.pz() << ',' << v.e() << ',' << d.px() << ',' << d.py() << ',' << d.pz() << ',' << d.e() << '\n';
+            auto const& q = pythia.event[particle.mother1()].p();
+            file << weight << ',' << parent << ',' << p.e() << ',' << p.px() << ',' << p.py() << ',' << p.pz() << ',' << v.px() << ',' << v.py() << ',' << v.pz() << ',' << v.e() << ',' << d.px() << ',' << d.py() << ',' << d.pz() << ',' << d.e() << ',' << q.e() << ',' << q.px() << ',' << q.py() << ',' << q.pz() << '\n';
         }
         decays->forced = 0;
     }
