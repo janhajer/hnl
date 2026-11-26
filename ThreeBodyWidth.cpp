@@ -346,9 +346,16 @@ double MesonThreeBodyWidth::B_form_factor(double q2, bool charged) const {
     return m_pole_prefactor(q2, id_to, charged) * sum;
 }
 
-// B_c -> eta_c: single pole as in HNLCalc (arXiv:2405.07330), with m(B_c*) = 6.4 GeV
+// B_c -> eta_c: f_+ and f_- of hep-ph/0007169 (tables II and VIII), f_0 = f_+ + q^2 / (m_P^2 - m_P'^2) f_-
 double MesonThreeBodyWidth::B_c_form_factor(double q2, bool charged) const {
-    return 0.76 / (1. - q2 / sqr(charged ? 6.4 : particle_data->m0(541)));
+    auto form_factor = [q2](double f0, double m, double delta) {
+        double ratio = q2 / sqr(m);
+        return f0 / (1. - ratio - delta * sqr(ratio));
+    };
+    double f_plus = form_factor(0.76, 6.37, 0.087);
+    if (charged) return f_plus;
+    double f_minus = form_factor(-0.38, 6.22, 0.060);
+    return f_plus + q2 / (sqr(particle_data->m0(id_from)) - sqr(particle_data->m0(id_to))) * f_minus;
 }
 
 double MesonThreeBodyWidth::form_factor(double q2, bool charged) const {
@@ -509,33 +516,39 @@ double MV(int id_from, int id_to) { // GeV
     return 0;
 }
 
-// B_c -> J/psi as in HNLCalc (arXiv:2405.07330): f(0) / (1 - q^2/m^2 - delta q^4/m^4)
-double B_c_J_psi(double q2, double f0, double m, double delta) {
+// B_c -> eta_c, J/psi: Ivanov, Korner, Santorelli, hep-ph/0007169, eq. (57) with f(0) of tables II, III and m_fit, delta
+// of table VIII: f(0) / (1 - q^2/m^2 - delta q^4/m^4). Their A_1, A_2, V are the usual ones; their A_3 multiplies
+// (p - p')^mu p.eps / (m_P + m_V), so a_- = -A_3 / (m_P + m_V) and there is no A_0 (see am()). HNLCalc
+// (arXiv:2405.07330) shifts their A_1, A_2, A_3 to A_0, A_1, A_2 and has A_2(0) = -0.004, the delta of A_3.
+double B_c_charmonium(double q2, double f0, double m, double delta) {
     double ratio = q2 / sqr(m);
     return f0 / (1. - ratio - delta * sqr(ratio));
 }
 
+double B_c_J_psi_A3(double q2) {
+    return B_c_charmonium(q2, -1.13, 5.67, -0.004);
+}
+
 double V(double q2, int id_from, int id_to) {
-    if (is_B_c(id_from)) return B_c_J_psi(q2, 0.96, 5.65, 0.0013);
+    if (is_B_c(id_from)) return B_c_charmonium(q2, 0.96, 5.65, 0.0013);
     double ratio = q2 / sqr(MV(id_from, id_to));
     return fV(id_from, id_to) / (1. - ratio) / (1. - sigmaV(id_from, id_to) * ratio - xiV(id_from, id_to) * sqr(ratio));
 }
 
-double A0(double q2, int id_from, int id_to) {
-    if (is_B_c(id_from)) return B_c_J_psi(q2, 0.68, 8.20, 1.40);
+double A0(double q2, int id_from, int id_to) { // not for B_c, see am()
     double ratioP = q2 / sqr(MP(id_from, id_to));
     double ratioV = q2 / sqr(MV(id_from, id_to));
     return fA0(id_from, id_to) / (1. - ratioP) / (1. - sigmaA0(id_from, id_to) * ratioV - xiA0(id_from, id_to) * sqr(ratioV));
 }
 
 double A1(double q2, int id_from, int id_to) {
-    if (is_B_c(id_from)) return B_c_J_psi(q2, 0.68, 5.91, 0.052);
+    if (is_B_c(id_from)) return B_c_charmonium(q2, 0.68, 8.20, 1.40);
     double ratio = q2 / sqr(MV(id_from, id_to));
     return fA1(id_from, id_to) / (1. - sigmaA1(id_from, id_to) * ratio - xiA1(id_from, id_to) * sqr(ratio));
 }
 
 double A2(double q2, int id_from, int id_to) {
-    if (is_B_c(id_from)) return B_c_J_psi(q2, -0.004, 5.67, -0.004);
+    if (is_B_c(id_from)) return B_c_charmonium(q2, 0.66, 5.91, 0.052);
     double ratio = q2 / sqr(MV(id_from, id_to));
     return fA2(id_from, id_to) / (1. - sigmaA2(id_from, id_to) * ratio - xiA2(id_from, id_to) * sqr(ratio));
 }
@@ -545,6 +558,7 @@ double MesonThreeBodyWidth::g(double q2) const {
 }
 
 double MesonThreeBodyWidth::am(double q2) const {
+    if (is_B_c(id_from)) return - B_c_J_psi_A3(q2) / (mHat + m_to);
     return (A2(q2, id_from, id_to) * (mHat - m_to) - A1(q2, id_from, id_to) * (mHat + m_to) + 2 * A0(q2, id_from, id_to) * m_to) / q2;
 }
 
