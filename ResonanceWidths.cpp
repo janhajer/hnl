@@ -1,5 +1,6 @@
 #include "pythia.hh"
 
+#include "PhysicsInputs.hh"
 #include "ResonanceWidths.hh"
 #include "id.hh"
 #include "io.hh"
@@ -101,6 +102,7 @@ bool MesonResonance::can_three_body(int meson) {
 
 MesonResonance::MesonResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from) :
     neutrino_coupling(neutrino_coupling_) {
+    set_physics_inputs(pythia);
     if (debug) print("Meson Resonance for", id_from);
     initBasic(id_from);
     particlePtr = pythia.particleData.particleDataEntryPtr(idRes);
@@ -165,29 +167,32 @@ void MesonResonance::initConstants() {
     three_body_width.set_pointers(particleDataPtr);
 }
 
-double decay_constant(int id) { // GeV
+// Decay constants [GeV] in the conventions of 1805.08567 (appendix C, tables 8 and 9): f of the pseudoscalars,
+// g_V = f_V m_V [GeV^2] of the vectors; neutral mesons with the normalisation of its eq. (B.32).
+double decay_constant(int id) {
     switch (id) {
-        case 211 : return 0.1302;
-        case 321 : return 0.1556;
-        case 411 : return 0.212;
-        case 431 : return 0.249;
-        case 521 : return 0.187;
-        case 541 : return 0.434;
-        case 111 : return 0.1302;
-        case 221 : return 0.0817;
-        case 331 : return -0.0947;
-        case 441 : return 0.237;
-        case 213 : return 0.162; // GeV^2
-        case 413 : return 0.535;
-        case 433 : return 0.650;
-        case 113 : return 0.162;
-        case 223 : return 0.153;
-        case 333 : return 0.234;
-        case 443 : return 1.29;
-        // not in 1805.08567; from tau decays with the l V formula (eq. 40) and Pythia's CKM, as g_rho there:
+        case 211 : return 0.1302; // FLAG 2024 (arXiv:2411.04268), eq. (79)
+        case 321 : return 0.1557; // FLAG 2024, eq. (80), N_f = 2+1+1
+        case 411 : return 0.2120; // FLAG 2024, eq. (129)
+        case 431 : return 0.2499; // FLAG 2024, eq. (130)
+        case 521 : return 0.1894; // f_B+ of FNAL/MILC 17 in FLAG 2024, table 33; the isospin average is 0.1900
+        case 541 : return 0.427; // HPQCD, arXiv:1207.0994, eq. (16); 0.434(15) of arXiv:1503.05762 agrees
+        case 111 : return 0.1302; // f_pi+
+        case 221 : return 0.0817; // 1805.08567, eq. (C.11), from the eta-eta' mixing of its refs. [51, 53]
+        case 331 : return -0.0947; // 1805.08567, eq. (C.12)
+        case 441 : return 0.2815; // f_eta_c = 398.1 MeV (HPQCD, arXiv:2005.01845, eq. (30)) / sqrt(2), as eq. (C.13)
+        case 213 : return 0.162; // 1805.08567, appendix C.1.3, from BR(tau -> rho nu)
+        case 413 : return 0.4493; // f_D* = 223.5 MeV (ETMC, arXiv:1707.04529, eq. (17)) times m_D*+ = 2.01026 GeV
+        case 433 : return 0.5678; // f_D_s* = 268.8 MeV (ETMC, arXiv:1707.04529, eq. (17)) times m_D_s*+ = 2.1122 GeV
+        case 113 : return 0.162; // as rho+
+        case 223 : return 0.153; // 1805.08567, table 9
+        case 333 : return 0.234; // 1805.08567, table 9
+        case 443 : return 1.29; // 1805.08567, table 9; HPQCD f_J/psi = 410.4 MeV (arXiv:2005.01845) gives 1.271
+        // not in 1805.08567; from tau decays with the l V formula (eq. 40) and Pythia's CKM, as g_rho there, with the
+        // tau branching ratios of PDG 2025:
         case 323 : return 0.1795; // BR(tau -> K* nu) / BR(tau -> pi nu) = 1.20 / 10.82 %
-        case 20213 : return 0.2861; // BR(tau -> 3 pi nu) / BR(tau -> pi nu) = (9.31 + 9.26) / 10.82 %, m_a1 = 1.23 GeV
-        case 20113 : return 0.2861;
+        case 20213 : return 0.2839; // BR(tau -> 3 pi nu, ex. K0) / BR(tau -> pi nu) = (9.02 + 9.26) / 10.82 %, m_a1 = 1.23 GeV
+        case 20113 : return 0.2839;
         default : print("decay_constant for meson", id, "not known");
     }
     return 0.;
@@ -295,7 +300,7 @@ int down_idx(int down) {
 }
 
 double MesonResonance::CKM2(int id_1, int id_2) {
-    if (id_1 == 431 && id_2 == 221) return coupSMPtr->VCKMgen(2, 2);
+    if (id_1 == 431 && id_2 == 221) return coupSMPtr->V2CKMgen(2, 2); // c -> s; the s sbar content of the eta is in its form factor
     auto pair_1 = quarks(id_1);
     auto pair_2 = quarks(id_2);
     auto up = get_up_type({pair_1.first, pair_1.second, pair_2.first, pair_2.second});
@@ -409,6 +414,7 @@ Pythia8::ParticleDataEntry & MesonResonance::calculate_widths() {
 
 NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id, bool majorana_) :
     neutrino_coupling(coupling), majorana(majorana_) {
+    set_physics_inputs(pythia);
     if (debug) print("NeutrinoResonance", id);
     initBasic(id);
     particlePtr = pythia.particleData.particleDataEntryPtr(idRes);

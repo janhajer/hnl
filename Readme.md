@@ -6,6 +6,7 @@
 * Boost headers (Range, Optional, Algorithm), e.g. `libboost-dev`
 * CMake >= 3.15
 * HepMC3, optional, only for `write-hepmc`, e.g. `libhepmc3-dev`
+* Catch2 v3, only for the tests; downloaded at configure time if not installed (e.g. `catch2`)
 
 ## Build
 
@@ -16,6 +17,10 @@ make -j
 ```
 
 `write-hepmc` is built if CMake finds HepMC3; otherwise add `-DHepMC3_DIR=<prefix>/share/HepMC3/cmake`.
+
+## Tests
+
+`ctest` in `build/` runs `tests/`: the form factors against values published with their fits, the kinematic constraints at q^2 = 0, and the SM limit of the widths (HNL of negligible mass, |U|^2 = 1) against measured branching ratios and lattice QCD rates. `-DBUILD_TESTING=OFF` skips them.
 
 The executables read Pythia's data from `<pythia prefix>/share/Pythia8/xmldoc`, fixed at build time; the environment variable `PYTHIA8DATA` overrides it.
 
@@ -44,7 +49,7 @@ Validation against counting the HNLs of events in which the parents decay as in 
 `b-mesons <m_N> <|U_mu|^2> <events> <mode>` (`main-b-mesons.cpp`; mode 0: SM branching ratios, 1: all B into HNLs, 2: one B per event into HNLs) shows the setup:
 
 * `NeutrinoResonance`: HNL mass, widths and decays (Majorana by default),
-* `MesonResonance` for each meson: HNL channels added to its decay table, widths from arXiv:1805.08567,
+* `MesonResonance` for each meson: HNL channels added to its decay table, widths from arXiv:1805.08567 with the inputs below,
 * `MesonDecays`: decay handler that generates the HNL channels with the matrix element instead of phase space.
 * `BaryonResonance`: Lambda_b -> Lambda_c l N with the lattice QCD form factors of arXiv:1503.01421; |M|^2 from Dirac traces, for any lepton and HNL masses. In the SM limit it gives their Gamma / |V_cb|^2 for e, mu and tau (21.5, 21.5, 7.15 ps^-1).
 
@@ -60,3 +65,58 @@ At m_N = m_tau the charged-current channels reproduce tau decays (pi : rho : a_1
 Decay HNLs with `next()` or `forceHadronLevel()`. `moreDecays()` with its default `allowPartons = false` replaces the quark pair by a random-flavour pair: the charge is not conserved, and below 1.45 GeV `ParticleDecays::pickHadrons` loops forever.
 
 `patches/pythia8318-ParticleDecays.patch` fixes this in Pythia 8.318 (`patch -p1 < .../pythia8318-ParticleDecays.patch` in the Pythia directory, then `make`): `moreDecays(false)` keeps the quark flavours and the flavour loop has a try limit; `next()` is not affected. HNL decays at 0.5-4.5 GeV then conserve the charge and never hang; so do SM decays, where unpatched `moreDecays()` gives the wrong charge in 43% of B+ and 23% of Lambda_b decays. Up to m_N = 2 GeV the multiplicity agrees with `forceHadronLevel()` to 2%; above, `moreDecays()` picks the hadrons by phase space (charged multiplicity +22% at 3 GeV), so `forceHadronLevel()` stays the better choice there.
+
+## Physics inputs
+
+Last checked against the literature: November 2026. Each value is cited again at its place in the code. Inputs that replace Pythia 8.318 defaults are set in `set_physics_inputs()` (`PhysicsInputs.hh`), called by the resonance constructors.
+
+Semileptonic form factors (`FormFactors.cpp`); FLAG 2024 is arXiv:2411.04268, PDG 2025 the 2025 update of the Review of Particle Physics:
+
+| transition | source | notes |
+|---|---|---|
+| K -> pi | f_+(0) = 0.9698: FLAG 2024 eq. (72); slopes: FlaviaNet, arXiv:1005.2323, table 10 | quadratic f_+, linear f_0; K+ -> pi0 with delta_SU(2) = 0.029 |
+| D -> K | FLAG 2024 table 30 (ETM 17D, HPQCD 21A, FNAL/MILC 22) | lattice only |
+| D -> pi | FNAL/MILC 22, arXiv:2212.12648, table XIII | FLAG 2024 gives no shape (ETM/FNAL tension) |
+| D_s -> eta | LCSR shape of 1805.08567 | normalised to B(D_s -> eta e nu) = 2.27 % (PDG 2025) |
+| D -> K* | Melikhov, Stech, hep-ph/0001113 | normalised to B(D+ -> K*0 e nu) = 5.40 % (PDG 2025); no lattice result |
+| B -> pi | FLAG 2024 table 50 | lattice and B-factory data; \|V_ub\| of the fit 3.61e-3 |
+| B_s -> K | FLAG 2024 table 40 | lattice only |
+| B -> D | FLAG 2024 table 52 | lattice and data; \|V_cb\| of the fit 40.0e-3 |
+| B_s -> D_s | HPQCD 19, arXiv:1906.00701, table VIII | as FLAG 2024 table 46 |
+| B -> D* | FLAG 2024 table 53 (N_f = 2+1) in the BGL form of FNAL/MILC 21, arXiv:2105.14019 | lattice and data; \|V_cb\| of the fit 39.23e-3 |
+| B_s -> D_s* | HPQCD 21B, arXiv:2105.11433, table XIII | HPQCD 23 publishes no coefficients |
+| B -> rho | BSZ, arXiv:1503.05534, table 14 | LCSR |
+| B_s -> K* | BSZ, table 15 | LCSR and lattice |
+| B_c -> eta_c | Ivanov, Korner, Santorelli, hep-ph/0007169 | quark model; no lattice result |
+| B_c -> J/psi | HPQCD 20, arXiv:2007.06957, table XVI | HPQCD 25 (arXiv:2503.15090) agrees in the total rate |
+| Lambda_b -> Lambda_c | Detmold, Lehner, Meinel, arXiv:1503.01421 | still the latest lattice result |
+
+For vector daughters A_0 is shifted by a constant so that A_0(0) = A_3(0) holds exactly (by at most 2.5 %, for B_s -> K*), see `FormFactors.hh`.
+
+Decay constants (`decay_constant()` in `ResonanceWidths.cpp`, conventions of 1805.08567):
+
+| meson | value | source |
+|---|---|---|
+| pi+, pi0 | 130.2 MeV | FLAG 2024 eq. (79) |
+| K+ | 155.7 MeV | FLAG 2024 eq. (80) |
+| D+ | 212.0 MeV | FLAG 2024 eq. (129) |
+| D_s | 249.9 MeV | FLAG 2024 eq. (130) |
+| B+ | 189.4 MeV | FNAL/MILC 17 in FLAG 2024 table 33 |
+| B_c | 427 MeV | HPQCD, arXiv:1207.0994 |
+| eta, eta' | 81.7, -94.7 MeV | 1805.08567 eqs. (C.11), (C.12) |
+| eta_c | 398.1 MeV / sqrt(2) | HPQCD, arXiv:2005.01845 |
+| rho | 0.162 GeV^2 | 1805.08567, from tau -> rho nu |
+| D*, D_s* | f = 223.5, 268.8 MeV, times the mass | ETMC, arXiv:1707.04529 |
+| omega, phi, J/psi | 0.153, 0.234, 1.29 GeV^2 | 1805.08567 table 9 |
+| K*, a_1 | 0.1795, 0.2839 GeV^2 | tau branching ratios of PDG 2025 |
+
+Pythia 8.318 defaults replaced in `set_physics_inputs()`:
+
+| quantity | value | source |
+|---|---|---|
+| \|V_CKM\| | global fit, e.g. V_ub = 3.732e-3, V_cb = 41.83e-3 | PDG 2025 CKM review eq. (12.27) |
+| c tau of pi+, K+, K_L, K_S, D, D_s, B, B_s, B_c, Lambda_b | e.g. B_c 0.15289 mm | PDG 2025 |
+
+Kept from Pythia: masses, V -> e+ e- branching ratios (within 2 % of PDG 2025), sin^2 theta_W. alpha_s(m_Z) = 0.118 in `ResonanceWidths.cpp`.
+
+The global-fit \|V_cb\| and \|V_ub\| are above the exclusive values of the B -> D(*) and B -> pi fits (inclusive-exclusive tension), so these channels are 7-14 % above the measured branching ratios; with the \|V\| of their fits they agree (`tests/widths.cpp`). Pythia limits V_cb to [0.0418, 0.0426].

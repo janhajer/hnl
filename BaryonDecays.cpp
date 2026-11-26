@@ -1,3 +1,4 @@
+#include "PhysicsInputs.hh"
 #include <cmath>
 #include <complex>
 #include <vector>
@@ -210,6 +211,7 @@ double lambda_b_width(double m_b, double m_c, double m_l, double m_N) {
 
 BaryonResonance::BaryonResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& neutrino_coupling_, int id_from) :
     neutrino_coupling(neutrino_coupling_) {
+    set_physics_inputs(pythia);
     initBasic(id_from);
     particlePtr = pythia.particleData.particleDataEntryPtr(idRes);
     tau0_sm = particlePtr->tau0();

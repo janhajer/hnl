@@ -36,16 +36,7 @@ private:
     double Gm(double xi) const;
     double form_factor_plus(double q2) const;
     double form_factor_0(double q2) const;
-    double form_factor(double q2, bool charged) const;
-    double K_form_factor(double q2, bool charged) const;
-    double D_form_factor(double q2, bool charged) const;
-    double B_form_factor(double q2, bool charged) const;
-    double B_c_form_factor(double q2, bool charged) const;
-    double z(double q2) const;
-    double g(double q2) const;
-    double am(double q2) const;
-    double ff(double q2) const;
-    double ap(double q2) const;
+    std::array<double, 4> vector_form_factors(double q2) const;
 private:
     Pythia8::ParticleData* particle_data;
     int id_from;
