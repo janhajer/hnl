@@ -319,8 +319,14 @@ double lambda(double a, double b, double c) {
 
 }
 
-void check_channel(Pythia8::DecayChannel const& channel) {
-    if (channel.product(0) != 11 || channel.product(1) != -11) print("should be 11", channel.product(0), channel.product(1));
+// branching ratio of the SM channel V -> e+ e-
+double electron_branching_ratio(Pythia8::ParticleDataEntry& particle) {
+    double result = 0.;
+    for_each(particle, [&result](Pythia8::DecayChannel const& channel) {
+        if (channel.multiplicity() == 2 && channel.product(0) == 11 && channel.product(1) == -11) result = channel.bRatio();
+    });
+    if (result == 0.) print("no e+ e- channel for", particle.id());
+    return result;
 }
 
 void MesonResonance::calcWidth(bool test) {
@@ -357,17 +363,8 @@ void MesonResonance::calcWidth(bool test) {
                 if (idRes == 443 || idRes == 553) {
                     preFac *= 27. * mHat / 8. / M_PI / sqr(coupSMPtr->alphaEM(sqr(mHat)));
                     auto term = 4. / 3. * coupSMPtr->sin2thetaW();
-                    if (idRes == 443) {
-                        preFac *= sqr(1. - 2 * term) / 4.;
-                        auto channel = particlePtr->channel(1);
-                        check_channel(channel);
-                        widNow = preFac * channel.bRatio() * particlePtr->mWidth() ;
-                    } else if (idRes == 553) {
-                        preFac *= sqr(1. - term);
-                        auto channel = particlePtr->channel(2);
-                        check_channel(channel);
-                        widNow = preFac * channel.bRatio() * particlePtr->mWidth();
-                    }
+                    preFac *= idRes == 443 ? sqr(1. - 2 * term) / 4. : sqr(1. - term);
+                    widNow = preFac * electron_branching_ratio(*particlePtr) * particlePtr->mWidth();
                 } else {
                     preFac *= CKM2(idRes);
                     widNow = preFac * sqr(decay_constant(idRes));
@@ -419,6 +416,19 @@ NeutrinoResonance::NeutrinoResonance(Pythia8::Pythia& pythia, std::function<doub
     particlePtr->setMMin(mass / 2);
     particlePtr->setMMax(mass * 2);
     if (debug) print("Particle", idRes, particlePtr->name(), "mass", particlePtr->m0(), "tau", particlePtr->tau0(), particlePtr->mWidth());
+}
+
+bool NeutrinoResonance::init(Pythia8::Info* infoPtrIn) {
+    if (particlePtr->m0() >= MASSMIN) return ResonanceWidths::init(infoPtrIn);
+    // the pointers that ResonanceWidths::init() would set before it rejects the mass
+    infoPtr = infoPtrIn;
+    settingsPtr = infoPtr->settingsPtr;
+    particleDataPtr = infoPtr->particleDataPtr;
+    loggerPtr = infoPtr->loggerPtr;
+    coupSMPtr = infoPtr->coupSMPtr;
+    coupSUSYPtr = infoPtr->coupSUSYPtr;
+    calculate_widths();
+    return true;
 }
 
 bool NeutrinoResonance::initBSM() {

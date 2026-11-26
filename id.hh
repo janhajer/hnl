@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+#include <string>
 #include <vector>
 
 #include "container.hh"
@@ -35,8 +37,8 @@ inline auto neutrino_coupling = [](double factor) {
             return 0;
         }
         auto id = id_heavy - 9900000 - id_light;
-        return id == 0 ? factor : 0;
-        return id == 0 || std::abs(id) == 2 || std::abs(id) == 4 ? factor : 0;
+        return id == 0 ? factor : 0; // each HNL mixes only with its own flavour
+        // all flavours: return id == 0 || std::abs(id) == 2 || std::abs(id) == 4 ? factor : 0;
     };
 };
 

@@ -44,6 +44,8 @@ struct NeutrinoResonance : public Pythia8::ResonanceWidths {
     // majorana: also the charge conjugated decays, which doubles the width; otherwise only N -> l- X+ and N -> nu X
     NeutrinoResonance(Pythia8::Pythia& pythia, std::function<double (int id_heavy, int id_light)> const& coupling, double mass, int id, bool majorana_ = true);
     Pythia8::ParticleDataEntry & calculate_widths();
+    // Pythia's ResonanceWidths::init() refuses masses below MASSMIN = 0.1 GeV; there the widths come from calculate_widths()
+    bool init(Pythia8::Info* infoPtrIn) override;
 protected:
     virtual bool initBSM() override;
     virtual bool allowCalc() override;

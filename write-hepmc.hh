@@ -11,11 +11,11 @@ namespace hepmc {
 
 namespace {
 
-const bool debug = true;
+constexpr bool debug = true;
 
 }
 
-std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> const& mesons) {
+inline std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> const& mesons) {
     if(debug) print("get max width");
     double max_width = 0;
     int id = 0;
@@ -37,7 +37,7 @@ std::pair<int, double> get_max_width(Pythia8::Pythia& pythia, std::vector<int> c
     return {id, max_width};
 }
 
-auto get_optimal_coupling(double mass, std::vector<int> const& mesons) {
+inline auto get_optimal_coupling(double mass, std::vector<int> const& mesons) {
     Pythia8::Pythia pythia(hnl::xml_dir(), false);
     set_pythia_write_hepmc(pythia, heavy_neutral_lepton, mass);
     set_pythia_init_quiet(pythia);
@@ -56,7 +56,7 @@ auto get_optimal_coupling(double mass, std::vector<int> const& mesons) {
     return 1. / max_width;
 }
 
-void for_each_if(Pythia8::Pythia& pythia, HepMC::IO_GenEvent& file, std::function<bool(Pythia8::Event const&)> const& function) {
+inline void for_each_if(Pythia8::Pythia& pythia, HepMC::IO_GenEvent& file, std::function<bool(Pythia8::Event const&)> const& function) {
     HepMC::Pythia8ToHepMC converter;
     int event_number = 0;
     while (event_number < pythia.mode("Main:numberOfEvents")) {
@@ -69,7 +69,7 @@ void for_each_if(Pythia8::Pythia& pythia, HepMC::IO_GenEvent& file, std::functio
     }
 }
 
-void write(Pythia8::Pythia& pythia, double mass, double coupling) {
+inline void write(Pythia8::Pythia& pythia, double mass, double coupling) {
     HepMC::IO_GenEvent file(std::to_string(mass) + ".hep", std::ios::out);
     file.write_comment("mass " + std::to_string(mass) + " GeV");
 
@@ -114,7 +114,7 @@ void write(Pythia8::Pythia& pythia, double mass, double coupling) {
     file.write_comment("sigma " + to_string(pythia.info.sigmaGen() * successfull / total) + " mb");
 }
 
-void write_hepmc(double mass) {
+inline void write_hepmc(double mass) {
     print("Generating events for HNLs with mass", mass, "GeV");
 
     std::vector<int> mesons{211, 130, 310, 321, 411, 421, 431, 511, 521, 531, 541, 443, 553};

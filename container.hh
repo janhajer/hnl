@@ -28,7 +28,7 @@ auto to_string(std::vector<Value> const& vector) {
     return result.str();
 }
 
-// template <template<class...> class Container, typename Element, typename Function, typename Result = std::decay_t<std::result_of_t<Function&(Element const&)>>>
+// template <template<class...> class Container, typename Element, typename Function, typename Result = std::decay_t<std::invoke_result_t<Function&, Element const&>>>
 // std::vector<Result> transform(Container<Element> const& container, Function && function) {
 //     std::vector<Result> result;
 //     result.reserve(container.size());

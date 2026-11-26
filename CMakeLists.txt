@@ -8,7 +8,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-add_compile_options(-Ofast -Wall -Wextra -Wpedantic -Wfatal-errors)
+add_compile_options(-Wall -Wextra -Wpedantic -Wfatal-errors) # Release: -O3; no -Ofast, its -ffast-math breaks NaN and Inf handling
 # add_compile_options(-march=native -mtune=native) # faster for local machine
 # add_compile_options(-g -ggdb) # debugging
 
@@ -34,7 +34,7 @@ message(STATUS "Pythia: ${PYTHIA8_LIBRARY}, data: ${PYTHIA8_XMLDOC}")
 find_package(Boost REQUIRED CONFIG)
 
 # lib
-add_library(hnl STATIC ResonanceWidths.cpp ThreeBodyWidth.cpp MesonDecays.cpp BaryonDecays.cpp decay_table.cpp branching_ratios.cpp)
+add_library(hnl STATIC ResonanceWidths.cpp ThreeBodyWidth.cpp MesonDecays.cpp BaryonDecays.cpp branching_ratios.cpp)
 target_include_directories(hnl PUBLIC "${PYTHIA8_INCLUDE_DIR}")
 target_compile_definitions(hnl PUBLIC PYTHIA8_XMLDOC="${PYTHIA8_XMLDOC}")
 target_link_libraries(hnl PUBLIC "${PYTHIA8_LIBRARY}" Boost::headers ${CMAKE_DL_LIBS})

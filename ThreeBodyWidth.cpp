@@ -214,7 +214,10 @@ double MesonThreeBodyWidth::get_width(int from_id_, int neutrino_id, int to_id_,
     mr_N = sqr(y_N);
 
     double width;
-    return integrate(width, sqr(y_l + y_N), sqr(1. - y_h), 1e-3 * y_N) ? width : 0.;
+    double tolerance = std::max(1e-3 * y_N, 1e-9); // the floor keeps it finite for m_N -> 0
+    if (integrate(width, sqr(y_l + y_N), sqr(1. - y_h), tolerance)) return width;
+    print("MesonThreeBodyWidth: integration failed for", id_from, "->", id_to, id_lepton, id_neutrino);
+    return 0.;
 }
 
 std::array<double, 4> MesonThreeBodyWidth::form_factors(int from_id_, int to_id_, double q2) {

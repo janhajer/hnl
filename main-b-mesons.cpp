@@ -11,6 +11,8 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <string>
+#include <type_traits>
 
 #include "Pythia8/Pythia.h"
 
@@ -20,16 +22,37 @@
 #include "pythia.hh"
 #include "string.hh"
 
+namespace {
+
+// the whole string has to be a number
+template<typename Number>
+bool parse(std::string const& string, Number& number) {
+    try {
+        std::size_t end = 0;
+        if constexpr (std::is_integral_v<Number>) number = std::stoi(string, &end);
+        else number = std::stod(string, &end);
+        return end == string.size();
+    } catch (...) {
+        return false;
+    }
+}
+
+}
+
 int main(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
-    if (arguments.size() < 4) {
-        hnl::print("usage: b-mesons <m_N [GeV]> <|U_mu|^2> <events> <mode: 0 SM, 1 all B, 2 one B> [seed]");
+    std::string usage = "usage: b-mesons <m_N [GeV] > 0> <|U_mu|^2 > 0> <events > 0> <mode: 0 SM, 1 all B, 2 one B> [seed]";
+    double mass = 0., coupling = 0.;
+    int events = 0, mode = -1, seed = 0;
+    if (arguments.size() < 4 || arguments.size() > 5
+        || !parse(arguments.at(0), mass) || mass <= 0.
+        || !parse(arguments.at(1), coupling) || coupling <= 0.
+        || !parse(arguments.at(2), events) || events <= 0
+        || !parse(arguments.at(3), mode) || mode < 0 || mode > 2
+        || (arguments.size() == 5 && (!parse(arguments.at(4), seed) || seed < 0 || seed > 900000000))) {
+        hnl::print(usage);
         return 1;
     }
-    double mass = hnl::to_double(arguments.at(0));
-    double coupling = hnl::to_double(arguments.at(1));
-    int events = std::stoi(arguments.at(2));
-    int mode = std::stoi(arguments.at(3));
 
     Pythia8::Pythia pythia(hnl::xml_dir(), false);
     hnl::set_pythia_production(pythia);
