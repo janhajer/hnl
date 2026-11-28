@@ -117,6 +117,7 @@ Pythia 8.318 defaults replaced in `set_physics_inputs()`:
 |---|---|---|
 | \|V_CKM\| | global fit, e.g. V_ub = 3.732e-3, V_cb = 41.83e-3 | PDG 2025 CKM review eq. (12.27) |
 | c tau of pi+, K+, K_L, K_S, D, D_s, B, B_s, B_c, Lambda_b | e.g. B_c 0.15289 mm | PDG 2025 |
+| branching ratios into tau of D_s, D+, B+, B0 | D_s -> tau nu 5.39 %, B+ (B0) -> tau nu X 2.52 (2.33) %, of which D tau nu 0.86 (0.80) %, D* tau nu 1.47 (1.37) % | PDG 2025 |
 
 Kept from Pythia: masses, V -> e+ e- branching ratios (within 2 % of PDG 2025), sin^2 theta_W. alpha_s(m_Z) = 0.118 in `ResonanceWidths.cpp`.
 

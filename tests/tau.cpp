@@ -76,3 +76,28 @@ TEST_CASE("tau -> N pi and N K of a light HNL reproduce the measured tau -> nu p
     CHECK_THAT(pi / width, WithinRel(0.1082, 0.02)); // PDG 2025: 10.82(5)%
     CHECK_THAT(K / width, WithinRel(0.00696, 0.03)); // PDG 2025: 0.696(10)%
 }
+
+TEST_CASE("tau branching ratios of D_s, D+, B+ and B0 are those of PDG 2025", "[tau]") {
+    Pythia8::Pythia pythia(hnl::xml_dir(), false);
+    hnl::set_physics_inputs(pythia);
+    hnl::set_physics_inputs(pythia); // the resonance constructors call it several times
+    auto sum = [&](int id, bool semitauonic_only) {
+        double result = 0.;
+        auto entry = pythia.particleData.particleDataEntryPtr(id);
+        for (int i = 0; i < entry->sizeChannels(); ++i) {
+            auto const& channel = entry->channel(i);
+            bool tau = false, neutrino = false;
+            for (int j = 0; j < channel.multiplicity(); ++j) {
+                tau = tau || channel.product(j) == -15;
+                neutrino = neutrino || channel.product(j) == 16;
+            }
+            if (!semitauonic_only || (tau && neutrino)) result += channel.bRatio();
+        }
+        return result;
+    };
+    CHECK_THAT(sum(431, true), WithinRel(0.0539, 1e-9));
+    CHECK_THAT(sum(411, true), WithinRel(0.00120, 1e-9));
+    CHECK_THAT(sum(521, true), WithinRel(0.02519, 1e-9));
+    CHECK_THAT(sum(511, true), WithinRel(0.02333, 1e-9));
+    for (int id : {431, 411, 521, 511}) CHECK_THAT(sum(id, false), WithinRel(1., 1e-9));
+}
